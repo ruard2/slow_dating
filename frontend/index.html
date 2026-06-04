@@ -838,7 +838,7 @@ function ChatColumn({messages,myName,onSend,onReaction,onReplay,socket}){
   }
 
   return(
-    <div style={{display:'flex',flexDirection:'column',flex:1,minHeight:0,background:'#0a0a11',borderRight:'1px solid rgba(139,26,74,.2)'}}>
+    <div style={{display:'flex',flexDirection:'column',flex:1,height:'100%',background:'#0a0a11',borderRight:'1px solid rgba(139,26,74,.2)'}}>
       {camOn&&(
         <div style={{position:'relative',flexShrink:0,background:'#000'}}>
           <video ref={vRef} muted playsInline autoPlay style={{width:'100%',aspectRatio:'4/3',objectFit:'cover',display:'block',transform:'scaleX(-1)'}}/>
@@ -1058,7 +1058,7 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
   ):null;
 
   return(
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',background:'#0d0d14',maxWidth:900,margin:'0 auto'}}>
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',background:'#0d0d14',maxWidth:900,margin:'0 auto',overflow:'hidden'}}>
 
       {/* HEADER */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 12px',background:'rgba(26,10,46,.8)',borderBottom:'1px solid rgba(139,26,74,.2)',flexShrink:0,backdropFilter:'blur(12px)'}}>
@@ -1095,8 +1095,8 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
       {/* 3 COLUMNS */}
       <div style={{display:'flex',flex:1,minHeight:0,gap:2,padding:'0 4px 4px'}}>
 
-        {/* LEFT: Chat — breed, hele kolom */}
-        <div style={{width:220,flexShrink:0,minHeight:0,display:'flex',flexDirection:'column'}}>
+        {/* LEFT: Chat — volledige hoogte */}
+        <div style={{width:220,flexShrink:0,display:'flex',flexDirection:'column',alignSelf:'stretch'}}>
           <ChatColumn messages={msgs} myName={myName} onSend={sendChat} onReaction={handleReaction} onReplay={handleReplay} socket={socket}/>
         </div>
 
