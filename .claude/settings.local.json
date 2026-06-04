@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "PowerShell($env:Path -split ';' | Where-Object { $_ -match 'node' })"
+    ]
+  }
+}
