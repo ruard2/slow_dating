@@ -9,7 +9,7 @@
   <script>tailwind.config={theme:{extend:{colors:{night:'#0d0d14',velvet:'#1a0a2e',rose:'#8b1a4a',blush:'#c45a8a',gold:'#d4af37'},fontFamily:{display:['"Playfair Display"','serif']}}}}</script>
   <style>
     *{box-sizing:border-box}
-    html,body,#root{height:100%;margin:0;padding:0;background:#0d0d14;color:#f5e6d3;font-family:'Inter',sans-serif;overflow:hidden}
+    html,body,#root{height:100%;margin:0;padding:0;background:#0d0d14;color:#f5e6d3;font-family:'Inter',sans-serif;overflow-x:hidden}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#8b1a4a;border-radius:2px}
     .glass{background:rgba(255,255,255,.05);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08)}
     .tgg{background:linear-gradient(135deg,#d4af37,#f0d060,#d4af37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -1029,7 +1029,7 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
   ):null;
 
   return(
-    <div style={{height:'100vh',display:'flex',flexDirection:'column',background:'#0d0d14',maxWidth:900,margin:'0 auto'}}>
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',background:'#0d0d14',maxWidth:900,margin:'0 auto',overflow:'hidden'}}>
 
       {/* HEADER */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 12px',background:'rgba(26,10,46,.8)',borderBottom:'1px solid rgba(139,26,74,.2)',flexShrink:0,backdropFilter:'blur(12px)'}}>
