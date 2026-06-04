@@ -178,11 +178,22 @@ const CARDS_HOT = [
   {title:'Vreemden',       emoji:'🎭',desc:'Schrijf samen een mini-verhaal: twee geliefden die elkaar na lange tijd weerzien in een hotel. Jij start met 3 zinnen, ik vervolg. Minimaal 4 rondes elk.'},
 ];
 
+// Speciale vaste kaart — kernkwadranten tool
+const KERNKWADRANT_CARD = {
+  title: 'Kernkwadranten',
+  emoji: '🧭',
+  desc: 'Doe samen de kernkwadrant check. Ontdek je kernkwaliteit, valkuil, uitdaging en allergie — en bespreek wat je herkent in de ander.',
+  kernkwadrant: true,
+};
+
 // Trek n unieke kaarten uit de juiste stapel op basis van positie
-function pickCards(n, pos) {
+// forceKern=true → kernkwadrant altijd als eerste kaart erbij
+function pickCards(n, pos, forceKern) {
   const deck = pos >= 40 ? CARDS_HOT : CARDS_SOFT;
   const shuffled = [...deck].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(n, deck.length));
+  const cards = shuffled.slice(0, Math.min(n, deck.length));
+  if(forceKern) { cards[0] = KERNKWADRANT_CARD; }
+  return cards;
 }
 function randomCard(pos) {
   return pickCards(1, pos||0)[0];
@@ -386,7 +397,7 @@ function CountdownTimer({seconds,socket,autoStart}){
 }
 
 // ─── MYSTERY CARD OVERLAY ─────────────────────────────────────────────────────
-function MysteryOverlay({card,title,onDone,onSave,saved,isMe}){
+function MysteryOverlay({card,title,onDone,onSave,saved,isMe,onOpenKern}){
   if(!card)return null;
   return(
     <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',padding:16,background:'rgba(0,0,0,.88)',backdropFilter:'blur(8px)'}}>
@@ -400,6 +411,11 @@ function MysteryOverlay({card,title,onDone,onSave,saved,isMe}){
           <div style={{fontSize:52,textAlign:'center',marginBottom:12}}>{card.emoji}</div>
           <h2 style={{fontFamily:'"Playfair Display",serif',fontSize:22,fontWeight:700,color:'white',textAlign:'center',marginBottom:12}}>{card.title}</h2>
           <p style={{color:'#d1d5db',lineHeight:1.7,fontSize:13,textAlign:'center'}}>{card.desc}</p>
+          {card.kernkwadrant&&isMe&&onOpenKern&&(
+            <button onClick={onOpenKern} style={{width:'100%',marginTop:10,padding:'10px',borderRadius:10,background:'linear-gradient(135deg,#c17f4a,#e09a60)',color:'white',fontWeight:700,fontSize:13,border:'none',cursor:'pointer'}}>
+              🧭 Open de tool
+            </button>
+          )}
           {!isMe&&<p style={{color:'#9ca3af',fontSize:12,textAlign:'center',marginTop:10,fontStyle:'italic'}}>Wacht terwijl de ander dit uitvoert...</p>}
         </div>
         {isMe&&(
@@ -897,6 +913,9 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
   const [partnerCards,setPartnerCards]=useState(null);  // 3 kaarten die IK zie om voor partner te kiezen
   const [waitingForPick,setWaitingForPick]=useState(false); // ik wacht tot partner kiest
   const [vetoUsed,setVetoUsed]=useState(false); // veto al gebruikt deze beurt
+  // Kernkwadranten
+  const [showKernkwadrant,setShowKernkwadrant]=useState(false);
+  const kernShownRef=useRef(false); // bijhouden of kernkwadrant al gespeeld (survives socket closure)
 
   // Mystery cards worden aangeboden via offer_mystery_cards / pick_mystery_card
 
@@ -907,7 +926,9 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
       setVetoUsed(false);
       // Mystery vakje: actieve speler biedt 3 kaarten aan partner
       if(d.phase==='mystery' && d.playerNumber===myNum){
-        const cards=pickCards(3, d.positions[myNum]);
+        const pos=d.positions[myNum];
+        const forceKern=pos<40 && !kernShownRef.current;
+        const cards=pickCards(3, pos, forceKern);
         setWaitingForPick(true);
         socket.emit('offer_mystery_cards',{cards});
       }
@@ -935,7 +956,11 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
     });
     // Mystery: partner kiest kaart voor actieve speler
     socket.on('offer_mystery_cards',({cards})=>setPartnerCards(cards));
-    socket.on('pick_mystery_card',({card})=>{ setWaitingForPick(false); setEventCard(card); });
+    socket.on('pick_mystery_card',({card})=>{
+      setWaitingForPick(false);
+      setEventCard(card);
+      if(card.kernkwadrant) kernShownRef.current=true;
+    });
     socket.on('position_update',d=>setG(s=>({...s,positions:d.positions,clothing:d.clothing})));
     socket.on('chat_message',m=>setMsgs(p=>[...p,m]));
     socket.on('fantasy_entries',({entries})=>setNotebookEntries(entries||[]));
@@ -967,7 +992,9 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
   function handleNotebookAppend(text){socket.emit('fantasy_append',{text});}
   function vetoSquare(){
     setVetoUsed(true);
-    const cards=pickCards(3, positions[myNum]);
+    const pos=positions[myNum];
+    const forceKern=pos<40 && !kernShownRef.current;
+    const cards=pickCards(3, pos, forceKern);
     setWaitingForPick(true);
     socket.emit('offer_mystery_cards',{cards});
   }
@@ -1201,9 +1228,17 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
                 <div style={{fontSize:32,textAlign:'center',marginBottom:6}}>{eventCard.emoji}</div>
                 <div style={{fontFamily:'"Playfair Display",serif',fontSize:13,fontWeight:700,color:'white',textAlign:'center',marginBottom:6}}>{eventCard.title}</div>
                 <div style={{fontSize:10,color:'#d1d5db',lineHeight:1.6,textAlign:'center'}}>{eventCard.desc}</div>
+                {eventCard.kernkwadrant&&(
+                  <button onClick={()=>setShowKernkwadrant(true)} style={{width:'100%',marginTop:8,padding:'9px',borderRadius:8,background:'linear-gradient(135deg,#c17f4a,#e09a60)',color:'white',fontWeight:700,fontSize:12,border:'none',cursor:'pointer'}}>
+                    🧭 Open de tool
+                  </button>
+                )}
               </div>
               {isMyTurn
-                ?<p style={{fontSize:9,color:'#9ca3af',textAlign:'center',padding:'0 10px 10px',fontStyle:'italic'}}>Gebruik chat of camera 💬<br/><span style={{color:'#6b7280'}}>Je partner geeft je vrij</span></p>
+                ?<p style={{fontSize:9,color:'#9ca3af',textAlign:'center',padding:'0 10px 10px',fontStyle:'italic'}}>
+                  {eventCard.kernkwadrant?'Doe de oefening samen — bespreek wat je herkent 🧭':'Gebruik chat of camera 💬'}<br/>
+                  <span style={{color:'#6b7280'}}>Je partner geeft je vrij als je klaar bent</span>
+                </p>
                 :<div style={{padding:'0 10px 10px'}}>
                   <button onClick={()=>{setEventCard(null);actionDone();}} style={{width:'100%',padding:'8px',borderRadius:8,background:'linear-gradient(135deg,#166534,#4ade8050)',color:'white',fontWeight:600,fontSize:11,border:'1px solid #4ade8040',cursor:'pointer'}}>
                     ✓ {activeName} is klaar
@@ -1230,12 +1265,24 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
       {/* Overlays */}
       {eventCard&&phase!=='mystery'&&(
         <MysteryOverlay card={eventCard} isMe={true} onDone={()=>setEventCard(null)}
-          onSave={()=>{setSavedCard(eventCard);setEventCard(null);}} saved={!!savedCard}/>
+          onSave={()=>{setSavedCard(eventCard);setEventCard(null);}} saved={!!savedCard}
+          onOpenKern={()=>setShowKernkwadrant(true)}/>
       )}
       {bonusCard&&(
         <MysteryOverlay card={bonusCard} title="🎲🎲 Dubbel! Bonus Kaart" isMe={true} onDone={()=>setBonusCard(null)}/>
       )}
       {showNotebook&&<FantasyNotebook entries={notebookEntries} myNum={myNum} onAppend={handleNotebookAppend} onClose={()=>setShowNotebook(false)}/>}
+
+      {/* Kernkwadranten iframe overlay */}
+      {showKernkwadrant&&(
+        <div style={{position:'fixed',inset:0,zIndex:70,display:'flex',flexDirection:'column',background:'#f5f0eb'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px',background:'#1a1a2e',flexShrink:0}}>
+            <span style={{color:'#c17f4a',fontWeight:700,fontSize:14}}>🧭 Kernkwadranten</span>
+            <button onClick={()=>setShowKernkwadrant(false)} style={{color:'white',fontSize:22,background:'none',border:'none',cursor:'pointer',lineHeight:1}}>✕</button>
+          </div>
+          <iframe src="/kernkwadranten.html" style={{flex:1,border:'none',width:'100%'}} title="Kernkwadranten"/>
+        </div>
+      )}
     </div>
   );
 }
