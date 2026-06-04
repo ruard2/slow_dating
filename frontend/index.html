@@ -40,18 +40,18 @@ const {useState,useEffect,useRef,useCallback} = React;
 // ─── BOARD DATA ───────────────────────────────────────────────────────────────
 const SQUARES = {
   1:{type:'blue',text:'Spreek in: wat trok jou als eerste naar mij toe? Niet uiterlijk — iets wat je voelde.'},
-  2:{type:'blue',text:'Stuur het GIF dat het best beschrijft hoe jij naar mij kijkt als ik niet kijk.'},
-  3:{type:'blue',text:'Wat is de gedachte aan mij die je het meest bezighoudt op een gewone dag?'},
+  2:{type:'blue',text:'Noem 3 dingen die je aan mij bewondert — niks uiterlijk. Spreek in. Eerlijk en specifiek.'},
+  3:{type:'versus',text:'Uitdaging: wie maakt de meest gekke of verleidelijke selfie in 60 seconden? Allebei sturen tegelijk. De ander beoordeelt. Verliezer doet een extra kledingstuk uit.',timerSeconds:60},
   4:{type:'green',text:'Trek je schoenen en sokken uit.'},
   5:{type:'blue',text:'Spreek in: beschrijf hoe het voelt als we eindelijk weer samen zijn. Gebruik je lichaam om het te beschrijven.'},
   6:{type:'red',text:'Maak een foto van iets op jouw lichaam dat jij mooi vindt aan jezelf. Stuur zonder uitleg.'},
-  7:{type:'red',text:'Stuur het meest verleidelijke GIF dat je nu kunt vinden. Leg uit waarom dit hem is.'},
+  7:{type:'blue',text:'Wat is de eigenschap van mij die jou het meest gerustgeeft? De reden dat jij bij mij bent. Spreek in.'},
   8:{type:'orange',text:'Ladder naar 19 — kledingstuk uit!',destination:19},
   9:{type:'blue',text:'Welke plek op mijn lichaam zou jij als eerste willen aanraken als ik nu voor je stond? Wees specifiek.'},
   10:{type:'red',text:'Foto van je handen. Ik stuur terug wat ik wil dat je ermee doet.',powerSwitch:true},
   11:{type:'green',text:'Trek je bovenkleding uit.'},
   12:{type:'blue',text:'Spreek in: fluister iets wat je altijd al aan mij wilde vertellen maar nooit durfde.'},
-  13:{type:'red',text:'Stuur een GIF die laat zien hoe jij me wilt zoenen — de eerste keer dat we elkaar na lang zien.'},
+  13:{type:'blue',text:'Wat is iets waar jij bang voor bent in onze relatie? Eerlijk — geen sugarcoating. Spreek in of schrijf.'},
   14:{type:'blue',text:'Wat vind je het spannendst aan de afstand tussen ons? Wat doet het met je verlangen?',
       choiceA:'Beschrijf hoe je me wilt zoenen — begin tot einde',choiceB:'Doe het voor de camera, 10 seconden'},
   15:{type:'red',text:'Foto van je nek en sleutelbeen. Vertel erbij wat je voelt als ik daar mijn lippen zou zetten.'},
@@ -66,7 +66,7 @@ const SQUARES = {
   24:{type:'blue',text:'Wat wil je van mij dat je nog nooit hebt durven vragen? Zeg het nu.'},
   25:{type:'red',text:'Foto van je schouders omhoog — niks meer.'},
   26:{type:'red',text:'Spreek in: beschrijf langzaam hoe je me wilt zoenen. Van eerste contact tot moment dat je stopt.'},
-  27:{type:'blue',text:'Op welk moment van de dag mis je me het meest — en wat zou je willen doen als ik er was?'},
+  27:{type:'blue',text:'Wat heb jij van mij nodig wat je nooit hardop vraagt? Nu wel. Neem de tijd.'},
   28:{type:'green',text:'Trek nog een kledingstuk uit — jouw keuze.'},
   29:{type:'snake',text:'Slang naar 12 — kledingstuk aan!',destination:12},
   30:{type:'purple',text:'Edging ronde 1 — raak jezelf 30 seconden aan. Stop dan. Spreek in hoe dat voelde.',timerSeconds:30,witness:true},
@@ -78,7 +78,7 @@ const SQUARES = {
   36:{type:'mystery',text:'Trek een Mystery Kaart'},
   37:{type:'red',text:'Spreek in: adem in mijn oor en zeg mijn naam. Precies zoals je naast me zou liggen.'},
   38:{type:'red',text:'Trek langzaam een kledingstuk uit voor de camera. Video, doe het traag.',witness:true},
-  39:{type:'blue',text:'Wat zou je doen als ik nu onaangekondigd naast je in bed zou liggen?'},
+  39:{type:'red',text:'Roleplay: ik kom onverwacht bij jou thuis aan na een lang weekend apart. Jij doet de deur open. Speel het via chat — minimaal 5 berichten elk. Jullie kennen elkaar al lang. Begin jij.'},
   40:{type:'red',text:'Fantasy vervolg in het notitieboek: voeg toe wat jij met mijn lichaam zou doen. Heel specifiek.',powerSwitch:true},
   41:{type:'snake',text:'Slang naar 24 — kledingstuk aan!',destination:24},
   42:{type:'green',text:'Trek alles uit — behalve je onderbroek of string.'},
@@ -95,7 +95,7 @@ const SQUARES = {
   52:{type:'green',text:'Volledig naakt — voor de rest van het spel.'},
   53:{type:'purple',text:'Edging ronde 4 — 60 seconden op mijn instructies. Doe precies wat ik zeg.',timerSeconds:60,witness:true},
   54:{type:'orange',text:'Ladder naar 72!',destination:72},
-  55:{type:'blue',text:'Spreek in: beschrijf hoe jouw lichaam op dit moment aanvoelt. Langzaam. In detail.'},
+  55:{type:'blue',text:'Beloof mij één concreet ding voor de volgende keer dat we samen zijn. Voice note. Geen vage antwoorden — een echte belofte.'},
   56:{type:'red',text:'Zeg mijn naam op de manier die jij het lekkerst vindt. Stuur als audio.'},
   57:{type:'red',text:'Fantasy vervolg in het notitieboek: jij schrijft hoe het voelt, ik schrijf wat ik doe.'},
   58:{type:'snake',text:'Slang naar 39 — kledingstuk aan!',destination:39},
@@ -113,7 +113,7 @@ const SQUARES = {
       choiceA:'Vertel het eerlijk via voice note',choiceB:'Laat me zien wat je het meest mooi vindt aan jezelf'},
   69:{type:'snake',text:'Slang naar 45 — kledingstuk aan!',destination:45},
   70:{type:'red',text:'2 minuten — ik stuur instructies, jij doet alles wat ik zeg. Alles.',timerSeconds:120,witness:true},
-  71:{type:'blue',text:'Spreek in: beschrijf hoe jouw lichaam nu aanvoelt. Elk detail. Langzaam.'},
+  71:{type:'versus',text:'Uitdaging: wie durft de meest publieke foto te sturen met wat je nu aanhebt? 90 seconden. Allebei sturen tegelijk. De ander beoordeelt wie het verst ging — verliezer doet een kledingstuk extra uit.',timerSeconds:90},
   72:{type:'purple',text:'Laatste edging — 2 minuten op eigen tempo. Ga zo ver als je kunt. Stop voor het einde.',timerSeconds:120,witness:true},
   73:{type:'red',text:'Meest verleidelijke pose: foto en korte video. Kijk recht in de camera.',witness:true},
   74:{type:'mystery',text:'Trek een Mystery Kaart'},
@@ -121,7 +121,7 @@ const SQUARES = {
   76:{type:'red',text:'60 seconden — doe alles wat ik je opdraag. Geen vragen.',timerSeconds:60,witness:true},
   77:{type:'snake',text:'Slang naar 61 — kledingstuk aan!',destination:61},
   78:{type:'red',text:'Laat me via video zien hoe je het randje nadert. Ik kijk mee. Stop als ik zeg: stop.',witness:true},
-  79:{type:'blue',text:'Spreek in: het mooiste wat je vandaag hebt gevoeld. Voor mij. Langzaam.'},
+  79:{type:'versus',text:'Uitdaging: snelheidsronde — wie stuurt als eerste een verleidelijk voice note van 20 seconden? Allebei op 3 beginnen. De winnaar geeft de ander één kleine opdracht naar keuze.'},
   80:{type:'gold',text:'FINISH — Je wint. De winnaar krijgt één wens van de ander. Kies hem zorgvuldig.'},
 };
 
@@ -134,6 +134,7 @@ const SC = {
   snake:  {bg:'#1f0505',border:'#7f1d1d',text:'#f87171',label:'Slang'},
   gold:   {bg:'#1f1a05',border:'#d4af37',text:'#fbbf24',label:'FINISH'},
   mystery:{bg:'#0d1520',border:'#475569',text:'#cbd5e1',label:'Mystery'},
+  versus: {bg:'#1a1100',border:'#d97706',text:'#fbbf24',label:'Uitdaging'},
 };
 
 const LADDERS = {3:19,18:37,35:54,45:66,53:72};
@@ -164,6 +165,15 @@ const CARDS = [
   {title:'Aanwezig',emoji:'✨',desc:'Spreek in: wat ben ik voor jou op dit moment? Eerlijk en specifiek. Geen clichés.'},
   {title:'Aanraking',emoji:'🔍',desc:'Stuur een foto van iets in jouw ruimte dat je nu aan mij doet denken. Leg uit waarom in één zin.'},
   {title:'Dichtbij',emoji:'💌',desc:'Schrijf 3 zinnen die je normaal pas zou sturen als we echt samen zijn. Nu stuur je ze.'},
+  // Voormalige bord-vakjes — te goed om weg te gooien
+  {title:'GIF Blik',emoji:'🎞️',desc:'Stuur het GIF dat het best beschrijft hoe jij naar mij kijkt als ik niet kijk.'},
+  {title:'GIF Vuur',emoji:'🌶️',desc:'Stuur het meest verleidelijke GIF dat je nu kunt vinden. Leg uit waarom precies dit hem is.'},
+  {title:'GIF Zoen',emoji:'💋',desc:'Stuur een GIF die laat zien hoe jij me wilt zoenen — de eerste keer na lang apart.'},
+  {title:'Daggedachte',emoji:'💭',desc:'Wat is de gedachte aan mij die je het meest bezighoudt op een gewone dag? Spreek in.'},
+  {title:'Missen',emoji:'🌙',desc:'Op welk moment mis je me het meest — en wat zou je willen doen als ik er dan was? Spreek in.'},
+  {title:'Onaangekondigd',emoji:'🚪',desc:'Wat zou je doen als ik nu onaangekondigd naast je in bed zou liggen? Beschrijf elk detail.'},
+  {title:'Lichaam Nu',emoji:'🫀',desc:'Spreek in: beschrijf hoe jouw lichaam op dit moment aanvoelt. Langzaam. Elk detail. Wat voel je, waar, hoe intens.'},
+  {title:'Gevoel Vandaag',emoji:'🌟',desc:'Spreek in: het mooiste wat je vandaag hebt gevoeld. Voor mij. Langzaam, zonder haast.'},
 ];
 
 function randomCard() { return CARDS[Math.floor(Math.random()*CARDS.length)]; }
@@ -947,7 +957,7 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
     setEventCard(card);
   }
 
-  const ICONS={blue:'💙',red:'🔥',purple:'💜',green:'💚',orange:'🟠',snake:'🐍',gold:'🏆',mystery:'🃏'};
+  const ICONS={blue:'💙',red:'🔥',purple:'💜',green:'💚',orange:'🟠',snake:'🐍',gold:'🏆',mystery:'🃏',versus:'⚔️'};
   const dots={1:[[50,50]],2:[[25,25],[75,75]],3:[[25,25],[50,50],[75,75]],4:[[25,25],[75,25],[25,75],[75,75]],5:[[25,25],[75,25],[50,50],[25,75],[75,75]],6:[[25,25],[75,25],[25,50],[75,50],[25,75],[75,75]]};
   const dv=diceValue||1;
   const dDots=dots[dv]||dots[1];
@@ -1200,7 +1210,7 @@ function Lobby({onCreate,onJoin,error}){
         <div className="glass" style={{marginTop:16,borderRadius:16,padding:14}}>
           <p style={{fontSize:11,color:'#6b7280',textAlign:'center',marginBottom:10,fontWeight:600,letterSpacing:1,textTransform:'uppercase'}}>Kleurlegenda</p>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-            {[['#60a5fa','Blauw = Waarheid'],['#f87171','Rood = Durven'],['#c084fc','Paars = Edging'],['#4ade80','Groen = Kleding'],['#fb923c','Oranje = Ladder'],['#cbd5e1','Zilver = Mystery']].map(([c,l])=>(
+            {[['#60a5fa','Blauw = Waarheid'],['#f87171','Rood = Durven'],['#c084fc','Paars = Edging'],['#4ade80','Groen = Kleding'],['#fb923c','Oranje = Ladder'],['#cbd5e1','Zilver = Mystery'],['#fbbf24','Goud = Uitdaging']].map(([c,l])=>(
               <div key={l} style={{display:'flex',alignItems:'center',gap:6}}>
                 <div style={{width:8,height:8,borderRadius:'50%',background:c,flexShrink:0}}/>
                 <span style={{fontSize:10,color:'#d1d5db'}}>{l}</span>
