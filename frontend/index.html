@@ -433,10 +433,33 @@ function MysteryOverlay({card,title,onDone,onSave,saved,isMe,onOpenKern}){
 // ─── FANTASY NOTEBOOK ─────────────────────────────────────────────────────────
 const PLAYER_COLORS = ['#c45a8a','#9333ea']; // speler 0 = roze, speler 1 = paars
 
-function FantasyNotebook({entries,myNum,onAppend,onClose}){
+function FantasyNotebook({entries,myNum,onAppend,onClose,socket}){
   const [text,setText]=useState('');
+  const [partnerTyping,setPartnerTyping]=useState(false);
   const endRef=useRef(null);
+  const typingTimerRef=useRef(null);
+  const isTypingRef=useRef(false);
+
   useEffect(()=>{ endRef.current?.scrollIntoView({behavior:'smooth'}); },[entries.length]);
+
+  useEffect(()=>{
+    if(!socket)return;
+    socket.on('notebook_typing',()=>{
+      setPartnerTyping(true);
+      clearTimeout(typingTimerRef.current);
+      typingTimerRef.current=setTimeout(()=>setPartnerTyping(false),2000);
+    });
+    return()=>{ socket.off('notebook_typing'); clearTimeout(typingTimerRef.current); };
+  },[socket]);
+
+  function handleChange(e){
+    setText(e.target.value);
+    if(socket&&!isTypingRef.current){
+      isTypingRef.current=true;
+      socket.emit('notebook_typing');
+      setTimeout(()=>{ isTypingRef.current=false; },1500);
+    }
+  }
 
   function submit(e){
     e.preventDefault();
@@ -469,8 +492,13 @@ function FantasyNotebook({entries,myNum,onAppend,onClose}){
             </div>
           )}
         </div>
+        {partnerTyping&&(
+          <div style={{padding:'4px 16px',fontSize:11,color:'#d4af37',fontStyle:'italic',flexShrink:0}}>
+            ✍️ schrijft...
+          </div>
+        )}
         <form onSubmit={submit} style={{display:'flex',gap:8,padding:12,borderTop:'1px solid rgba(212,175,55,.2)',flexShrink:0}}>
-          <input value={text} onChange={e=>setText(e.target.value)}
+          <input value={text} onChange={handleChange}
             placeholder="Schrijf een zin en druk Enter..."
             style={{flex:1,padding:'10px 14px',borderRadius:12,background:'rgba(255,255,255,.06)',border:'1px solid rgba(212,175,55,.3)',color:'white',fontSize:13,outline:'none'}}/>
           <button type="submit" style={{padding:'10px 16px',borderRadius:12,background:'linear-gradient(135deg,#8b1a4a,#c45a8a)',color:'white',fontWeight:600,fontSize:13,border:'none',cursor:'pointer'}}>↑</button>
@@ -696,7 +724,7 @@ function ChatMessage({msg,isMe,onReaction,onReplay}){
         <div style={{maxWidth:'90%'}}>
           {!isMe&&<div style={{fontSize:10,color:'#c45a8a',marginBottom:2,marginLeft:4}}>{msg.sender}</div>}
           {msg.mediaType==='text'&&(
-            <div style={{padding:'6px 10px',borderRadius:14,fontSize:11,color:'white',lineHeight:1.6,background:isMe?'linear-gradient(135deg,#8b1a4a,#c45a8a)':'rgba(255,255,255,.09)'}}>
+            <div style={{padding:'8px 12px',borderRadius:14,fontSize:13,color:'white',lineHeight:1.6,background:isMe?'linear-gradient(135deg,#8b1a4a,#c45a8a)':'rgba(255,255,255,.09)'}}>
               {msg.text}
             </div>
           )}
@@ -810,7 +838,7 @@ function ChatColumn({messages,myName,onSend,onReaction,onReplay,socket}){
   }
 
   return(
-    <div style={{display:'flex',flexDirection:'column',height:'100%',background:'#0a0a11',borderRight:'1px solid rgba(139,26,74,.2)'}}>
+    <div style={{display:'flex',flexDirection:'column',flex:1,minHeight:0,background:'#0a0a11',borderRight:'1px solid rgba(139,26,74,.2)'}}>
       {camOn&&(
         <div style={{position:'relative',flexShrink:0,background:'#000'}}>
           <video ref={vRef} muted playsInline autoPlay style={{width:'100%',aspectRatio:'4/3',objectFit:'cover',display:'block',transform:'scaleX(-1)'}}/>
@@ -842,14 +870,14 @@ function ChatColumn({messages,myName,onSend,onReaction,onReplay,socket}){
         </div>
       )}
       <div style={{flex:1,overflowY:'auto',padding:'6px 6px',minHeight:0}}>
-        {messages.length===0&&<div style={{textAlign:'center',color:'#374151',fontSize:11,marginTop:24}}><div style={{fontSize:24,marginBottom:4}}>💬</div>Chat</div>}
+        {messages.length===0&&<div style={{textAlign:'center',color:'#374151',fontSize:12,marginTop:32}}><div style={{fontSize:28,marginBottom:6}}>💬</div>Chat</div>}
         {messages.map((m,i)=><ChatMessage key={i} msg={m} isMe={m.sender===myName} onReaction={r=>onReaction&&onReaction(r,m)} onReplay={(card,origMsg)=>onReplay&&onReplay(card,origMsg)}/>)}
-        {partnerTyping&&<div style={{fontSize:10,color:'#c45a8a',padding:'2px 6px',fontStyle:'italic'}}>... typt 💭</div>}
+        {partnerTyping&&<div style={{fontSize:11,color:'#c45a8a',padding:'3px 8px',fontStyle:'italic'}}>... typt 💭</div>}
         <div ref={endRef}/>
       </div>
       <form onSubmit={sendText} style={{display:'flex',gap:4,padding:6,borderTop:'1px solid rgba(139,26,74,.2)',flexShrink:0}}>
-        <input value={text} onChange={handleTextChange} placeholder="Typ..." style={{flex:1,padding:'6px 8px',borderRadius:10,background:'rgba(255,255,255,.06)',border:'1px solid rgba(139,26,74,.3)',color:'white',fontSize:11,outline:'none',minWidth:0}}/>
-        <button type="submit" style={{padding:'6px 8px',borderRadius:10,background:'#8b1a4a',color:'white',fontSize:11,border:'none',cursor:'pointer'}}>↑</button>
+        <input value={text} onChange={handleTextChange} placeholder="Typ..." style={{flex:1,padding:'9px 12px',borderRadius:12,background:'rgba(255,255,255,.06)',border:'1px solid rgba(139,26,74,.3)',color:'white',fontSize:13,outline:'none',minWidth:0}}/>
+        <button type="submit" style={{padding:'9px 12px',borderRadius:12,background:'#8b1a4a',color:'white',fontSize:13,border:'none',cursor:'pointer'}}>↑</button>
       </form>
     </div>
   );
@@ -1029,7 +1057,7 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
   ):null;
 
   return(
-    <div style={{height:'100vh',display:'flex',flexDirection:'column',background:'#0d0d14',maxWidth:900,margin:'0 auto',overflow:'hidden'}}>
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',background:'#0d0d14',maxWidth:900,margin:'0 auto'}}>
 
       {/* HEADER */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 12px',background:'rgba(26,10,46,.8)',borderBottom:'1px solid rgba(139,26,74,.2)',flexShrink:0,backdropFilter:'blur(12px)'}}>
@@ -1066,8 +1094,8 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
       {/* 3 COLUMNS */}
       <div style={{display:'flex',flex:1,minHeight:0,gap:2,padding:'0 4px 4px'}}>
 
-        {/* LEFT: Chat */}
-        <div style={{width:130,flexShrink:0,minHeight:0}}>
+        {/* LEFT: Chat — breed, hele kolom */}
+        <div style={{width:220,flexShrink:0,minHeight:0,display:'flex',flexDirection:'column'}}>
           <ChatColumn messages={msgs} myName={myName} onSend={sendChat} onReaction={handleReaction} onReplay={handleReplay} socket={socket}/>
         </div>
 
@@ -1275,7 +1303,7 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
       {bonusCard&&(
         <MysteryOverlay card={bonusCard} title="🎲🎲 Dubbel! Bonus Kaart" isMe={true} onDone={()=>setBonusCard(null)}/>
       )}
-      {showNotebook&&<FantasyNotebook entries={notebookEntries} myNum={myNum} onAppend={handleNotebookAppend} onClose={()=>setShowNotebook(false)}/>}
+      {showNotebook&&<FantasyNotebook entries={notebookEntries} myNum={myNum} onAppend={handleNotebookAppend} onClose={()=>setShowNotebook(false)} socket={socket}/>}
 
       {/* Kernkwadranten iframe overlay */}
       {showKernkwadrant&&(
@@ -1385,7 +1413,7 @@ function loadSession(){
 
 // ─── APP ──────────────────────────────────────────────────────────────────────
 function App(){
-  const [screen,setScreen]=useState('lobby'); // lobby|waiting|setup|game|reconnecting
+  const [screen,setScreen]=useState('lobby');
   const [myNum,setMyNum]=useState(null);
   const [myName,setMyName]=useState('');
   const [roomId,setRoomId]=useState(null);
@@ -1395,32 +1423,37 @@ function App(){
   const [loading,setLoading]=useState(false);
   const [setupData,setSetupData]=useState({});
   const socketRef=useRef(null);
+  const pendingNameRef=useRef(''); // naam bewaren voor gebruik in async handlers
 
   // Check voor opgeslagen sessie bij opstarten
   useEffect(()=>{
     const sess=loadSession();
-    if(sess?.roomId && sess.playerName){
+    if(sess && sess.roomId && sess.playerName && sess.playerNumber!==undefined){
       setScreen('reconnecting');
       setMyName(sess.playerName);
       setMyNum(sess.playerNumber);
       setRoomId(sess.roomId);
-      handleRejoin(sess);
+      // Timeout: als na 6s geen antwoord, toon fallback
+      const timeout=setTimeout(()=>{
+        setError('Geen reactie van server — kamer mogelijk verlopen.');
+      },6000);
+      handleRejoin(sess,timeout);
     }
   },[]);
 
   async function getSocket(){
     if(socketRef.current)return socketRef.current;
-    setLoading(true);
     try{
       const io=await loadIO(window.BACKEND_URL);
       const s=io(window.BACKEND_URL,{autoConnect:true,reconnection:true});
       s.on('connect_error',()=>setError('Kan geen verbinding maken. Is de backend actief?'));
-      // Normaal joinen
+      // Normaal joinen — sla sessie op zodra roomId bekend is
       s.on('room_created',({roomId,playerNumber,game})=>{
-        saveSession(roomId,playerNumber,s._opts?.playerName||'');
+        saveSession(roomId, playerNumber, pendingNameRef.current); // ✓ correcte naam
         setRoomId(roomId);setMyNum(playerNumber);setGame(game);setScreen('waiting');
       });
       s.on('room_joined',({roomId,playerNumber,game})=>{
+        saveSession(roomId, playerNumber, pendingNameRef.current); // ✓ ook voor joiner
         setRoomId(roomId);setMyNum(playerNumber);setGame(game);
       });
       s.on('enter_setup',({game})=>{setGame(game);setScreen('setup');});
@@ -1429,10 +1462,14 @@ function App(){
       s.on('player_disconnected',({message})=>setError(message));
       s.on('error',({message})=>setError(message));
       // Reconnect events
-      s.on('room_rejoined',({playerNumber,game})=>{
+      s.on('room_rejoined',({playerNumber,game},timeout)=>{
+        if(timeout)clearTimeout(timeout);
+        // Sessie updaten met bevestigde data
+        const sess=loadSession();
+        if(sess) saveSession(sess.roomId, playerNumber, sess.playerName);
         setMyNum(playerNumber);setGame(game);setError('');
         const ph=game.phase;
-        if(ph==='waiting')setScreen('waiting');
+        if(ph==='waiting') setScreen('waiting');
         else if(ph==='setup'){setSetupData(game.setupData||{});setScreen('setup');}
         else setScreen('game');
         setLoading(false);
@@ -1440,25 +1477,48 @@ function App(){
       s.on('rejoin_failed',({message})=>{
         clearSession();setError(message);setScreen('lobby');setLoading(false);
       });
-      socketRef.current=s;setSocket(s);setLoading(false);return s;
+      socketRef.current=s;setSocket(s);return s;
     }catch(e){setError('Kon socket.io niet laden.');setLoading(false);return null;}
   }
 
-  async function handleRejoin(sess){
+  async function handleRejoin(sess, timeout){
     setLoading(true);
     const s=await getSocket();
-    if(s) s.emit('rejoin_room',sess);
+    if(!s){
+      if(timeout)clearTimeout(timeout);
+      setError('Kon geen verbinding maken.');
+      return;
+    }
+    // Eenmalig luisteren met timeout referentie
+    s.once('room_rejoined',({playerNumber,game})=>{
+      if(timeout)clearTimeout(timeout);
+      const stored=loadSession();
+      if(stored) saveSession(stored.roomId, playerNumber, stored.playerName);
+      setMyNum(playerNumber);setGame(game);setError('');
+      const ph=game.phase;
+      if(ph==='waiting') setScreen('waiting');
+      else if(ph==='setup'){setSetupData(game.setupData||{});setScreen('setup');}
+      else setScreen('game');
+      setLoading(false);
+    });
+    s.once('rejoin_failed',({message})=>{
+      if(timeout)clearTimeout(timeout);
+      clearSession();setError(message);setScreen('lobby');setLoading(false);
+    });
+    s.emit('rejoin_room', sess);
   }
 
   async function handleCreate(name){
     setMyName(name);setError('');
+    pendingNameRef.current=name; // bewaar naam voor room_created handler
     const s=await getSocket();
-    if(s){ saveSession('',0,name); s.emit('create_room',{playerName:name}); }
+    if(s) s.emit('create_room',{playerName:name});
   }
   async function handleJoin(name,code){
     setMyName(name);setError('');
+    pendingNameRef.current=name; // bewaar naam voor room_joined handler
     const s=await getSocket();
-    if(s){ saveSession(code,1,name); s.emit('join_room',{roomId:code,playerName:name}); }
+    if(s) s.emit('join_room',{roomId:code,playerName:name});
   }
   function handleSetup(intensity,word){socket&&socket.emit('player_setup',{intensity,word});}
   function handlePlayAgain(){ clearSession(); window.location.reload(); }

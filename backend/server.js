@@ -254,6 +254,10 @@ io.on('connection', socket => {
     const roomId = socketToRoom[socket.id];
     if (roomId) socket.to(roomId).emit('typing_indicator');
   });
+  socket.on('notebook_typing', () => {
+    const roomId = socketToRoom[socket.id];
+    if (roomId) socket.to(roomId).emit('notebook_typing');
+  });
 
   socket.on('chat_message', msg => {
     const roomId = socketToRoom[socket.id];
@@ -265,9 +269,22 @@ io.on('connection', socket => {
   socket.on('disconnect', () => {
     const roomId = socketToRoom[socket.id];
     if (roomId && rooms[roomId]) {
-      delete rooms[roomId].players[socket.id];
-      io.to(roomId).emit('player_disconnected', { message: 'Je partner heeft de verbinding verbroken.' });
-      if (!Object.keys(rooms[roomId].players).length) delete rooms[roomId];
+      // Markeer speler als disconnected maar verwijder NIET — rejoin moet nog kunnen
+      const player = rooms[roomId].players[socket.id];
+      if (player) {
+        rooms[roomId].players[socket.id] = { ...player, disconnected: true };
+      }
+      io.to(roomId).emit('player_disconnected', { message: `${player?.name||'Partner'} verbreekt verbinding — wacht op terugkeer...` });
+      // Verwijder kamer pas na 2 minuten als niemand terug is
+      setTimeout(() => {
+        const game = rooms[roomId];
+        if (!game) return;
+        const stillDisconnected = Object.values(game.players).every(p => p.disconnected);
+        if (stillDisconnected) {
+          delete rooms[roomId];
+          console.log(`Room ${roomId} verwijderd na timeout`);
+        }
+      }, 2 * 60 * 1000);
     }
     delete socketToRoom[socket.id];
   });
