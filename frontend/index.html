@@ -44,7 +44,7 @@ const SQUARES = {
   3:{type:'versus',text:'Uitdaging: wie maakt de meest gekke of verleidelijke selfie in 60 seconden? Allebei sturen tegelijk. De ander beoordeelt. Verliezer doet een extra kledingstuk uit.',timerSeconds:60},
   4:{type:'green',text:'Trek je schoenen en sokken uit.'},
   5:{type:'blue',text:'Spreek in: beschrijf hoe het voelt als we eindelijk weer samen zijn. Gebruik je lichaam om het te beschrijven.'},
-  6:{type:'red',text:'Maak een foto van iets op jouw lichaam dat jij mooi vindt aan jezelf. Stuur zonder uitleg.'},
+  6:{type:'mystery',text:'Trek een Mystery Kaart'},
   7:{type:'blue',text:'Wat is de eigenschap van mij die jou het meest gerustgeeft? De reden dat jij bij mij bent. Spreek in.'},
   8:{type:'orange',text:'Ladder naar 19 — kledingstuk uit!',destination:19},
   9:{type:'blue',text:'Welke plek op mijn lichaam zou jij als eerste willen aanraken als ik nu voor je stond? Wees specifiek.'},
@@ -65,7 +65,7 @@ const SQUARES = {
   23:{type:'orange',text:'Ladder naar 37 — kledingstuk uit!',destination:37},
   24:{type:'blue',text:'Wat wil je van mij dat je nog nooit hebt durven vragen? Zeg het nu.'},
   25:{type:'red',text:'Foto van je schouders omhoog — niks meer.'},
-  26:{type:'red',text:'Spreek in: beschrijf langzaam hoe je me wilt zoenen. Van eerste contact tot moment dat je stopt.'},
+  26:{type:'mystery',text:'Trek een Mystery Kaart'},
   27:{type:'blue',text:'Wat heb jij van mij nodig wat je nooit hardop vraagt? Nu wel. Neem de tijd.'},
   28:{type:'green',text:'Trek nog een kledingstuk uit — jouw keuze.'},
   29:{type:'snake',text:'Slang naar 12 — kledingstuk aan!',destination:12},
@@ -99,7 +99,7 @@ const SQUARES = {
   56:{type:'red',text:'Zeg mijn naam op de manier die jij het lekkerst vindt. Stuur als audio.'},
   57:{type:'red',text:'Fantasy vervolg in het notitieboek: jij schrijft hoe het voelt, ik schrijf wat ik doe.'},
   58:{type:'snake',text:'Slang naar 39 — kledingstuk aan!',destination:39},
-  59:{type:'blue',text:'Wat is het eerste wat je gaat doen als ik voor je deur sta?'},
+  59:{type:'mystery',text:'Trek een Mystery Kaart'},
   60:{type:'purple',text:'Edging 90 seconden — ga zo ver als je durft. Ik geef live instructies.',timerSeconds:90,powerSwitch:true,witness:true},
   61:{type:'red',text:'Striptease — 40 seconden. Langzaam. Stuur als video.',timerSeconds:40,witness:true},
   62:{type:'blue',text:'Wat vind je op dit moment het aantrekkelijkst aan mij?',
@@ -141,42 +141,52 @@ const LADDERS = {3:19,18:37,35:54,45:66,53:72};
 const SNAKES  = {32:12,41:23,58:38,69:48,77:63};
 const PWR     = new Set([10,20,30,40,50,60,70]);
 
-// ─── MYSTERY CARDS (22) ───────────────────────────────────────────────────────
-const CARDS = [
-  {title:'Teken',emoji:'🎨',desc:'Teken mijn silhouet of een intiem lichaamsdeel op papier zoals jij het ziet. Maak een foto en stuur.'},
-  {title:'Gedicht',emoji:'✍️',desc:'Schrijf 4 regels over wat jij nu voelt. Eerlijk en ongepolijst. Stuur de tekst.'},
-  {title:'Brief',emoji:'📝',desc:'Schrijf een alinea alsof je nu naast me in bed ligt. Beschrijf elke beweging die je zou maken.'},
-  {title:'Regie',emoji:'🎬',desc:'Beschrijf stap voor stap wat wij zouden doen als jij nu binnenkomt. Begin bij de deur. Zo gedetailleerd mogelijk.'},
-  {title:'Woordschilderij',emoji:'🖼️',desc:'Beschrijf mijn lichaam in 5 langzame, sensuele zinnen. Alsof je een schilder bent die elk detail vastlegt.'},
-  {title:'De Scène',emoji:'💭',desc:'Beschrijf de meest opwindende scène tussen ons die je je kunt voorstellen. Begin bij het begin. Detail voor detail.'},
+// ─── MYSTERY CARDS — twee stapels: ZACHT (pos<40) en HEET (pos>=40) ────────────
+const CARDS_SOFT = [
+  {title:'Teken',        emoji:'🎨',desc:'Teken mijn silhouet of een intiem lichaamsdeel op papier zoals jij het ziet. Maak een foto en stuur.'},
+  {title:'Gedicht',      emoji:'✍️',desc:'Schrijf 4 regels over wat jij nu voelt. Eerlijk en ongepolijst. Stuur de tekst.'},
+  {title:'Brief',        emoji:'📝',desc:'Schrijf een alinea alsof je nu naast me in bed ligt. Beschrijf elke beweging die je zou maken.'},
   {title:'Nachtgedachte',emoji:'🌙',desc:'Spreek in: de gedachte aan mij die jou het meest wakker hield. Eerlijk, zonder te censureren.'},
-  {title:'Scenario',emoji:'🗺️',desc:'Kies een plek — hotel, trein, strand, auto. Beschrijf precies wat er zou gebeuren als we daar nu samen waren.'},
-  {title:'Vreemden',emoji:'🎭',desc:'Schrijf de eerste 5 zinnen van een verhaal: twee vreemden die elkaar net ontmoeten en direct voelen dat er iets is...'},
-  {title:'Synchron',emoji:'🔄',desc:'Spreek samen een lichaamsdeel af via de chat. Raak het tegelijkertijd aan — 30 seconden. Geen woorden.'},
+  {title:'Adem',         emoji:'🌬️',desc:'Maak een audio opname: adem langzaam in en uit, 30 seconden. Niks anders. Stuur het.'},
   {title:'Fantasy Wissel',emoji:'💫',desc:'Open het notitieboek. Schrijf één zin van een gezamenlijke fantasy. De ander vervolgt. Minimaal 8 zinnen elk.'},
-  {title:'Stilte',emoji:'👀',desc:'Bel elkaar. 2 minuten alleen naar de camera kijken. Niks zeggen. Niks doen. Gewoon kijken.'},
-  {title:'Blind',emoji:'🙈',desc:'Sluit je ogen. De ander geeft 3 instructies via audio die jij uitvoert puur op gevoel. Vertrouwen.'},
-  {title:'IJskoud',emoji:'🧊',desc:'Houd een ijsblokje tegen je geslachtsdeel of tepels — 10 seconden. Foto vlak vóór. Foto vlak ná. Stuur beiden.'},
-  {title:'Ritme',emoji:'🎵',desc:'Kies een nummer. Raak jezelf aan op het ritme van de muziek. Stuur de naam van het nummer daarna.'},
-  {title:'Adem',emoji:'🌬️',desc:'Maak een audio opname: adem langzaam in en uit, 30 seconden. Niks anders. Stuur het.'},
-  {title:'Herinnering',emoji:'💜',desc:'Spreek in: een herinnering aan mij die jou onverwacht bezighoudt. Begin zodra je de opname start.'},
-  {title:'De Vraag',emoji:'🎯',desc:'Stel mij via de chat één vraag die je altijd wilde stellen maar nooit durfde. Ik moet eerlijk antwoorden.'},
-  {title:'Verboden',emoji:'📱',desc:'Vertel iets over jezelf dat je normaal nooit zou sturen. Eén zin. Nu wel. Geen terugkrabben.'},
-  {title:'Aanwezig',emoji:'✨',desc:'Spreek in: wat ben ik voor jou op dit moment? Eerlijk en specifiek. Geen clichés.'},
-  {title:'Aanraking',emoji:'🔍',desc:'Stuur een foto van iets in jouw ruimte dat je nu aan mij doet denken. Leg uit waarom in één zin.'},
-  {title:'Dichtbij',emoji:'💌',desc:'Schrijf 3 zinnen die je normaal pas zou sturen als we echt samen zijn. Nu stuur je ze.'},
-  // Voormalige bord-vakjes — te goed om weg te gooien
-  {title:'GIF Blik',emoji:'🎞️',desc:'Stuur het GIF dat het best beschrijft hoe jij naar mij kijkt als ik niet kijk.'},
-  {title:'GIF Vuur',emoji:'🌶️',desc:'Stuur het meest verleidelijke GIF dat je nu kunt vinden. Leg uit waarom precies dit hem is.'},
-  {title:'GIF Zoen',emoji:'💋',desc:'Stuur een GIF die laat zien hoe jij me wilt zoenen — de eerste keer na lang apart.'},
-  {title:'Daggedachte',emoji:'💭',desc:'Wat is de gedachte aan mij die je het meest bezighoudt op een gewone dag? Spreek in.'},
-  {title:'Missen',emoji:'🌙',desc:'Op welk moment mis je me het meest — en wat zou je willen doen als ik er dan was? Spreek in.'},
-  {title:'Onaangekondigd',emoji:'🚪',desc:'Wat zou je doen als ik nu onaangekondigd naast je in bed zou liggen? Beschrijf elk detail.'},
-  {title:'Lichaam Nu',emoji:'🫀',desc:'Spreek in: beschrijf hoe jouw lichaam op dit moment aanvoelt. Langzaam. Elk detail. Wat voel je, waar, hoe intens.'},
+  {title:'Stilte',       emoji:'👀',desc:'Bel elkaar. 2 minuten alleen naar de camera kijken. Niks zeggen. Niks doen. Gewoon kijken.'},
+  {title:'Herinnering',  emoji:'💜',desc:'Spreek in: een herinnering aan mij die jou onverwacht bezighoudt. Begin zodra je de opname start.'},
+  {title:'De Vraag',     emoji:'🎯',desc:'Stel mij via de chat één vraag die je altijd wilde stellen maar nooit durfde. Ik moet eerlijk antwoorden.'},
+  {title:'Verboden',     emoji:'📱',desc:'Vertel iets over jezelf dat je normaal nooit zou sturen. Eén zin. Nu wel. Geen terugkrabben.'},
+  {title:'Aanwezig',     emoji:'✨',desc:'Spreek in: wat ben ik voor jou op dit moment? Eerlijk en specifiek. Geen clichés.'},
+  {title:'Aanraking',    emoji:'🔍',desc:'Stuur een foto van iets in jouw ruimte dat je nu aan mij doet denken. Leg uit waarom in één zin.'},
+  {title:'Dichtbij',     emoji:'💌',desc:'Schrijf 3 zinnen die je normaal pas zou sturen als we echt samen zijn. Nu stuur je ze.'},
+  {title:'GIF Blik',     emoji:'🎞️',desc:'Stuur het GIF dat het best beschrijft hoe jij naar mij kijkt als ik niet kijk.'},
+  {title:'GIF Vuur',     emoji:'🌶️',desc:'Stuur het meest verleidelijke GIF dat je nu kunt vinden. Leg uit waarom precies dit hem is.'},
+  {title:'Daggedachte',  emoji:'💭',desc:'Wat is de gedachte aan mij die je het meest bezighoudt op een gewone dag? Spreek in.'},
+  {title:'Missen',       emoji:'🌛',desc:'Op welk moment mis je me het meest — en wat zou je doen als ik er dan was? Spreek in.'},
   {title:'Gevoel Vandaag',emoji:'🌟',desc:'Spreek in: het mooiste wat je vandaag hebt gevoeld. Voor mij. Langzaam, zonder haast.'},
 ];
 
-function randomCard() { return CARDS[Math.floor(Math.random()*CARDS.length)]; }
+const CARDS_HOT = [
+  {title:'Regie',          emoji:'🎬',desc:'Beschrijf stap voor stap wat wij zouden doen als jij nu binnenkomt. Begin bij de deur. Zo gedetailleerd mogelijk.'},
+  {title:'Woordschilderij',emoji:'🖼️',desc:'Beschrijf mijn lichaam in 5 langzame, sensuele zinnen. Alsof je een schilder bent die elk detail vastlegt.'},
+  {title:'De Scène',       emoji:'💭',desc:'Beschrijf de meest opwindende scène tussen ons die je je kunt voorstellen. Begin bij het begin. Detail voor detail.'},
+  {title:'Scenario',       emoji:'🗺️',desc:'Kies een plek — hotel, trein, strand, auto. Beschrijf precies wat er zou gebeuren als we daar nu samen waren.'},
+  {title:'Synchron',       emoji:'🔄',desc:'Spreek samen een lichaamsdeel af via de chat. Raak het tegelijkertijd aan — 30 seconden. Geen woorden.'},
+  {title:'Blind',          emoji:'🙈',desc:'Sluit je ogen. De ander geeft 3 instructies via audio die jij uitvoert puur op gevoel. Vertrouwen.'},
+  {title:'IJskoud',        emoji:'🧊',desc:'Houd een ijsblokje tegen je geslachtsdeel of tepels — 10 seconden. Foto vlak vóór. Foto vlak ná. Stuur beiden.'},
+  {title:'Ritme',          emoji:'🎵',desc:'Kies een nummer. Raak jezelf aan op het ritme van de muziek. Stuur de naam van het nummer daarna.'},
+  {title:'GIF Zoen',       emoji:'💋',desc:'Stuur een GIF die laat zien hoe jij me wilt zoenen — de eerste keer na lang apart. Dan stem beschrijving in.'},
+  {title:'Onaangekondigd', emoji:'🚪',desc:'Wat zou je doen als ik nu onaangekondigd naast je in bed zou liggen? Beschrijf elk detail — begin bij het eerste moment van contact.'},
+  {title:'Lichaam Nu',     emoji:'🫀',desc:'Spreek in: beschrijf hoe jouw lichaam op dit moment aanvoelt. Langzaam. Elk detail. Wat voel je, waar, hoe intens.'},
+  {title:'Vreemden',       emoji:'🎭',desc:'Schrijf samen een mini-verhaal: twee geliefden die elkaar na lange tijd weerzien in een hotel. Jij start met 3 zinnen, ik vervolg. Minimaal 4 rondes elk.'},
+];
+
+// Trek n unieke kaarten uit de juiste stapel op basis van positie
+function pickCards(n, pos) {
+  const deck = pos >= 40 ? CARDS_HOT : CARDS_SOFT;
+  const shuffled = [...deck].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(n, deck.length));
+}
+function randomCard(pos) {
+  return pickCards(1, pos||0)[0];
+}
 
 const EMOJIS = [
   // Flirty & expressief
@@ -883,17 +893,24 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
   const [chosenOption,setChosenOption]=useState(null); // 'A'|'B'
   const [milestone,setMilestone]=useState(null);
   const milestonesHit=useRef(new Set());
+  // Mystery partner-pick systeem
+  const [partnerCards,setPartnerCards]=useState(null);  // 3 kaarten die IK zie om voor partner te kiezen
+  const [waitingForPick,setWaitingForPick]=useState(false); // ik wacht tot partner kiest
+  const [vetoUsed,setVetoUsed]=useState(false); // veto al gebruikt deze beurt
 
-  // Auto-draw card when landing on mystery square
-  useEffect(()=>{
-    if(G.phase==='mystery' && !eventCard) setEventCard(randomCard());
-  },[G.phase]);
+  // Mystery cards worden aangeboden via offer_mystery_cards / pick_mystery_card
 
   useEffect(()=>{
     socket.on('move_result',d=>{
       setRolling(false);setPrevClothing(c=>[...c]);
       setLastMove(d.result||{});setChosenOption(null);
-      // Milestone check
+      setVetoUsed(false);
+      // Mystery vakje: actieve speler biedt 3 kaarten aan partner
+      if(d.phase==='mystery' && d.playerNumber===myNum){
+        const cards=pickCards(3, d.positions[myNum]);
+        setWaitingForPick(true);
+        socket.emit('offer_mystery_cards',{cards});
+      }
       const pos=d.positions?.[myNum]||0;
       [25,50,75].forEach(m=>{
         if(pos>=m&&!milestonesHit.current.has(m)){
@@ -906,19 +923,19 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
       if(d.phase==='mystery') setEventCard(randomCard());
       setG(s=>({...s,positions:d.positions,clothing:d.clothing,phase:d.phase,winner:d.winner,diceValue:d.diceValue,powerSwitch:d.powerSwitch,currentTurn:d.currentTurn}));
       if(d.result?.isDouble&&d.phase!=='finished'){
-        setTimeout(()=>setBonusCard(randomCard()),400);
+        setTimeout(()=>setBonusCard(randomCard(d.positions?.[myNum]||0)),400);
       }
     });
     socket.on('turn_advanced',d=>{
       setG(s=>({...s,phase:d.phase,currentTurn:d.currentTurn,powerSwitch:d.powerSwitch,clothing:d.clothing,diceValue:null}));
       setLastMove(null);setChosenOption(null);
-      // Notificeer als het nu jouw beurt is
+      setPartnerCards(null);setWaitingForPick(false);setVetoUsed(false);setEventCard(null);
       const nowActive=d.powerSwitch?d.powerSwitch.activePlayer:d.currentTurn;
-      if(nowActive===myNum){
-        playBeep();
-        if(navigator.vibrate) navigator.vibrate([100,50,100]);
-      }
+      if(nowActive===myNum){ playBeep(); if(navigator.vibrate) navigator.vibrate([100,50,100]); }
     });
+    // Mystery: partner kiest kaart voor actieve speler
+    socket.on('offer_mystery_cards',({cards})=>setPartnerCards(cards));
+    socket.on('pick_mystery_card',({card})=>{ setWaitingForPick(false); setEventCard(card); });
     socket.on('position_update',d=>setG(s=>({...s,positions:d.positions,clothing:d.clothing})));
     socket.on('chat_message',m=>setMsgs(p=>[...p,m]));
     socket.on('fantasy_entries',({entries})=>setNotebookEntries(entries||[]));
@@ -926,7 +943,7 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
       setReactionNotif(`${from} reageerde ${reaction}`);
       setTimeout(()=>setReactionNotif(null),4000);
     });
-    return()=>['move_result','turn_advanced','position_update','chat_message','fantasy_entries','media_reaction'].forEach(e=>socket.off(e));
+    return()=>['move_result','turn_advanced','position_update','chat_message','fantasy_entries','media_reaction','offer_mystery_cards','pick_mystery_card'].forEach(e=>socket.off(e));
   },[]);
 
   const {positions,clothing,currentTurn,phase,winner,powerSwitch,playerNames,diceValue}=G;
@@ -948,7 +965,16 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
   function skipAction(){socket.emit('skip_action');}
   function sendChat(obj){socket.emit('chat_message',obj);setMsgs(p=>[...p,{...obj,sender:myName}]);}
   function handleNotebookAppend(text){socket.emit('fantasy_append',{text});}
-  function drawEventCard(){setEventCard(randomCard());}
+  function vetoSquare(){
+    setVetoUsed(true);
+    const cards=pickCards(3, positions[myNum]);
+    setWaitingForPick(true);
+    socket.emit('offer_mystery_cards',{cards});
+  }
+  function pickForPartner(card){
+    setPartnerCards(null);
+    socket.emit('pick_mystery_card',{card});
+  }
   function handleReaction(r,msg){socket.emit('media_reaction',{reaction:r});}
   function handleReplay(card,origMsg){
     setMsgs(p=>[...p,{mediaType:'text',text:`🃏 Replay betaling: "${card.title}" — ${card.desc}`,sender:myName}]);
@@ -1093,19 +1119,46 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
                   {/* Opdracht: de ANDER beslist wanneer klaar */}
                   {sq.type!=='orange'&&sq.type!=='snake'&&(
                     isMyTurn
-                      ?<div style={{padding:'8px',borderRadius:8,fontSize:10,textAlign:'center',background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.06)',color:'#9ca3af',lineHeight:1.5}}>
-                        Gebruik chat, camera of notitieboek 💬<br/>
-                        <span style={{color:'#6b7280',fontSize:9}}>Je partner geeft je vrij als je klaar bent</span>
+                      ?<div style={{display:'flex',flexDirection:'column',gap:4}}>
+                        {!waitingForPick
+                          ?<>
+                            <div style={{padding:'6px 8px',borderRadius:8,fontSize:10,textAlign:'center',background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.06)',color:'#9ca3af',lineHeight:1.5}}>
+                              Gebruik chat, camera of notitieboek 💬<br/>
+                              <span style={{color:'#6b7280',fontSize:9}}>Je partner geeft je vrij als je klaar bent</span>
+                            </div>
+                            {!vetoUsed&&sq.type!=='versus'&&(
+                              <button onClick={vetoSquare} style={{padding:'6px',borderRadius:8,fontSize:9,background:'rgba(107,33,168,.15)',border:'1px solid rgba(107,33,168,.3)',color:'#c084fc',cursor:'pointer'}}>
+                                🃏 Ik pas — liever mystery
+                              </button>
+                            )}
+                          </>
+                          :<div style={{padding:'8px',borderRadius:8,fontSize:10,textAlign:'center',background:'rgba(107,33,168,.1)',border:'1px solid rgba(107,33,168,.3)',color:'#c084fc'}}>
+                            🃏 Je partner kiest jouw kaart...
+                          </div>
+                        }
                       </div>
                       :<div style={{display:'flex',flexDirection:'column',gap:4}}>
-                        <button onClick={actionDone} style={{padding:'8px',borderRadius:8,fontSize:11,fontWeight:600,color:'white',background:'linear-gradient(135deg,#166534,#4ade8050)',border:'1px solid #4ade8040',cursor:'pointer'}}>
-                          ✓ {activeName} is klaar
-                        </button>
-                        {clothing[active]<5&&(
-                          <button onClick={skipAction} style={{padding:'6px',borderRadius:8,fontSize:10,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',color:'#6b7280',cursor:'pointer'}}>
-                            ↩ Skip (–1 kleding)
-                          </button>
-                        )}
+                        {partnerCards
+                          ?<>
+                            <div style={{fontSize:9,color:'#c084fc',fontWeight:600,textAlign:'center',marginBottom:2}}>Kies een kaart voor {activeName}:</div>
+                            {partnerCards.map((card,i)=>(
+                              <button key={i} onClick={()=>pickForPartner(card)} style={{padding:'6px 8px',borderRadius:8,fontSize:10,textAlign:'left',background:'rgba(107,33,168,.15)',border:'1px solid rgba(107,33,168,.3)',color:'white',cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
+                                <span style={{fontSize:16}}>{card.emoji}</span>
+                                <div><div style={{fontWeight:600,fontSize:10}}>{card.title}</div><div style={{fontSize:9,color:'#9ca3af',lineHeight:1.3}}>{card.desc.slice(0,60)}...</div></div>
+                              </button>
+                            ))}
+                          </>
+                          :<>
+                            <button onClick={actionDone} style={{padding:'8px',borderRadius:8,fontSize:11,fontWeight:600,color:'white',background:'linear-gradient(135deg,#166534,#4ade8050)',border:'1px solid #4ade8040',cursor:'pointer'}}>
+                              ✓ {activeName} is klaar
+                            </button>
+                            {clothing[active]<5&&(
+                              <button onClick={skipAction} style={{padding:'6px',borderRadius:8,fontSize:10,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',color:'#6b7280',cursor:'pointer'}}>
+                                ↩ Skip (–1 kleding)
+                              </button>
+                            )}
+                          </>
+                        }
                       </div>
                   )}
                 </>
@@ -1113,20 +1166,41 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
             </div>
           )}
 
-          {/* Mystery square — inline in rechterkolom zodat chat bereikbaar blijft */}
+          {/* Mystery vakje: wacht-staat (actieve speler wacht op partner) */}
+          {phase==='mystery'&&!eventCard&&isMyTurn&&(
+            <div className="su" style={{borderRadius:12,padding:12,background:'linear-gradient(135deg,#150a2a,#1a0a2e)',border:'1px solid #6b21a8',textAlign:'center',flexShrink:0}}>
+              <div style={{fontSize:28,marginBottom:6}}>🃏</div>
+              <div style={{color:'#c084fc',fontSize:11,fontWeight:600}}>Je partner kiest jouw kaart...</div>
+              <div style={{color:'#6b7280',fontSize:9,marginTop:4}}>Wacht even — zij kiest uit 3 opties</div>
+            </div>
+          )}
+          {/* Mystery vakje: partner kiest (observer ziet 3 kaarten) */}
+          {phase==='mystery'&&!eventCard&&!isMyTurn&&partnerCards&&(
+            <div className="su" style={{borderRadius:12,overflow:'hidden',background:'linear-gradient(135deg,#150a2a,#1a0a2e)',border:'1px solid #6b21a8',flexShrink:0}}>
+              <div style={{padding:'8px 10px',borderBottom:'1px solid rgba(107,33,168,.3)'}}>
+                <span style={{color:'#c084fc',fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:1.5}}>Kies voor {activeName} 🃏</span>
+              </div>
+              <div style={{padding:8,display:'flex',flexDirection:'column',gap:6}}>
+                {partnerCards.map((card,i)=>(
+                  <button key={i} onClick={()=>pickForPartner(card)} style={{padding:'8px 10px',borderRadius:8,fontSize:10,textAlign:'left',background:'rgba(107,33,168,.15)',border:'1px solid rgba(107,33,168,.35)',color:'white',cursor:'pointer',display:'flex',alignItems:'flex-start',gap:8}}>
+                    <span style={{fontSize:20,flexShrink:0}}>{card.emoji}</span>
+                    <div><div style={{fontWeight:700,fontSize:11,marginBottom:2}}>{card.title}</div><div style={{fontSize:9,color:'#9ca3af',lineHeight:1.4}}>{card.desc.slice(0,80)}...</div></div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Mystery vakje: kaart gekozen, speler voert uit */}
           {phase==='mystery'&&eventCard&&(
             <div className="su" style={{borderRadius:12,overflow:'hidden',background:'linear-gradient(135deg,#150a2a,#1a0a2e)',border:'1px solid #6b21a8',boxShadow:'0 0 16px rgba(107,33,168,.4)',flexShrink:0}}>
               <div style={{padding:'8px 10px',borderBottom:'1px solid rgba(107,33,168,.3)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <span style={{color:'#c084fc',fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:1.5}}>Mystery Vakje 🃏</span>
+                <span style={{color:'#c084fc',fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:1.5}}>Mystery Kaart 🃏</span>
                 {!savedCard&&<button onClick={()=>setSavedCard(eventCard)} style={{background:'rgba(212,175,55,.15)',color:'#d4af37',border:'1px solid rgba(212,175,55,.3)',padding:'2px 7px',borderRadius:6,fontSize:9,cursor:'pointer'}}>🔖</button>}
               </div>
               <div style={{padding:10}}>
                 <div style={{fontSize:32,textAlign:'center',marginBottom:6}}>{eventCard.emoji}</div>
                 <div style={{fontFamily:'"Playfair Display",serif',fontSize:13,fontWeight:700,color:'white',textAlign:'center',marginBottom:6}}>{eventCard.title}</div>
                 <div style={{fontSize:10,color:'#d1d5db',lineHeight:1.6,textAlign:'center'}}>{eventCard.desc}</div>
-                <p style={{fontSize:9,color:'#6b7280',textAlign:'center',marginTop:6,fontStyle:'italic'}}>
-                  💬 Gebruik de chat links om te reageren
-                </p>
               </div>
               {isMyTurn
                 ?<p style={{fontSize:9,color:'#9ca3af',textAlign:'center',padding:'0 10px 10px',fontStyle:'italic'}}>Gebruik chat of camera 💬<br/><span style={{color:'#6b7280'}}>Je partner geeft je vrij</span></p>
@@ -1146,10 +1220,10 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
             </button>
           )}
 
-          {/* Mystery button */}
-          <button onClick={drawEventCard} style={{width:'100%',padding:'6px 0',borderRadius:10,fontSize:11,fontWeight:500,background:'linear-gradient(135deg,#150a2a,#1a0a2e)',border:'1px solid rgba(107,33,168,.4)',color:'#c084fc',cursor:'pointer',flexShrink:0}}>
-            🃏 Mystery kaart
-          </button>
+          {/* Mystery info — geen losse knop meer, kaarten lopen via vakjes en veto */}
+          <div style={{padding:'4px 6px',borderRadius:8,fontSize:9,color:'#475569',textAlign:'center',border:'1px solid rgba(71,85,105,.2)'}}>
+            {positions[myNum]>=40?'🔥 Hete stapel actief':'🌸 Zachte stapel actief'}
+          </div>
         </div>
       </div>
 

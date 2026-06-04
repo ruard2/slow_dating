@@ -25,7 +25,7 @@ const io = new Server(server, {
 const LADDERS = { 3:19, 18:37, 35:54, 45:66, 53:72 };
 const SNAKES  = { 32:12, 41:23, 58:38, 69:48, 77:63 };
 const POWER_SWITCH = new Set([10,20,30,40,50,60,70]);
-const MYSTERY_SQ   = new Set([17,36,51,64,74]);
+const MYSTERY_SQ   = new Set([6,17,26,36,51,59,64,74]);
 
 function createGame(roomId) {
   return {
@@ -207,6 +207,16 @@ io.on('connection', socket => {
     const game = rooms[roomId]; if (!game) return;
     const player = game.players[socket.id];
     socket.to(roomId).emit('media_reaction', { reaction, from: player?.name });
+  });
+
+  // Mystery card partner-pick relay
+  socket.on('offer_mystery_cards', data => {
+    const roomId = socketToRoom[socket.id];
+    if (roomId) socket.to(roomId).emit('offer_mystery_cards', data);
+  });
+  socket.on('pick_mystery_card', data => {
+    const roomId = socketToRoom[socket.id];
+    if (roomId) socket.to(roomId).emit('pick_mystery_card', data);
   });
 
   socket.on('typing_indicator', () => {
