@@ -116,6 +116,37 @@ io.on('connection', socket => {
     socket.emit('room_created', { roomId, playerNumber: 0, game: sanitize(game) });
   });
 
+  socket.on('rejoin_room', ({ roomId, playerNumber, playerName }) => {
+    const game = rooms[roomId];
+    if (!game) {
+      socket.emit('rejoin_failed', { message: 'Kamer niet meer actief. Start een nieuw spel.' });
+      return;
+    }
+    // Verwijder oude socket van deze speler
+    for (const [sid, p] of Object.entries(game.players)) {
+      if (p.number === playerNumber) {
+        delete game.players[sid];
+        delete socketToRoom[sid];
+        break;
+      }
+    }
+    // Voeg toe met nieuwe socket
+    game.players[socket.id] = { name: playerName, number: playerNumber };
+    socketToRoom[socket.id] = roomId;
+    socket.join(roomId);
+    // Stuur volledige game state terug
+    socket.emit('room_rejoined', {
+      playerNumber,
+      game: sanitize(game),
+    });
+    // Herstel fantasy notebook
+    if (game.fantasyEntries?.length) {
+      socket.emit('fantasy_entries', { entries: game.fantasyEntries });
+    }
+    // Informeer partner
+    socket.to(roomId).emit('partner_reconnected', { name: playerName });
+  });
+
   socket.on('join_room', ({ roomId, playerName }) => {
     const game = rooms[roomId];
     if (!game) { socket.emit('error', { message: 'Kamer niet gevonden.' }); return; }

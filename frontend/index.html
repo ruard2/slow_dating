@@ -968,7 +968,11 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
       setReactionNotif(`${from} reageerde ${reaction}`);
       setTimeout(()=>setReactionNotif(null),4000);
     });
-    return()=>['move_result','turn_advanced','position_update','chat_message','fantasy_entries','media_reaction','offer_mystery_cards','pick_mystery_card'].forEach(e=>socket.off(e));
+    socket.on('partner_reconnected',({name})=>{
+      setReactionNotif(`${name} is terug 🔄`);
+      setTimeout(()=>setReactionNotif(null),4000);
+    });
+    return()=>['move_result','turn_advanced','position_update','chat_message','fantasy_entries','media_reaction','offer_mystery_cards','pick_mystery_card','partner_reconnected'].forEach(e=>socket.off(e));
   },[]);
 
   const {positions,clothing,currentTurn,phase,winner,powerSwitch,playerNames,diceValue}=G;
@@ -1368,9 +1372,20 @@ function WaitingRoom({roomId,playerName}){
   );
 }
 
+// ─── SESSION HELPERS ──────────────────────────────────────────────────────────
+function saveSession(roomId,playerNumber,playerName){
+  try{ localStorage.setItem('slgame',JSON.stringify({roomId,playerNumber,playerName})); }catch(e){}
+}
+function clearSession(){
+  try{ localStorage.removeItem('slgame'); }catch(e){}
+}
+function loadSession(){
+  try{ const s=localStorage.getItem('slgame'); return s?JSON.parse(s):null; }catch(e){return null;}
+}
+
 // ─── APP ──────────────────────────────────────────────────────────────────────
 function App(){
-  const [screen,setScreen]=useState('lobby'); // lobby|waiting|setup|game
+  const [screen,setScreen]=useState('lobby'); // lobby|waiting|setup|game|reconnecting
   const [myNum,setMyNum]=useState(null);
   const [myName,setMyName]=useState('');
   const [roomId,setRoomId]=useState(null);
@@ -1379,34 +1394,94 @@ function App(){
   const [socket,setSocket]=useState(null);
   const [loading,setLoading]=useState(false);
   const [setupData,setSetupData]=useState({});
+  const socketRef=useRef(null);
+
+  // Check voor opgeslagen sessie bij opstarten
+  useEffect(()=>{
+    const sess=loadSession();
+    if(sess?.roomId && sess.playerName){
+      setScreen('reconnecting');
+      setMyName(sess.playerName);
+      setMyNum(sess.playerNumber);
+      setRoomId(sess.roomId);
+      handleRejoin(sess);
+    }
+  },[]);
 
   async function getSocket(){
-    if(socket)return socket;
+    if(socketRef.current)return socketRef.current;
     setLoading(true);
     try{
       const io=await loadIO(window.BACKEND_URL);
       const s=io(window.BACKEND_URL,{autoConnect:true,reconnection:true});
       s.on('connect_error',()=>setError('Kan geen verbinding maken. Is de backend actief?'));
-      s.on('room_created',({roomId,playerNumber,game})=>{setRoomId(roomId);setMyNum(playerNumber);setGame(game);setScreen('waiting');});
-      s.on('room_joined',({roomId,playerNumber,game})=>{setRoomId(roomId);setMyNum(playerNumber);setGame(game);});
+      // Normaal joinen
+      s.on('room_created',({roomId,playerNumber,game})=>{
+        saveSession(roomId,playerNumber,s._opts?.playerName||'');
+        setRoomId(roomId);setMyNum(playerNumber);setGame(game);setScreen('waiting');
+      });
+      s.on('room_joined',({roomId,playerNumber,game})=>{
+        setRoomId(roomId);setMyNum(playerNumber);setGame(game);
+      });
       s.on('enter_setup',({game})=>{setGame(game);setScreen('setup');});
       s.on('setup_update',({setupData})=>setSetupData(setupData));
       s.on('game_start',({game})=>{setGame(game);setScreen('game');});
       s.on('player_disconnected',({message})=>setError(message));
       s.on('error',({message})=>setError(message));
-      setSocket(s);setLoading(false);return s;
+      // Reconnect events
+      s.on('room_rejoined',({playerNumber,game})=>{
+        setMyNum(playerNumber);setGame(game);setError('');
+        const ph=game.phase;
+        if(ph==='waiting')setScreen('waiting');
+        else if(ph==='setup'){setSetupData(game.setupData||{});setScreen('setup');}
+        else setScreen('game');
+        setLoading(false);
+      });
+      s.on('rejoin_failed',({message})=>{
+        clearSession();setError(message);setScreen('lobby');setLoading(false);
+      });
+      socketRef.current=s;setSocket(s);setLoading(false);return s;
     }catch(e){setError('Kon socket.io niet laden.');setLoading(false);return null;}
   }
 
-  async function handleCreate(name){setMyName(name);setError('');const s=await getSocket();if(s)s.emit('create_room',{playerName:name});}
-  async function handleJoin(name,code){setMyName(name);setError('');const s=await getSocket();if(s)s.emit('join_room',{roomId:code,playerName:name});}
-  function handleSetup(intensity,word){socket&&socket.emit('player_setup',{intensity,word});}
+  async function handleRejoin(sess){
+    setLoading(true);
+    const s=await getSocket();
+    if(s) s.emit('rejoin_room',sess);
+  }
 
-  if(loading)return<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0d0d14'}}><div style={{textAlign:'center'}}><div style={{fontSize:40,marginBottom:12}}>⚙️</div><p style={{color:'#6b7280'}}>Verbinding maken...</p></div></div>;
+  async function handleCreate(name){
+    setMyName(name);setError('');
+    const s=await getSocket();
+    if(s){ saveSession('',0,name); s.emit('create_room',{playerName:name}); }
+  }
+  async function handleJoin(name,code){
+    setMyName(name);setError('');
+    const s=await getSocket();
+    if(s){ saveSession(code,1,name); s.emit('join_room',{roomId:code,playerName:name}); }
+  }
+  function handleSetup(intensity,word){socket&&socket.emit('player_setup',{intensity,word});}
+  function handlePlayAgain(){ clearSession(); window.location.reload(); }
+
+  if(screen==='reconnecting'||loading)return(
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0d0d14'}}>
+      <div style={{textAlign:'center'}}>
+        <div style={{fontSize:40,marginBottom:12}}>🔄</div>
+        <p style={{color:'#d4af37',fontSize:15,fontWeight:600}}>Verbinding herstellen...</p>
+        <p style={{color:'#6b7280',fontSize:12,marginTop:6}}>Even geduld</p>
+        {error&&<>
+          <p style={{color:'#f87171',fontSize:12,marginTop:12}}>{error}</p>
+          <button onClick={()=>{clearSession();setScreen('lobby');setError('');}} style={{marginTop:12,padding:'8px 20px',borderRadius:10,background:'#8b1a4a',color:'white',border:'none',cursor:'pointer',fontSize:13}}>
+            Nieuw spel starten
+          </button>
+        </>}
+      </div>
+    </div>
+  );
   if(screen==='lobby')return<Lobby onCreate={handleCreate} onJoin={handleJoin} error={error}/>;
   if(screen==='waiting')return<WaitingRoom roomId={roomId} playerName={myName}/>;
   if(screen==='setup'&&game)return<PreGameSetup myName={myName} myNumber={myNum} setupData={setupData} onSubmit={handleSetup}/>;
-  if(screen==='game'&&game&&socket)return<Game game={game} myNum={myNum} myName={myName} socket={socket} onPlayAgain={()=>window.location.reload()}/>;
+  if(screen==='game'&&game&&socket)return<Game game={game} myNum={myNum} myName={myName} socket={socket} onPlayAgain={handlePlayAgain}/>;
   return<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0d0d14'}}><div style={{textAlign:'center'}}><div style={{fontSize:40}}>⏳</div><p style={{color:'#6b7280',marginTop:12}}>Wacht op partner...</p>{error&&<p style={{color:'#f87171',fontSize:12,marginTop:8}}>{error}</p>}</div></div>;
 }
 
