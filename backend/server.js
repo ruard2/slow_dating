@@ -247,7 +247,14 @@ io.on('connection', socket => {
   });
   socket.on('pick_mystery_card', data => {
     const roomId = socketToRoom[socket.id];
-    if (roomId) socket.to(roomId).emit('pick_mystery_card', data);
+    const game = rooms[roomId]; if (!game) return;
+    // Mystery fase: stuur naar iedereen (ook observer moet kaart zien + klaar kunnen klikken)
+    // Action fase (veto): alleen naar actieve speler via overlay
+    if (game.phase === 'mystery') {
+      io.to(roomId).emit('pick_mystery_card', data);
+    } else {
+      socket.to(roomId).emit('pick_mystery_card', data);
+    }
   });
 
   socket.on('typing_indicator', () => {

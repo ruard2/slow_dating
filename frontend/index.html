@@ -969,8 +969,8 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
           setTimeout(()=>setMilestone(null),3500);
         }
       });
-      if(d.phase==='mystery') setEventCard(randomCard());
-      setG(s=>({...s,positions:d.positions,clothing:d.clothing,phase:d.phase,winner:d.winner,diceValue:d.diceValue,powerSwitch:d.powerSwitch,currentTurn:d.currentTurn}));
+      // GEEN auto-draw meer — mystery kaart loopt via partner-kiest flow
+      setG(s=>({...s,positions:d.positions,clothing:d.clothing,phase:d.phase,winner:d.winner,diceValue:d.diceValue,powerSwitch:d.powerSwitch,currentTurn:d.currentTurn,visitCount:d.visitCount||1}));
       if(d.result?.isDouble&&d.phase!=='finished'){
         setTimeout(()=>setBonusCard(randomCard(d.positions?.[myNum]||0)),400);
       }
@@ -1003,7 +1003,7 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
     return()=>['move_result','turn_advanced','position_update','chat_message','fantasy_entries','media_reaction','offer_mystery_cards','pick_mystery_card','partner_reconnected'].forEach(e=>socket.off(e));
   },[]);
 
-  const {positions,clothing,currentTurn,phase,winner,powerSwitch,playerNames,diceValue}=G;
+  const {positions,clothing,currentTurn,phase,winner,powerSwitch,playerNames,diceValue,visitCount=1}=G;
   const opNum=myNum===0?1:0;
   const opName=playerNames[opNum]||'Partner';
   const active=powerSwitch?powerSwitch.activePlayer:currentTurn;
@@ -1050,10 +1050,11 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
   if(winner!==null) return<WinnerScreen winnerName={playerNames[winner]} isWinner={winner===myNum} fantasyEntries={notebookEntries} onPlayAgain={onPlayAgain}/>;
 
   // Which text to show for choice squares
+  const baseText = pendingSq ? getSquareText(pendingSq, visitCount) : null;
   const squareText = sq?(
     chosenOption==='A'&&sq.choiceA ? sq.choiceA :
     chosenOption==='B'&&sq.choiceB ? sq.choiceB :
-    sq.text
+    baseText || sq.text
   ):null;
 
   return(
@@ -1190,6 +1191,11 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
                                 🃏 Ik pas — liever mystery
                               </button>
                             )}
+                            {clothing[active]<5&&(
+                              <button onClick={skipAction} style={{padding:'5px',borderRadius:8,fontSize:9,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',color:'#6b7280',cursor:'pointer'}}>
+                                ↩ Skip (–1 kleding)
+                              </button>
+                            )}
                           </>
                           :<div style={{padding:'8px',borderRadius:8,fontSize:10,textAlign:'center',background:'rgba(107,33,168,.1)',border:'1px solid rgba(107,33,168,.3)',color:'#c084fc'}}>
                             🃏 Je partner kiest jouw kaart...
@@ -1211,11 +1217,6 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
                             <button onClick={actionDone} style={{padding:'8px',borderRadius:8,fontSize:11,fontWeight:600,color:'white',background:'linear-gradient(135deg,#166534,#4ade8050)',border:'1px solid #4ade8040',cursor:'pointer'}}>
                               ✓ {activeName} is klaar
                             </button>
-                            {clothing[active]<5&&(
-                              <button onClick={skipAction} style={{padding:'6px',borderRadius:8,fontSize:10,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',color:'#6b7280',cursor:'pointer'}}>
-                                ↩ Skip (–1 kleding)
-                              </button>
-                            )}
                           </>
                         }
                       </div>
@@ -1461,22 +1462,7 @@ function App(){
       s.on('game_start',({game})=>{setGame(game);setScreen('game');});
       s.on('player_disconnected',({message})=>setError(message));
       s.on('error',({message})=>setError(message));
-      // Reconnect events
-      s.on('room_rejoined',({playerNumber,game},timeout)=>{
-        if(timeout)clearTimeout(timeout);
-        // Sessie updaten met bevestigde data
-        const sess=loadSession();
-        if(sess) saveSession(sess.roomId, playerNumber, sess.playerName);
-        setMyNum(playerNumber);setGame(game);setError('');
-        const ph=game.phase;
-        if(ph==='waiting') setScreen('waiting');
-        else if(ph==='setup'){setSetupData(game.setupData||{});setScreen('setup');}
-        else setScreen('game');
-        setLoading(false);
-      });
-      s.on('rejoin_failed',({message})=>{
-        clearSession();setError(message);setScreen('lobby');setLoading(false);
-      });
+      // room_rejoined en rejoin_failed worden alleen in handleRejoin geregistreerd (s.once)
       socketRef.current=s;setSocket(s);return s;
     }catch(e){setError('Kon socket.io niet laden.');setLoading(false);return null;}
   }
