@@ -209,6 +209,11 @@ io.on('connection', socket => {
     socket.to(roomId).emit('media_reaction', { reaction, from: player?.name });
   });
 
+  socket.on('typing_indicator', () => {
+    const roomId = socketToRoom[socket.id];
+    if (roomId) socket.to(roomId).emit('typing_indicator');
+  });
+
   socket.on('chat_message', msg => {
     const roomId = socketToRoom[socket.id];
     const game = rooms[roomId]; if (!game) return;

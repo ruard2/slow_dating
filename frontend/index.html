@@ -168,7 +168,15 @@ const CARDS = [
 
 function randomCard() { return CARDS[Math.floor(Math.random()*CARDS.length)]; }
 
-const EMOJIS = ['💋','😍','🔥','💜','💙','❤️','😘','🥰','😏','👅','💦','🫦','😈','🙈','💃','🫶','💕','🤤','😮‍💨','💫','✨','🌙','🫠','👀','🤭','😚','🥺','🫣','😋','🤫','💝','🌹','🍒','🌸','😇','🤩','😻','💐','🎭','🪞','🎬','🎙️','📸','🌊','⚡','🏆'];
+const EMOJIS = [
+  // Flirty & expressief
+  '💋','😍','🔥','💜','💙','❤️','😘','🥰','😏','👅','💦','🫦','😈','🙈','💃','🫶','💕','🤤','😮‍💨','💫',
+  '✨','🌙','🫠','👀','🤭','😚','🥺','🫣','😋','🤫','💝','🌹','🍒','🌸','😇','🤩','😻','💐','🎭','🪞',
+  '🎬','🎙️','📸','🌊','⚡','🏆',
+  // Spicy (nieuw)
+  '🍑','🌶️','🥵','😳','🫢','🤯','😵‍💫','🥴','💓','🩷',
+  '🛏️','🕯️','🔐','🍓','🍫','👑','🪄','💢','🫀','🧨',
+];
 
 // ─── SPARE QUESTION POOLS (bij herhaalde vakjes) ──────────────────────────────
 const BLUE_EXTRA = [
@@ -674,9 +682,31 @@ function ChatMessage({msg,isMe,onReaction,onReplay}){
 }
 
 // ─── CHAT COLUMN ──────────────────────────────────────────────────────────────
-function ChatColumn({messages,myName,onSend,onReaction,onReplay}){
+function ChatColumn({messages,myName,onSend,onReaction,onReplay,socket}){
   const [text,setText]=useState('');
   const [showEmoji,setShowEmoji]=useState(false);
+  const [partnerTyping,setPartnerTyping]=useState(false);
+  const typingTimerRef=useRef(null);
+  const isTypingRef=useRef(false);
+
+  useEffect(()=>{
+    if(!socket)return;
+    socket.on('typing_indicator',()=>{
+      setPartnerTyping(true);
+      clearTimeout(typingTimerRef.current);
+      typingTimerRef.current=setTimeout(()=>setPartnerTyping(false),2000);
+    });
+    return()=>socket.off('typing_indicator');
+  },[socket]);
+
+  function handleTextChange(e){
+    setText(e.target.value);
+    if(socket&&!isTypingRef.current){
+      isTypingRef.current=true;
+      socket.emit('typing_indicator');
+      setTimeout(()=>{isTypingRef.current=false;},1500);
+    }
+  }
   const [stream,setStream]=useState(null);
   const [camOn,setCamOn]=useState(false);
   const [recording,setRecording]=useState(false);
@@ -778,10 +808,11 @@ function ChatColumn({messages,myName,onSend,onReaction,onReplay}){
       <div style={{flex:1,overflowY:'auto',padding:'6px 6px',minHeight:0}}>
         {messages.length===0&&<div style={{textAlign:'center',color:'#374151',fontSize:11,marginTop:24}}><div style={{fontSize:24,marginBottom:4}}>💬</div>Chat</div>}
         {messages.map((m,i)=><ChatMessage key={i} msg={m} isMe={m.sender===myName} onReaction={r=>onReaction&&onReaction(r,m)} onReplay={(card,origMsg)=>onReplay&&onReplay(card,origMsg)}/>)}
+        {partnerTyping&&<div style={{fontSize:10,color:'#c45a8a',padding:'2px 6px',fontStyle:'italic'}}>... typt 💭</div>}
         <div ref={endRef}/>
       </div>
       <form onSubmit={sendText} style={{display:'flex',gap:4,padding:6,borderTop:'1px solid rgba(139,26,74,.2)',flexShrink:0}}>
-        <input value={text} onChange={e=>setText(e.target.value)} placeholder="Typ..." style={{flex:1,padding:'6px 8px',borderRadius:10,background:'rgba(255,255,255,.06)',border:'1px solid rgba(139,26,74,.3)',color:'white',fontSize:11,outline:'none',minWidth:0}}/>
+        <input value={text} onChange={handleTextChange} placeholder="Typ..." style={{flex:1,padding:'6px 8px',borderRadius:10,background:'rgba(255,255,255,.06)',border:'1px solid rgba(139,26,74,.3)',color:'white',fontSize:11,outline:'none',minWidth:0}}/>
         <button type="submit" style={{padding:'6px 8px',borderRadius:10,background:'#8b1a4a',color:'white',fontSize:11,border:'none',cursor:'pointer'}}>↑</button>
       </form>
     </div>
@@ -789,7 +820,7 @@ function ChatColumn({messages,myName,onSend,onReaction,onReplay}){
 }
 
 // ─── WINNER SCREEN ────────────────────────────────────────────────────────────
-function WinnerScreen({winnerName,isWinner,fantasyText,onPlayAgain}){
+function WinnerScreen({winnerName,isWinner,fantasyEntries,onPlayAgain}){
   return(
     <div style={{position:'fixed',inset:0,zIndex:55,display:'flex',alignItems:'center',justifyContent:'center',padding:20,background:'rgba(0,0,0,.97)'}}>
       <Confetti/>
@@ -801,12 +832,14 @@ function WinnerScreen({winnerName,isWinner,fantasyText,onPlayAgain}){
           </h1>
           <p style={{color:'#9ca3af',fontSize:15}}>Vak 80 bereikt 🎉</p>
         </div>
-        {fantasyText&&(
-          <div style={{width:'100%',borderRadius:16,padding:16,background:'rgba(212,175,55,.08)',border:'1px solid rgba(212,175,55,.3)'}}>
+        {fantasyEntries&&fantasyEntries.length>0&&(
+          <div style={{width:'100%',borderRadius:16,padding:16,background:'rgba(212,175,55,.08)',border:'1px solid rgba(212,175,55,.3)',maxHeight:160,overflowY:'auto'}}>
             <div style={{fontSize:14,color:'#d4af37',fontWeight:600,marginBottom:8}}>📓 Jullie gezamenlijke fantasy</div>
-            <div style={{fontSize:12,color:'#d1d5db',lineHeight:1.7,fontFamily:'"Playfair Display",serif',fontStyle:'italic',textAlign:'left'}}>
-              {fantasyText}
-            </div>
+            {fantasyEntries.map(e=>(
+              <div key={e.id} style={{fontSize:12,color:PLAYER_COLORS[e.playerNum],lineHeight:1.7,fontFamily:'"Playfair Display",serif',fontStyle:'italic',textAlign:'left',marginBottom:4}}>
+                <span style={{fontWeight:600,fontSize:10}}>{e.playerName}: </span>{e.text}
+              </div>
+            ))}
           </div>
         )}
         <div style={{width:'100%',borderRadius:16,padding:20,background:'linear-gradient(135deg,#1f1a05,#2d1a05)',border:'1px solid #d4af37',boxShadow:'0 0 30px rgba(212,175,55,.3)'}}>
@@ -834,10 +867,12 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
   const [savedCard,setSavedCard]=useState(null);
   const [bonusCard,setBonusCard]=useState(null);
   const [msgs,setMsgs]=useState([]);
-  const [notebook,setNotebook]=useState(initialGame.fantasyText||'');
+  const [notebookEntries,setNotebookEntries]=useState([]);
   const [showNotebook,setShowNotebook]=useState(false);
   const [reactionNotif,setReactionNotif]=useState(null);
   const [chosenOption,setChosenOption]=useState(null); // 'A'|'B'
+  const [milestone,setMilestone]=useState(null);
+  const milestonesHit=useRef(new Set());
 
   // Auto-draw card when landing on mystery square
   useEffect(()=>{
@@ -848,6 +883,16 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
     socket.on('move_result',d=>{
       setRolling(false);setPrevClothing(c=>[...c]);
       setLastMove(d.result||{});setChosenOption(null);
+      // Milestone check
+      const pos=d.positions?.[myNum]||0;
+      [25,50,75].forEach(m=>{
+        if(pos>=m&&!milestonesHit.current.has(m)){
+          milestonesHit.current.add(m);
+          const msgs25={25:'Kwart van het spel 🌸 — lekker bezig!',50:'Halverwege 🔥 — het wordt heter...',75:'Bijna 🌋 — nog even!'};
+          setMilestone(msgs25[m]);
+          setTimeout(()=>setMilestone(null),3500);
+        }
+      });
       if(d.phase==='mystery') setEventCard(randomCard());
       setG(s=>({...s,positions:d.positions,clothing:d.clothing,phase:d.phase,winner:d.winner,diceValue:d.diceValue,powerSwitch:d.powerSwitch,currentTurn:d.currentTurn}));
       if(d.result?.isDouble&&d.phase!=='finished'){
@@ -857,15 +902,21 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
     socket.on('turn_advanced',d=>{
       setG(s=>({...s,phase:d.phase,currentTurn:d.currentTurn,powerSwitch:d.powerSwitch,clothing:d.clothing,diceValue:null}));
       setLastMove(null);setChosenOption(null);
+      // Notificeer als het nu jouw beurt is
+      const nowActive=d.powerSwitch?d.powerSwitch.activePlayer:d.currentTurn;
+      if(nowActive===myNum){
+        playBeep();
+        if(navigator.vibrate) navigator.vibrate([100,50,100]);
+      }
     });
     socket.on('position_update',d=>setG(s=>({...s,positions:d.positions,clothing:d.clothing})));
     socket.on('chat_message',m=>setMsgs(p=>[...p,m]));
-    socket.on('fantasy_update',({text})=>setNotebook(text));
+    socket.on('fantasy_entries',({entries})=>setNotebookEntries(entries||[]));
     socket.on('media_reaction',({reaction,from})=>{
       setReactionNotif(`${from} reageerde ${reaction}`);
       setTimeout(()=>setReactionNotif(null),4000);
     });
-    return()=>['move_result','turn_advanced','position_update','chat_message','fantasy_update','media_reaction'].forEach(e=>socket.off(e));
+    return()=>['move_result','turn_advanced','position_update','chat_message','fantasy_entries','media_reaction'].forEach(e=>socket.off(e));
   },[]);
 
   const {positions,clothing,currentTurn,phase,winner,powerSwitch,playerNames,diceValue}=G;
@@ -886,7 +937,7 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
   function actionDone(){setPrevClothing([...clothing]);socket.emit('action_done');}
   function skipAction(){socket.emit('skip_action');}
   function sendChat(obj){socket.emit('chat_message',obj);setMsgs(p=>[...p,{...obj,sender:myName}]);}
-  function handleNotebook(text){setNotebook(text);socket.emit('fantasy_update',{text});}
+  function handleNotebookAppend(text){socket.emit('fantasy_append',{text});}
   function drawEventCard(){setEventCard(randomCard());}
   function handleReaction(r,msg){socket.emit('media_reaction',{reaction:r});}
   function handleReplay(card,origMsg){
@@ -901,7 +952,7 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
   const dv=diceValue||1;
   const dDots=dots[dv]||dots[1];
 
-  if(winner!==null) return<WinnerScreen winnerName={playerNames[winner]} isWinner={winner===myNum} fantasyText={notebook} onPlayAgain={onPlayAgain}/>;
+  if(winner!==null) return<WinnerScreen winnerName={playerNames[winner]} isWinner={winner===myNum} fantasyEntries={notebookEntries} onPlayAgain={onPlayAgain}/>;
 
   // Which text to show for choice squares
   const squareText = sq?(
@@ -917,7 +968,8 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 12px',background:'rgba(26,10,46,.8)',borderBottom:'1px solid rgba(139,26,74,.2)',flexShrink:0,backdropFilter:'blur(12px)'}}>
         <span style={{fontFamily:'"Playfair Display",serif',color:'#d4af37',fontWeight:700,fontSize:13}}>🐍 Slangen & Ladders</span>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          {reactionNotif&&<span className="fi" style={{fontSize:11,color:'#c45a8a',background:'rgba(139,26,74,.2)',padding:'2px 8px',borderRadius:10}}>{reactionNotif}</span>}
+          {milestone&&<span className="fi" style={{fontSize:11,color:'#d4af37',background:'rgba(212,175,55,.15)',padding:'2px 10px',borderRadius:10,border:'1px solid rgba(212,175,55,.3)'}}>{milestone}</span>}
+          {!milestone&&reactionNotif&&<span className="fi" style={{fontSize:11,color:'#c45a8a',background:'rgba(139,26,74,.2)',padding:'2px 8px',borderRadius:10}}>{reactionNotif}</span>}
           {powerSwitch&&<span style={{fontSize:10,padding:'2px 8px',borderRadius:10,background:'rgba(212,175,55,.15)',color:'#d4af37'}}>⚡ {powerSwitch.turnsLeft}x</span>}
           <button onClick={()=>setShowNotebook(true)} style={{fontSize:16,background:'rgba(212,175,55,.1)',border:'1px solid rgba(212,175,55,.3)',borderRadius:8,padding:'3px 8px',cursor:'pointer',color:'#d4af37'}} title="Gedeeld notitieboek">📓</button>
           {isMyTurn
@@ -949,7 +1001,7 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
 
         {/* LEFT: Chat */}
         <div style={{width:130,flexShrink:0,minHeight:0}}>
-          <ChatColumn messages={msgs} myName={myName} onSend={sendChat} onReaction={handleReaction} onReplay={handleReplay}/>
+          <ChatColumn messages={msgs} myName={myName} onSend={sendChat} onReaction={handleReaction} onReplay={handleReplay} socket={socket}/>
         </div>
 
         {/* CENTER: Board */}
@@ -1099,7 +1151,7 @@ function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
       {bonusCard&&(
         <MysteryOverlay card={bonusCard} title="🎲🎲 Dubbel! Bonus Kaart" isMe={true} onDone={()=>setBonusCard(null)}/>
       )}
-      {showNotebook&&<FantasyNotebook text={notebook} onChange={handleNotebook} onClose={()=>setShowNotebook(false)}/>}
+      {showNotebook&&<FantasyNotebook entries={notebookEntries} myNum={myNum} onAppend={handleNotebookAppend} onClose={()=>setShowNotebook(false)}/>}
     </div>
   );
 }
