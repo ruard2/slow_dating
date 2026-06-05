@@ -15,7 +15,7 @@
  */
 
 const ProfielClient = (() => {
-  const BACKEND = window.KOPPEL_BACKEND_URL || 'https://kleurkompas-backend.up.railway.app';
+  const BACKEND = window.KOPPEL_BACKEND_URL || 'https://snakesandladdders-production.up.railway.app';
   const LS_KEY  = 'kk_user_id';
 
   let _userId = null;

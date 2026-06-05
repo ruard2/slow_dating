@@ -9,7 +9,7 @@
  *   KoppelClient.onComplete        → callback als beide klaar met invullen
  */
 
-const BACKEND_URL = window.KOPPEL_BACKEND_URL || 'https://kleurkompas-backend.up.railway.app';
+const BACKEND_URL = window.KOPPEL_BACKEND_URL || 'https://snakesandladdders-production.up.railway.app';
 
 const KoppelClient = (() => {
   let socket = null;
