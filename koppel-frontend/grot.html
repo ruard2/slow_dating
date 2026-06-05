@@ -819,6 +819,8 @@ function setupKoppelListeners() {
     const btn = document.getElementById('btn-start-zonder-partner');
     if (btn) btn.textContent = 'Start ronde samen →';
     btn.onclick = naarDomein;
+    // Wissel userId uit zodat relatiekaart.html de partner kent
+    KoppelClient.progress({ type: 'user_id_exchange', userId: ProfielClient.getUserId() });
   });
 
   KoppelClient.on('complete', ({ state }) => {
@@ -830,12 +832,15 @@ function setupKoppelListeners() {
   });
 
   KoppelClient.on('partner_progress', ({ progress }) => {
-    if (progress && progress.type === 'case_selected') {
-      // Partner heeft case geselecteerd, wij nemen dezelfde
-      if (!STATE.isPlayer1 && progress.caseId) {
-        const gevonden = STATE.allesCases.find(c => c.case_id === progress.caseId);
-        if (gevonden) laadCase(gevonden);
-      }
+    if (!progress) return;
+    // userId uitwisseling
+    if (progress.type === 'user_id_exchange' && progress.userId) {
+      localStorage.setItem('grot_partner_id', progress.userId);
+    }
+    // Case synchronisatie (player 2 neemt zelfde case als player 1)
+    if (progress.type === 'case_selected' && !STATE.isPlayer1 && progress.caseId) {
+      const gevonden = STATE.allesCases.find(c => c.case_id === progress.caseId);
+      if (gevonden) laadCase(gevonden);
     }
   });
 
