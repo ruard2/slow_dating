@@ -979,6 +979,12 @@ function laadCase(casus) {
   document.getElementById('sit-titel').textContent = casus.situation?.title || '';
   document.getElementById('sit-narratief').textContent = casus.situation?.narrative || casus.situation?.short_text || '';
 
+  // ── Modus badge: ronde vs kaart ──────────────────────
+  const isRonde = heeftUniekeVragen(casus);
+  const typLabel = TEKST.type_labels[casus.case_type] || casus.case_type;
+  document.getElementById('sit-type-badge').textContent =
+    isRonde ? typLabel : `${typLabel} · kaart`;
+
   // ── Safety laag ───────────────────────────────────────
   const safetyInfo = window.TOON ? TOON.safety(casus) : { klasse: 'normaal', teksten: null };
   STATE.huidigeRondeSafety = safetyInfo;
@@ -992,7 +998,7 @@ function laadCase(casus) {
     if (safetyInfo.teksten.btn) btnEl.textContent = safetyInfo.teksten.btn;
   } else {
     badgeEl.style.display = 'none';
-    btnEl.textContent = 'Dit herken ik — begin';
+    btnEl.textContent = isRonde ? 'Dit herken ik — begin' : 'Lees en reflecteer →';
   }
 
   showScreen('screen-situatie');
@@ -1002,9 +1008,99 @@ function skipCase() {
   if (STATE.domeinId) kiesDomein(STATE.domeinId);
 }
 
+// ── Detecteer of case 'unieke' vragen heeft ──────────────
+// Alleen D1 cases hebben volledig uitgewerkte unieke opties.
+// D2-D15 hebben template-boilerplate — die tonen we als kaart.
+function heeftUniekeVragen(casus) {
+  if (!casus) return false;
+  const domein = casus.domain?.domain_id || '';
+  return domein === 'D1'; // Alleen D1 is volledig uitgewerkt
+}
+
 // ── Vragen ───────────────────────────────────────────────
 function startVragen() {
-  toonVraag(0);
+  if (heeftUniekeVragen(STATE.huidigeCase)) {
+    // Volledige ronde met echte vragen
+    toonVraag(0);
+  } else {
+    // Kaart-modus: één eenvoudige herkenningsvraag, dan direct reveal
+    toonHerkenningsvraag();
+  }
+}
+
+// ── Kaart-modus: universele herkenningsvraag ─────────────
+// Voor D2-D15 cases: één vraag die domein-tags genereert.
+// De opties zijn relevant voor het domein, niet case-specifiek.
+const HERKENNING_OPTIES = {
+  positive: [
+    { label: 'Dit raakt me positief — ik herken dit gevoel van verbinding',    tags: { 'needs.connection': 2, 'needs.reassurance': 1, 'skills.vulnerability': 1 } },
+    { label: 'Ik herken dit, maar voel ook iets van angst het te verliezen',    tags: { 'needs.safety': 2, 'sensitive_points.not_chosen': 1 } },
+    { label: 'Dit raak ik nauwelijks aan — het voelt ver van mij',              tags: { 'needs.closeness': 1, 'protections.withdraw': 1 } },
+    { label: 'Ik herken de situatie maar weet niet goed wat ik ervan vind',     tags: { 'centers.head': 1, 'needs.understanding': 1 } },
+  ],
+  tension: [
+    { label: 'Dit herken ik goed — deze spanning ken ik van dichtbij',         tags: { 'protections.withdraw': 2, 'needs.attention': 1, 'patterns.pursue_withdraw': 1 } },
+    { label: 'Ik word boos of gefrustreerd in dit soort momenten',              tags: { 'protections.protest': 2, 'needs.respect': 1, 'centers.body': 1 } },
+    { label: 'Ik trek me terug en wacht af',                                    tags: { 'protections.silence': 2, 'needs.safety': 1 } },
+    { label: 'Ik ga het gesprek aan, maar vind het moeilijk',                   tags: { 'skills.asking_directly': 2, 'needs.connection': 1 } },
+  ],
+  deep: [
+    { label: 'Dit raakt iets dieps — ik herken dit van heel dichtbij',         tags: { 'needs.closeness': 2, 'sensitive_points.alone': 1, 'centers.heart': 1 } },
+    { label: 'Dit roept verdriet of pijn op',                                   tags: { 'sensitive_points.not_seen': 2, 'needs.reassurance': 1 } },
+    { label: 'Ik scherm me hier bewust voor af',                                tags: { 'protections.avoid': 2, 'protections.withdraw': 1 } },
+    { label: 'Dit is herkenbaar maar ik wil er liever niet te lang bij stilstaan', tags: { 'protections.humor': 1, 'needs.safety': 1 } },
+  ],
+};
+
+function toonHerkenningsvraag() {
+  const c = STATE.huidigeCase;
+  const caseType = c?.case_type || 'tension';
+  const opties = HERKENNING_OPTIES[caseType] || HERKENNING_OPTIES.tension;
+  const domeinNaam = c?.domain?.domain_name || '';
+
+  // Gebruik het vraag-scherm maar met onze herkenningsvraag
+  document.getElementById('vraag-stap-label').textContent = 'Herkenning';
+  document.getElementById('vraag-nr-badge').textContent = '1/1';
+  document.getElementById('vraag-prompt').textContent =
+    `Hoe herkenbaar is deze situatie voor jou?`;
+  document.getElementById('vraag-helper').textContent =
+    'Kies wat het dichtst bij jouw eerste reactie komt.';
+
+  document.getElementById('vraag-progress').style.width = '50%';
+
+  // Fake question_id voor de herkenningsvraag
+  const fakeQId = 'herkenning';
+  const lijst = document.getElementById('optie-lijst');
+  lijst.innerHTML = '';
+
+  opties.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'optie-btn';
+    btn.textContent = opt.label;
+    if (STATE.geselecteerd[fakeQId] === opt.label) btn.classList.add('selected');
+    btn.onclick = () => {
+      // Sla tags op
+      Object.entries(opt.tags).forEach(([k, v]) => {
+        STATE.verzameldeTagsHuidigeRonde[k] = (STATE.verzameldeTagsHuidigeRonde[k] || 0) + v;
+      });
+      // Domein-tag
+      if (c?.domain?.domain_id) {
+        const dKey = `domains.${c.domain.domain_id.toLowerCase()}`;
+        STATE.verzameldeTagsHuidigeRonde[dKey] = 1;
+      }
+      STATE.geselecteerd[fakeQId] = opt.label;
+      lijst.querySelectorAll('.optie-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      document.getElementById('btn-volgende-vraag').disabled = false;
+    };
+    lijst.appendChild(btn);
+  });
+
+  document.getElementById('btn-volgende-vraag').disabled = true;
+  document.getElementById('btn-volgende-vraag').textContent = 'Klaar →';
+  document.getElementById('btn-volgende-vraag').onclick = rondeAntwoordenKlaar;
+
+  showScreen('screen-vraag');
 }
 
 function toonVraag(index) {
