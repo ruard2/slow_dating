@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Waarden ✦ Wat Telt Voor Jou</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:#0f0820;color:#f0e6d3;font-family:'Inter',sans-serif;overflow:hidden;}
+
+body::before{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 20% 30%,#2d1050 0%,transparent 55%),
+             radial-gradient(ellipse at 80% 70%,#102840 0%,transparent 55%),
+             #0a0618;z-index:0;}
+
+.screen{display:none;position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;z-index:1;}
+.screen.active{display:flex;flex-direction:column;align-items:center;}
+
+/* ── Fonts ─────────────────────────────────── */
+h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;
+  background:linear-gradient(135deg,#d4af37,#f5e070,#d4af37);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  text-align:center;line-height:1.2;}
+h2{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#f0e6d3;text-align:center;}
+.sub{color:#9080a8;font-size:0.85rem;text-align:center;line-height:1.6;}
+.gold{color:#d4af37;}
+
+/* ── Buttons ─────────────────────────────── */
+.btn{display:block;width:100%;padding:14px 20px;border:none;border-radius:14px;
+  font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;
+  font-family:'Inter',sans-serif;}
+.btn-gold{background:linear-gradient(135deg,#d4af37,#f0d060);color:#1a0a2e;}
+.btn-gold:active{transform:scale(0.97);}
+.btn-outline{background:transparent;border:1.5px solid #d4af3766;color:#d4af37;}
+.btn-outline:active{background:#d4af3715;}
+.btn-ghost{background:rgba(255,255,255,0.07);color:#f0e6d3;border:1px solid rgba(255,255,255,0.1);}
+.btn-ghost:active{background:rgba(255,255,255,0.13);}
+.btn-sm{padding:9px 14px;font-size:0.82rem;border-radius:10px;}
+
+/* ── Layout ──────────────────────────────── */
+.pad{padding:20px;width:100%;max-width:440px;}
+.gap{display:flex;flex-direction:column;gap:12px;}
+.gap-sm{display:flex;flex-direction:column;gap:8px;}
+.row{display:flex;gap:8px;}.row .btn{flex:1;}
+.divider{height:1px;background:rgba(255,255,255,0.08);margin:4px 0;}
+.center{text-align:center;}
+
+/* ── Category colors ─────────────────────── */
+:root{
+  --c-autonomie:#4a90e2;  --c-relatie:#e27a9e;    --c-zorg:#e2a47a;
+  --c-groei:#7ac47a;      --c-prestatie:#d4af37;  --c-vrijheid:#9e7ace;
+  --c-gemeenschap:#7acec4;--c-plezier:#e2d47a;    --c-veiligheid:#7a9ec4;
+  --c-spiritueel:#c47ae2; --c-balans:#7ae2c4;     --c-karakter:#c4a07a;
+  --c-bijdrage:#a0c47a;   --c-verbondenheid:#c47a8a;
+}
+
+/* ── Kaart grid ──────────────────────────── */
+.kaarten-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:10px;width:100%;padding:0 16px 100px;
+}
+
+/* ── Waarden kaart ───────────────────────── */
+.waarde-kaart{
+  border-radius:14px;padding:16px 12px 14px;
+  border:1.5px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.04);
+  cursor:pointer;transition:all .22s;
+  display:flex;flex-direction:column;gap:6px;
+  position:relative;overflow:hidden;
+  min-height:140px;
+}
+.waarde-kaart::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--cat-color);border-radius:14px 14px 0 0;
+}
+.waarde-kaart:active{transform:scale(0.96);}
+.waarde-kaart.geselecteerd-partner{
+  border-color:var(--cat-color);
+  background:rgba(var(--cat-rgb),0.12);
+  box-shadow:0 0 16px rgba(var(--cat-rgb),0.25);
+}
+.waarde-kaart.geselecteerd-zelf{
+  border-color:var(--cat-color);
+  background:rgba(var(--cat-rgb),0.18);
+  box-shadow:0 0 20px rgba(var(--cat-rgb),0.35);
+}
+.kaart-cat-dot{width:7px;height:7px;border-radius:50%;
+  background:var(--cat-color);display:inline-block;margin-right:5px;}
+.kaart-cat-label{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;
+  color:rgba(255,255,255,0.45);display:flex;align-items:center;}
+.kaart-naam{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;
+  color:#f0e6d3;line-height:1.2;}
+.kaart-desc{font-size:0.72rem;color:#8878a0;line-height:1.45;flex:1;}
+.kaart-gewicht{position:absolute;bottom:10px;right:10px;
+  font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;
+  color:rgba(255,255,255,0.25);}
+.kaart-check{position:absolute;top:8px;right:8px;width:20px;height:20px;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:0.7rem;opacity:0;transition:all .2s;}
+.waarde-kaart.geselecteerd-partner .kaart-check,
+.waarde-kaart.geselecteerd-zelf .kaart-check{opacity:1;background:var(--cat-color);color:#fff;}
+
+/* ── Filter bar ──────────────────────────── */
+.filter-bar{display:flex;gap:6px;overflow-x:auto;padding:10px 16px;
+  scrollbar-width:none;flex-shrink:0;width:100%;}
+.filter-bar::-webkit-scrollbar{display:none;}
+.filter-chip{padding:6px 12px;border-radius:20px;font-size:0.72rem;
+  font-weight:500;cursor:pointer;white-space:nowrap;transition:all .2s;
+  border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);
+  color:rgba(255,255,255,0.6);}
+.filter-chip.active{background:rgba(212,175,55,0.2);border-color:#d4af37;color:#d4af37;}
+
+/* ── Select counter bar ───────────────────── */
+.select-bar{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:440px;
+  background:linear-gradient(to top,rgba(10,6,24,0.98) 70%,transparent);
+  padding:16px 20px 24px;z-index:100;
+}
+.select-bar-inner{background:rgba(30,20,50,0.95);border:1px solid rgba(212,175,55,0.3);
+  border-radius:16px;padding:12px 16px;
+  display:flex;align-items:center;gap:12px;}
+.select-slots{display:flex;gap:6px;}
+.slot{width:28px;height:28px;border-radius:8px;border:1.5px dashed rgba(212,175,55,0.4);
+  display:flex;align-items:center;justify-content:center;font-size:0.65rem;
+  transition:all .2s;color:rgba(255,255,255,0.3);}
+.slot.filled{background:rgba(212,175,55,0.25);border-color:#d4af37;border-style:solid;
+  color:#d4af37;}
+.select-label{flex:1;font-size:0.8rem;color:#9080a8;line-height:1.3;}
+.select-label strong{color:#f0e6d3;display:block;}
+.select-confirm{padding:8px 16px;border-radius:10px;font-size:0.82rem;
+  font-weight:600;border:none;cursor:pointer;font-family:'Inter',sans-serif;
+  background:linear-gradient(135deg,#d4af37,#f0d060);color:#1a0a2e;
+  white-space:nowrap;opacity:0.4;pointer-events:none;transition:all .2s;}
+.select-confirm.ready{opacity:1;pointer-events:auto;}
+
+/* ── Reveal kaart ────────────────────────── */
+.reveal-set{display:flex;flex-direction:column;gap:10px;width:100%;}
+.reveal-kaart{border-radius:14px;padding:14px 16px;
+  border:1.5px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.05);
+  display:flex;align-items:flex-start;gap:12px;}
+.reveal-kaart-kleur{width:4px;border-radius:4px;align-self:stretch;min-height:40px;flex-shrink:0;}
+.reveal-kaart-tekst{}
+.reveal-kaart-naam{font-family:'Playfair Display',serif;font-size:1rem;color:#f0e6d3;margin-bottom:3px;}
+.reveal-kaart-desc{font-size:0.75rem;color:#8878a0;line-height:1.4;}
+
+/* ── Gesprek kaart ───────────────────────── */
+.gesprek-kaart{border-radius:16px;padding:20px;width:100%;
+  background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.1);}
+.gesprek-voor{font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:#d4af37;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.gesprek-vraag{font-family:'Playfair Display',serif;font-size:1.05rem;font-style:italic;
+  color:#f0e6d3;line-height:1.55;}
+.gesprek-nav{display:flex;justify-content:space-between;align-items:center;margin-top:12px;}
+.gesprek-dot-row{display:flex;gap:5px;}
+.gesprek-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.15);transition:.2s;}
+.gesprek-dot.active{background:#d4af37;}
+
+/* ── Intro steps ─────────────────────────── */
+.intro-step{text-align:center;padding:12px 0;}
+.intro-icon{font-size:2.5rem;margin-bottom:10px;}
+.intro-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:#f0e6d3;margin-bottom:6px;}
+.intro-desc{font-size:0.82rem;color:#9080a8;line-height:1.55;}
+
+/* ── Progress ────────────────────────────── */
+.fase-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+  border-radius:20px;font-size:0.72rem;font-weight:600;letter-spacing:0.06em;
+  background:rgba(212,175,55,0.12);color:#d4af37;border:1px solid #d4af3730;}
+
+/* ── Koppel / code ───────────────────────── */
+.big-code{font-size:2.2rem;letter-spacing:0.4em;font-weight:700;color:#f0d060;
+  font-family:'Playfair Display',serif;text-align:center;}
+.code-input{text-align:center;font-size:1.6rem;letter-spacing:0.3em;text-transform:uppercase;
+  font-weight:700;background:rgba(255,255,255,0.08);border:2px solid rgba(212,175,55,0.4);
+  border-radius:14px;padding:16px;color:#f0d060;width:100%;font-family:'Inter',sans-serif;}
+.waiting-dots span{display:inline-block;animation:bounce 1.2s infinite;}
+.waiting-dots span:nth-child(2){animation-delay:.2s;}
+.waiting-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+
+.back-btn{position:fixed;top:10px;left:10px;z-index:9999;
+  background:rgba(0,0,0,0.45);color:#d4af37;border:1px solid #d4af3755;
+  border-radius:20px;padding:5px 12px;font-size:0.75rem;text-decoration:none;
+  font-family:serif;letter-spacing:0.05em;backdrop-filter:blur(6px);}
+
+/* ── Animations ──────────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.fade-up{animation:fadeUp .35s ease forwards;}
+@keyframes popIn{0%{transform:scale(0.8);opacity:0}60%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+.pop-in{animation:popIn .4s cubic-bezier(.34,1.56,.64,1) forwards;}
+</style>
+</head>
+<body>
+
+<a href="world.html" class="back-btn">← Kaart</a>
+
+<!-- ══════════════════════════════════════
+     SCREEN: START
+══════════════════════════════════════ -->
+<div id="screen-start" class="screen active">
+  <div class="pad gap" style="padding-top:60px;">
+    <div class="center">
+      <div style="font-size:3.2rem;margin-bottom:6px;">🧭</div>
+      <h1>Waarden</h1>
+      <p class="sub" style="margin-top:8px;">Wat drijft jou? Wat zie jij in de ander?<br>Ontdek waar jullie harten liggen.</p>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-gold" onclick="startKoppel('create')">✦ Begin samen — maak sessie</button>
+    <button class="btn btn-outline" onclick="startKoppel('join')">Doe mee met koppelcode</button>
+    <button class="btn btn-ghost" onclick="startSolo()">Solo verkennen</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: KOPPELCODE
+══════════════════════════════════════ -->
+<div id="screen-koppel" class="screen">
+  <div class="pad gap" style="padding-top:60px;">
+    <h2 id="koppel-titel">Sessie aanmaken</h2>
+    <div id="koppel-maak-ui" style="display:none;" class="gap">
+      <p class="sub">Jouw koppelcode:</p>
+      <div class="big-code" id="display-code">···</div>
+      <p class="sub">Geef deze code aan je partner</p>
+      <div id="wacht-partner">
+        <p class="sub waiting-dots center">Wachten op partner<span>.</span><span>.</span><span>.</span></p>
+      </div>
+      <div id="beide-verbonden" style="display:none;" class="gap">
+        <p style="color:#7ac47a;text-align:center;">✓ Beide verbonden!</p>
+        <button class="btn btn-gold" onclick="goIntro()">Begin ✦</button>
+      </div>
+    </div>
+    <div id="koppel-join-ui" style="display:none;" class="gap">
+      <input class="code-input" id="join-input" maxlength="6" placeholder="ABCDE"
+             oninput="this.value=this.value.toUpperCase()"/>
+      <button class="btn btn-gold" onclick="doJoin()">Verbinden ›</button>
+      <div id="join-wacht" style="display:none;text-align:center;">
+        <p class="sub waiting-dots">Verbinden<span>.</span><span>.</span><span>.</span></p>
+      </div>
+      <div id="join-klaar" style="display:none;text-align:center;">
+        <p style="color:#7ac47a;">✓ Verbonden! Wacht op host...</p>
+      </div>
+    </div>
+    <p id="koppel-error" style="color:#e07070;text-align:center;display:none;"></p>
+    <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-start')">← Terug</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: INTRO / UITLEG
+══════════════════════════════════════ -->
+<div id="screen-intro" class="screen">
+  <div class="pad gap" style="padding-top:50px;">
+    <div class="center">
+      <div class="fase-badge">Hoe werkt het?</div>
+    </div>
+
+    <div class="intro-step fade-up">
+      <div class="intro-icon">🃏</div>
+      <div class="intro-title">Blader door de kaarten</div>
+      <div class="intro-desc">95 waarden verdeeld over 14 thema's. Van licht en speels tot diep en wezenlijk.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="intro-step">
+      <div class="intro-icon">💌</div>
+      <div class="intro-title">Kies 3 kaarten voor je partner</div>
+      <div class="intro-desc">"Dit zie ik in jou" — welke waarden stralen van de ander af? Of wat wil je hem/haar geven?</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="intro-step">
+      <div class="intro-icon">🌱</div>
+      <div class="intro-title">Kies 3 kaarten voor jezelf</div>
+      <div class="intro-desc">"Dit verlang ik" — welke waarden wil jij meer leven? Wat heb jij nodig?</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="intro-step">
+      <div class="intro-icon">💬</div>
+      <div class="intro-title">Ontdek en bespreek</div>
+      <div class="intro-desc">Zie wat de ander koos en praat erover aan de hand van gerichte vragen. Hier begint het echte gesprek.</div>
+    </div>
+
+    <button class="btn btn-gold" onclick="startFase1()">Begin met de kaarten ✦</button>
+    <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-start')">← Terug</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: KAARTEN SELECTEREN (fase 1 + 2)
+══════════════════════════════════════ -->
+<div id="screen-selecteer" class="screen">
+  <div style="width:100%;max-width:440px;display:flex;flex-direction:column;min-height:100%;">
+
+    <!-- Header -->
+    <div style="padding:16px 16px 8px;flex-shrink:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <div class="fase-badge" id="fase-badge">Fase 1 van 2</div>
+        <span style="font-size:0.78rem;color:#9080a8;" id="selecteer-teller">0 kaarten</span>
+      </div>
+      <h2 id="selecteer-titel" style="text-align:left;font-size:1.15rem;margin-top:6px;">Dit zie ik in jou</h2>
+      <p class="sub" id="selecteer-sub" style="text-align:left;font-size:0.78rem;margin-top:2px;">Kies 3 waarden die je aan je partner wilt geven</p>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar" id="filter-bar">
+      <div class="filter-chip active" onclick="filterCat('', this)">Alles</div>
+      <div class="filter-chip" onclick="filterCat('autonomie',this)">Autonomie</div>
+      <div class="filter-chip" onclick="filterCat('relatie',this)">Relatie</div>
+      <div class="filter-chip" onclick="filterCat('zorg',this)">Zorg</div>
+      <div class="filter-chip" onclick="filterCat('groei',this)">Groei</div>
+      <div class="filter-chip" onclick="filterCat('prestatie',this)">Prestatie</div>
+      <div class="filter-chip" onclick="filterCat('vrijheid',this)">Vrijheid</div>
+      <div class="filter-chip" onclick="filterCat('gemeenschap',this)">Gemeenschap</div>
+      <div class="filter-chip" onclick="filterCat('plezier',this)">Plezier</div>
+      <div class="filter-chip" onclick="filterCat('veiligheid',this)">Veiligheid</div>
+      <div class="filter-chip" onclick="filterCat('spiritueel',this)">Spiritueel</div>
+      <div class="filter-chip" onclick="filterCat('balans',this)">Balans</div>
+      <div class="filter-chip" onclick="filterCat('karakter',this)">Karakter</div>
+      <div class="filter-chip" onclick="filterCat('bijdrage',this)">Bijdrage</div>
+      <div class="filter-chip" onclick="filterCat('verbondenheid',this)">Verbondenheid</div>
+    </div>
+
+    <!-- Grid -->
+    <div class="kaarten-grid" id="kaarten-grid"></div>
+  </div>
+
+  <!-- Select bar (fixed bottom) -->
+  <div class="select-bar">
+    <div class="select-bar-inner">
+      <div class="select-slots" id="select-slots">
+        <div class="slot" id="slot-0">1</div>
+        <div class="slot" id="slot-1">2</div>
+        <div class="slot" id="slot-2">3</div>
+      </div>
+      <div class="select-label">
+        <strong id="select-label-main">Kies 3 kaarten</strong>
+        <span id="select-label-sub">Tik een kaart om te selecteren</span>
+      </div>
+      <button class="select-confirm" id="select-confirm-btn" onclick="confirmFase()">
+        Klaar ›
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: WACHTEN OP PARTNER
+══════════════════════════════════════ -->
+<div id="screen-wacht" class="screen">
+  <div class="pad gap" style="padding-top:120px;align-items:center;text-align:center;">
+    <div style="font-size:3rem;">✨</div>
+    <h2>Jouw keuze is ingediend</h2>
+    <p class="sub waiting-dots">Wachten op je partner<span>.</span><span>.</span><span>.</span></p>
+    <p class="sub" style="margin-top:8px;font-style:italic;">"De mooiste ontdekkingen komen als je even wacht."</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: REVEAL
+══════════════════════════════════════ -->
+<div id="screen-reveal" class="screen">
+  <div class="pad gap" style="padding-top:50px;padding-bottom:40px;">
+
+    <div class="center">
+      <h1 style="font-size:1.6rem;">De onthulling</h1>
+      <p class="sub">Kijk wat jullie voor elkaar kozen</p>
+    </div>
+
+    <!-- Partner gaf jou -->
+    <div>
+      <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#d4af37;margin-bottom:10px;">
+        💌 Partner gaf jou deze waarden
+      </p>
+      <div class="reveal-set" id="reveal-partner-gaf"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Jij gaf partner -->
+    <div>
+      <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#9e7ace;margin-bottom:10px;">
+        🎁 Jij gaf je partner deze waarden
+      </p>
+      <div class="reveal-set" id="reveal-jij-gaf"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Overlap -->
+    <div id="overlap-sectie" style="display:none;">
+      <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#7ae2c4;margin-bottom:10px;">
+        ✨ Dit kozen jullie allebei
+      </p>
+      <div class="reveal-set" id="reveal-overlap"></div>
+      <div class="divider"></div>
+    </div>
+
+    <!-- Eigen keuzes -->
+    <div>
+      <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#7ac47a;margin-bottom:10px;">
+        🌱 Dit verlang jij voor jezelf
+      </p>
+      <div class="reveal-set" id="reveal-jij-zelf"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#e2a47a;margin-bottom:10px;">
+        🌱 Dit verlangt je partner voor zichzelf
+      </p>
+      <div class="reveal-set" id="reveal-partner-zelf"></div>
+    </div>
+
+    <button class="btn btn-gold" onclick="goGesprek()">Gesprek starten ✦</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: GESPREK
+══════════════════════════════════════ -->
+<div id="screen-gesprek" class="screen">
+  <div class="pad gap" style="padding-top:50px;padding-bottom:40px;">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="fase-badge">Gesprek</div>
+      <span style="font-size:0.78rem;color:#9080a8;" id="gesprek-teller">1 / ?</span>
+    </div>
+
+    <div class="gesprek-kaart" id="gesprek-kaart">
+      <div class="gesprek-voor" id="gesprek-voor">
+        <span id="gesprek-voor-icon">💌</span>
+        <span id="gesprek-voor-tekst">Over de waarden die je gaf</span>
+      </div>
+      <div class="gesprek-vraag" id="gesprek-vraag">...</div>
+      <div class="gesprek-nav">
+        <div class="gesprek-dot-row" id="gesprek-dots"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="prevGesprek()" id="prev-btn"
+            style="width:auto;padding:6px 12px;">‹</button>
+          <button class="btn btn-ghost btn-sm" onclick="nextGesprek()" id="next-btn"
+            style="width:auto;padding:6px 12px;">›</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Waarden-context -->
+    <div id="gesprek-context" class="gap-sm"></div>
+
+    <div class="divider"></div>
+
+    <button class="btn btn-gold" onclick="showScreen('screen-menu-end')">Afronden ✦</button>
+    <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-reveal')">← Terug naar overzicht</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: AFSLUITING
+══════════════════════════════════════ -->
+<div id="screen-menu-end" class="screen">
+  <div class="pad gap" style="padding-top:80px;align-items:center;text-align:center;">
+    <div style="font-size:3rem;">🌟</div>
+    <h1 style="font-size:1.6rem;">Goed gedaan</h1>
+    <p class="sub">Jullie hebben elkaars waarden ontdekt.<br>Dat is een gave — bewaar het goed.</p>
+    <div class="divider" style="width:100%;margin:8px 0;"></div>
+    <button class="btn btn-gold" onclick="showScreen('screen-intro')">Opnieuw spelen</button>
+    <button class="btn btn-outline" onclick="window.location='world.html'">Terug naar de kaart</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// TEKST (i18n-klaar object)
+// ══════════════════════════════════════════════
+const TEKST = {
+  fase1_titel: 'Dit zie ik in jou',
+  fase1_sub: 'Kies 3 waarden die jij in je partner ziet of hem/haar wil geven',
+  fase2_titel: 'Dit verlang ik voor mezelf',
+  fase2_sub: 'Kies 3 waarden die jij meer wilt leven of nodig hebt',
+};
+
+// ══════════════════════════════════════════════
+// WAARDEN DATABASE (95 waarden — research-based)
+// Brené Brown, Rokeach, Schwartz, VIA, NVC
+// ══════════════════════════════════════════════
+const WAARDEN = [
+  // AUTONOMIE
+  {id:'v001',naam:'Vrijheid',desc:'De ruimte om je eigen keuzes te maken en jezelf te zijn zonder belemmeringen',cat:'autonomie',g:'medium'},
+  {id:'v002',naam:'Onafhankelijkheid',desc:'Op jezelf kunnen steunen en je eigen weg gaan',cat:'autonomie',g:'medium'},
+  {id:'v003',naam:'Authenticiteit',desc:'Echt jezelf zijn, ook als dat niet past bij wat anderen verwachten',cat:'autonomie',g:'diep'},
+  {id:'v004',naam:'Avontuur',desc:'Het onbekende opzoeken en nieuwe ervaringen omarmen',cat:'autonomie',g:'licht'},
+  {id:'v005',naam:'Nieuwsgierigheid',desc:'Een open, onderzoekende houding naar de wereld, ideeën en mensen',cat:'autonomie',g:'licht'},
+  {id:'v006',naam:'Zelfbeschikking',desc:'De bevoegdheid om je eigen leven in te richten zoals jij dat wilt',cat:'autonomie',g:'diep'},
+  // RELATIE
+  {id:'v007',naam:'Liefde',desc:'Diepe genegenheid en verbondenheid geven en ontvangen',cat:'relatie',g:'diep'},
+  {id:'v008',naam:'Intimiteit',desc:'Je kwetsbaar durven opstellen en echt gekend worden door een ander',cat:'relatie',g:'diep'},
+  {id:'v009',naam:'Trouw',desc:'Betrouwbaar en standvastig aanwezig zijn voor wie op je rekent',cat:'relatie',g:'diep'},
+  {id:'v010',naam:'Verbinding',desc:'Betekenisvolle banden hebben en het gevoel erbij te horen',cat:'relatie',g:'medium'},
+  {id:'v011',naam:'Vriendschap',desc:'Warme, eerlijke relaties met mensen die je leven rijker maken',cat:'relatie',g:'medium'},
+  {id:'v012',naam:'Acceptatie',desc:'Mensen verwelkomen zoals ze zijn, zonder oordeel',cat:'relatie',g:'medium'},
+  {id:'v013',naam:'Vergeving',desc:'Loslaten van wrok en ruimte maken voor herstel na pijn',cat:'relatie',g:'diep'},
+  {id:'v014',naam:'Wederzijdsheid',desc:'Geven en nemen in balans zodat beide partners zich gezien voelen',cat:'relatie',g:'medium'},
+  {id:'v015',naam:'Saamhorigheid',desc:'Samen ergens bij horen en voor elkaar door het vuur gaan',cat:'relatie',g:'medium'},
+  // ZORG
+  {id:'v016',naam:'Zorgzaamheid',desc:'Aandacht geven aan het welzijn van mensen die je dierbaar zijn',cat:'zorg',g:'medium'},
+  {id:'v017',naam:'Empathie',desc:'Je inleven in wat een ander voelt zonder dat over te nemen',cat:'zorg',g:'medium'},
+  {id:'v018',naam:'Mededogen',desc:'Bewogen worden door het lijden van anderen en bewust helpen',cat:'zorg',g:'diep'},
+  {id:'v019',naam:'Bescherming',desc:'Een veilige haven zijn voor de mensen die je liefhebt',cat:'zorg',g:'medium'},
+  {id:'v020',naam:'Gastvrijheid',desc:'Anderen welkom heten en een warm thuis bieden',cat:'zorg',g:'licht'},
+  {id:'v021',naam:'Dienstbaarheid',desc:'Vreugde vinden in bijdragen zonder er iets voor terug te verwachten',cat:'zorg',g:'medium'},
+  // GROEI
+  {id:'v022',naam:'Groei',desc:'Jezelf voortdurend ontwikkelen en beter worden als persoon',cat:'groei',g:'medium'},
+  {id:'v023',naam:'Leren',desc:'Kennis en wijsheid opdoen als een levenslange passie',cat:'groei',g:'licht'},
+  {id:'v024',naam:'Zelfinzicht',desc:'Je eigen patronen en drijfveren eerlijk onder ogen zien',cat:'groei',g:'diep'},
+  {id:'v025',naam:'Moed',desc:'Handelen vanuit je waarden ook als het spannend of beangstigend is',cat:'groei',g:'diep'},
+  {id:'v026',naam:'Veerkracht',desc:'Opstaan na tegenslagen en sterker worden door moeilijkheden',cat:'groei',g:'medium'},
+  {id:'v027',naam:'Creativiteit',desc:'Nieuwe ideeën bedenken die iets bijzonders toevoegen',cat:'groei',g:'licht'},
+  {id:'v028',naam:'Wijsheid',desc:'Kennis omzetten naar goed oordelen in het echte leven',cat:'groei',g:'diep'},
+  {id:'v029',naam:'Ambitie',desc:'Streven naar doelen die groter zijn dan wat je nu hebt',cat:'groei',g:'medium'},
+  // PRESTATIE
+  {id:'v030',naam:'Excellentie',desc:'Het beste uit jezelf halen en kwaliteit leveren in wat je doet',cat:'prestatie',g:'medium'},
+  {id:'v031',naam:'Vakmanschap',desc:'Diep meesterschap ontwikkelen in iets wat je belangrijk vindt',cat:'prestatie',g:'medium'},
+  {id:'v032',naam:'Doorzettingsvermogen',desc:'Volhouden als het moeilijk wordt, niet opgeven voor je doel bereikt is',cat:'prestatie',g:'medium'},
+  {id:'v033',naam:'Invloed',desc:'Een positief verschil maken in de wereld om je heen',cat:'prestatie',g:'medium'},
+  {id:'v034',naam:'Erkenning',desc:'Gezien en gewaardeerd worden voor wat je bijdraagt en wie je bent',cat:'prestatie',g:'medium'},
+  {id:'v035',naam:'Leiderschap',desc:'Anderen inspireren en meenemen richting een gemeenschappelijk doel',cat:'prestatie',g:'medium'},
+  {id:'v036',naam:'Succes',desc:'Je eigen definitie van succes nastreven en die bereiken',cat:'prestatie',g:'licht'},
+  // VRIJHEID (integriteit)
+  {id:'v037',naam:'Eerlijkheid',desc:'De waarheid spreken ook als dat oncomfortabel is',cat:'vrijheid',g:'diep'},
+  {id:'v038',naam:'Integriteit',desc:'Leven in lijn met je waarden, ook als niemand meekijkt',cat:'vrijheid',g:'diep'},
+  {id:'v039',naam:'Openheid',desc:'Transparant zijn over wie je bent en wat je denkt',cat:'vrijheid',g:'medium'},
+  {id:'v040',naam:'Rechtvaardigheid',desc:'Eerlijk en onpartijdig behandeld worden en anderen zo behandelen',cat:'vrijheid',g:'diep'},
+  {id:'v041',naam:'Gelijkwaardigheid',desc:'Geloven dat ieder mens gelijke waarde en rechten verdient',cat:'vrijheid',g:'diep'},
+  // GEMEENSCHAP
+  {id:'v042',naam:'Familie',desc:'Diepe verbondenheid met de mensen die je thuis noemt',cat:'gemeenschap',g:'diep'},
+  {id:'v043',naam:'Traditie',desc:'Waarde hechten aan gewoonten die verbinden met het verleden',cat:'gemeenschap',g:'medium'},
+  {id:'v044',naam:'Bijdragen',desc:'Iets achterlaten wat de wereld een klein beetje beter maakt',cat:'gemeenschap',g:'diep'},
+  {id:'v045',naam:'Solidariteit',desc:'Naast mensen staan die het moeilijk hebben, ook als het je moeite kost',cat:'gemeenschap',g:'diep'},
+  {id:'v046',naam:'Samenwerking',desc:'Samen iets bereiken wat je alleen niet zou kunnen',cat:'gemeenschap',g:'licht'},
+  {id:'v047',naam:'Diversiteit',desc:'Rijkdom zien in de verscheidenheid van mensen en culturen',cat:'gemeenschap',g:'medium'},
+  // PLEZIER
+  {id:'v048',naam:'Plezier',desc:'Genieten van het leven en ruimte maken voor luchtigheid',cat:'plezier',g:'licht'},
+  {id:'v049',naam:'Humor',desc:'De lichtere kant van het leven zien en anderen aan het lachen maken',cat:'plezier',g:'licht'},
+  {id:'v050',naam:'Genot',desc:'Bewust genieten van mooie momenten, smaken en aanrakingen',cat:'plezier',g:'licht'},
+  {id:'v051',naam:'Spelen',desc:'Ruimte houden voor spelenderwijs ontdekken, zonder doel',cat:'plezier',g:'licht'},
+  {id:'v052',naam:'Schoonheid',desc:'Oog hebben voor esthetiek en natuur als voeding voor de ziel',cat:'plezier',g:'licht'},
+  {id:'v053',naam:'Passie',desc:'Iets doen met heel je hart en je er volledig in verliezen',cat:'plezier',g:'medium'},
+  // VEILIGHEID
+  {id:'v054',naam:'Veiligheid',desc:'Een omgeving creëren waar je jezelf kunt zijn zonder angst',cat:'veiligheid',g:'medium'},
+  {id:'v055',naam:'Stabiliteit',desc:'Houvast en voorspelbaarheid als fundament voor alles daarna',cat:'veiligheid',g:'medium'},
+  {id:'v056',naam:'Zekerheid',desc:'Weten dat de basisbehoeften van jezelf en je dierbaren gedekt zijn',cat:'veiligheid',g:'medium'},
+  {id:'v057',naam:'Rust',desc:'Kalmte en stilte als noodzakelijke ruimte voor herstel',cat:'veiligheid',g:'medium'},
+  {id:'v058',naam:'Vertrouwen',desc:'Geloven in goede bedoelingen en je over kunnen geven aan anderen',cat:'veiligheid',g:'diep'},
+  {id:'v059',naam:'Thuis',desc:'Een plek of persoon waarbij je volledig tot rust kunt komen',cat:'veiligheid',g:'diep'},
+  // SPIRITUEEL
+  {id:'v060',naam:'Zingeving',desc:'Leven vanuit de diepe overtuiging dat wat je doet er echt toe doet',cat:'spiritueel',g:'diep'},
+  {id:'v061',naam:'Dankbaarheid',desc:'Het goede in je leven bewust opmerken en er warm van worden',cat:'spiritueel',g:'medium'},
+  {id:'v062',naam:'Hoop',desc:'Geloven in een betere toekomst, ook als het nu moeilijk is',cat:'spiritueel',g:'medium'},
+  {id:'v063',naam:'Innerlijke vrede',desc:'Een plek in jezelf vinden die rustig blijft als de wereld rumoerig is',cat:'spiritueel',g:'diep'},
+  {id:'v064',naam:'Verwondering',desc:'De wereld zien met de ogen van iemand die er voor het eerst naar kijkt',cat:'spiritueel',g:'licht'},
+  {id:'v065',naam:'Spiritualiteit',desc:'Verbinding zoeken met iets groters dan jezelf, hoe je dat ook noemt',cat:'spiritueel',g:'diep'},
+  // BALANS
+  {id:'v066',naam:'Balans',desc:'Zorg dragen voor een leven waarin werk, relaties en rust in evenwicht zijn',cat:'balans',g:'medium'},
+  {id:'v067',naam:'Gezondheid',desc:'Bewust omgaan met je lichaam en geest als fundament',cat:'balans',g:'medium'},
+  {id:'v068',naam:'Eenvoud',desc:'Kiezen voor het essentiële en loslaten wat overbodig is',cat:'balans',g:'medium'},
+  {id:'v069',naam:'Zelfzorg',desc:'Goed voor jezelf zorgen zodat je ook voor anderen kunt zorgen',cat:'balans',g:'medium'},
+  {id:'v070',naam:'Aanwezigheid',desc:'Echt aanwezig zijn in het moment, zonder afgeleid te worden',cat:'balans',g:'medium'},
+  {id:'v071',naam:'Matigheid',desc:'Bewust kiezen voor genoeg in plaats van altijd meer willen',cat:'balans',g:'medium'},
+  // KARAKTER
+  {id:'v072',naam:'Bescheidenheid',desc:'Je sterke kanten kennen zonder er mee te pronken',cat:'karakter',g:'medium'},
+  {id:'v073',naam:'Verantwoordelijkheid',desc:'Eigenaarschap nemen over je keuzes en hun gevolgen',cat:'karakter',g:'diep'},
+  {id:'v074',naam:'Discipline',desc:'Doen wat nodig is, ook als je er geen zin in hebt',cat:'karakter',g:'medium'},
+  {id:'v075',naam:'Geduld',desc:'Kunnen wachten en ruimte geven zonder dat ongeduld het overneemt',cat:'karakter',g:'licht'},
+  {id:'v076',naam:'Kwetsbaarheid',desc:'Jezelf laten zien zoals je werkelijk bent, ook de imperfecte delen',cat:'karakter',g:'diep'},
+  {id:'v077',naam:'Moed',desc:'Overeind blijven bij tegenslagen en bang durven zijn zonder te vluchten',cat:'karakter',g:'diep'},
+  // BIJDRAGE
+  {id:'v078',naam:'Duurzaamheid',desc:'Keuzes maken die de aarde en toekomstige generaties respecteren',cat:'bijdrage',g:'medium'},
+  {id:'v079',naam:'Vrijgevigheid',desc:'Geven — van tijd, geld of aandacht — zonder bijbedoelingen',cat:'bijdrage',g:'medium'},
+  {id:'v080',naam:'Erfenis',desc:'Iets achterlaten dat voortleeft — een verhaal, werk of herinnering',cat:'bijdrage',g:'diep'},
+  {id:'v081',naam:'Onderwijs',desc:'Kennis doorgeven als een van de mooiste dingen die je kunt doen',cat:'bijdrage',g:'medium'},
+  {id:'v082',naam:'Rechtvaardigheid',desc:'Opkomen voor mensen die geen stem hebben',cat:'bijdrage',g:'diep'},
+  // VERBONDENHEID
+  {id:'v083',naam:'Natuur',desc:'Je verbonden voelen met de wereld buiten de mens: dieren, planten, seizoenen',cat:'verbondenheid',g:'licht'},
+  {id:'v084',naam:'Schoonheid in het alledaagse',desc:'De bijzonderheid zien in gewone dingen en momenten',cat:'verbondenheid',g:'licht'},
+  {id:'v085',naam:'Muziek',desc:'Geluid en ritme als een taal die dieper gaat dan woorden',cat:'verbondenheid',g:'licht'},
+  {id:'v086',naam:'Verhalen',desc:'Betekenis geven aan het leven door het te vertellen en te horen',cat:'verbondenheid',g:'medium'},
+  {id:'v087',naam:'Herinneringen',desc:'Het verleden koesteren als een deel van wie je nu bent',cat:'verbondenheid',g:'medium'},
+  {id:'v088',naam:'Rituelen',desc:'Betekenis geven aan overgangen en momenten door ze te markeren',cat:'verbondenheid',g:'medium'},
+  {id:'v089',naam:'Loyaliteit',desc:'Er zijn voor wie je liefhebt, ook als het lastig is',cat:'verbondenheid',g:'diep'},
+  {id:'v090',naam:'Wortels',desc:'Verbonden blijven met waar je vandaan komt als kracht, niet als last',cat:'verbondenheid',g:'diep'},
+  // Extra (Rokeach + VIA)
+  {id:'v091',naam:'Eigenwaarde',desc:'Jezelf waardig achten — niet vanwege prestaties, maar vanwege wie je bent',cat:'karakter',g:'diep'},
+  {id:'v092',naam:'Innerlijke harmonie',desc:'Vrede hebben met de verschillende kanten van jezelf',cat:'spiritueel',g:'diep'},
+  {id:'v093',naam:'Speelsheid',desc:'Het kind in jezelf levend houden, ook als volwassene',cat:'plezier',g:'licht'},
+  {id:'v094',naam:'Nieuw begin',desc:'De mogelijkheid zien om je leven op elk moment anders te schrijven',cat:'groei',g:'medium'},
+  {id:'v095',naam:'Verbondenheid met de kosmos',desc:'Het gevoel dat je deel uitmaakt van iets oneindig groters dan jezelf',cat:'spiritueel',g:'diep'},
+];
+
+// ══════════════════════════════════════════════
+// GESPREKSSTARTERS (research-based: Gottman, NVC, Aron)
+// ══════════════════════════════════════════════
+const GESPREKSSTARTERS = [
+  // Over wat je de ander gaf
+  {type:'gegeven', v:'Wanneer zag jij deze waarde het duidelijkst in je partner terug?'},
+  {type:'gegeven', v:'Welke herinnering schoot je te binnen toen je deze kaart koos voor de ander?'},
+  {type:'gegeven', v:'Is dit iets wat je bewondert in je partner, of iets waarvan je hoopt dat hij/zij het meer gaat leven?'},
+  {type:'gegeven', v:'Wat zou er voor jou veranderen als je partner deze waarde minder zou leven?'},
+  {type:'gegeven', v:'Wat zie jij in je partner op dit vlak, dat hij/zij zelf misschien niet goed ziet?'},
+  {type:'gegeven', v:'Hoe heeft deze waarde van je partner jou persoonlijk geraakt of beïnvloed?'},
+  // Over wat je voor jezelf koos
+  {type:'zelf', v:'Is dit iets wat je nu al leeft, of iets waarnaar je verlangt?'},
+  {type:'zelf', v:'Wanneer voel je dat je dit het meest mist in je leven?'},
+  {type:'zelf', v:'Wat houdt je er soms van af om deze waarde volledig te leven?'},
+  {type:'zelf', v:'Heeft iemand uit je verleden deze waarde bij jou aangewakkerd of juist onderdrukt?'},
+  {type:'zelf', v:'Hoe zou ons leven er anders uitzien als jij dit meer zou leven?'},
+  {type:'zelf', v:'Wat zou je morgen anders doen als je volledig vanuit deze waarde leefde?'},
+  // Over de overlap en het verschil
+  {type:'samen', v:'Welke waarde verraste jou het meest in wat de ander koos?'},
+  {type:'samen', v:'Op welk punt denken jullie dat jullie waarden het sterkst botsen?'},
+  {type:'samen', v:'Waar vullen jullie waarden elkaar aan op een manier die jullie sterker maakt?'},
+  {type:'samen', v:'Is er een waarde van de ander die jij meer in je eigen leven wil?'},
+  {type:'samen', v:'Is er een waarde die jullie delen maar op een heel andere manier leven?'},
+  {type:'samen', v:'Wat zegt dit gesprek over wie jullie samen zijn, vergeleken met wie jullie afzonderlijk zijn?'},
+  {type:'samen', v:'Als je één waarde uit de keuze van de ander mee mocht nemen, welke zou dat zijn en waarom?'},
+  // Verdieping (Gottman / NVC)
+  {type:'verdieping', v:'Vertel een moment dat je echt leefde vanuit deze waarde. Hoe voelde dat?'},
+  {type:'verdieping', v:'Wanneer werd deze waarde voor jou "echt" — was er een gebeurtenis die hem formeerde?'},
+  {type:'verdieping', v:'Wat is de schaduwkant van deze waarde — wanneer werkt het je juist tegen?'},
+  {type:'verdieping', v:'Als je partner je meer in deze waarde zou willen steunen, hoe ziet dat er in de praktijk uit?'},
+  {type:'verdieping', v:'Welke behoefte zit er achter deze waarde? Wat probeert ze voor jou te beschermen?'},
+  {type:'verdieping', v:'Als je over tien jaar terugkijkt — heeft deze waarde je gebracht waar je wilde zijn?'},
+  {type:'verdieping', v:'Heb ik ooit, bewust of onbewust, iets gedaan dat het leven van deze waarde moeilijker maakte?'},
+  {type:'verdieping', v:'Wat hoop je dat ik begrijp over jou, nu ik weet dat deze waarde zo belangrijk is?'},
+  {type:'verdieping', v:'Sluit dit gesprek af met één zin: "Wat ik jou wil laten weten na dit gesprek is..."'},
+];
+
+// ══════════════════════════════════════════════
+// CATEGORIE CONFIG
+// ══════════════════════════════════════════════
+const CAT_CONFIG = {
+  autonomie:    {kleur:'#4a90e2', rgb:'74,144,226'},
+  relatie:      {kleur:'#e27a9e', rgb:'226,122,158'},
+  zorg:         {kleur:'#e2a47a', rgb:'226,164,122'},
+  groei:        {kleur:'#7ac47a', rgb:'122,196,122'},
+  prestatie:    {kleur:'#d4af37', rgb:'212,175,55'},
+  vrijheid:     {kleur:'#9e7ace', rgb:'158,122,206'},
+  gemeenschap:  {kleur:'#7acec4', rgb:'122,206,196'},
+  plezier:      {kleur:'#e2d47a', rgb:'226,212,122'},
+  veiligheid:   {kleur:'#7a9ec4', rgb:'122,158,196'},
+  spiritueel:   {kleur:'#c47ae2', rgb:'196,122,226'},
+  balans:       {kleur:'#7ae2c4', rgb:'122,226,196'},
+  karakter:     {kleur:'#c4a07a', rgb:'196,160,122'},
+  bijdrage:     {kleur:'#a0c47a', rgb:'160,196,122'},
+  verbondenheid:{kleur:'#c47a8a', rgb:'196,122,138'},
+};
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+const state = {
+  player: '1', code: null, solo: false,
+  fase: 1, // 1 = kies voor partner, 2 = kies voor jezelf
+  gekozenPartner: [],  // ids van waarden die je aan partner geeft
+  gekozenZelf: [],     // ids van waarden die je voor jezelf kiest
+  partnerData: null,   // ontvangen van partner via koppel
+  huidigFilter: '',
+  // Gesprek
+  gesprekLijst: [],
+  gesprekIdx: 0,
+};
+
+// ══════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) { el.classList.add('active'); el.scrollTop = 0; }
+}
+
+function getWaarde(id) { return WAARDEN.find(w => w.id === id); }
+function getCat(cat) { return CAT_CONFIG[cat] || {kleur:'#888',rgb:'136,136,136'}; }
+
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+// ══════════════════════════════════════════════
+// KOPPELCODE
+// ══════════════════════════════════════════════
+function loadKoppelScript(cb) {
+  if (window.KoppelClient) { cb(); return; }
+  const s = document.createElement('script');
+  s.src = 'koppel.js';
+  s.onload = cb;
+  document.head.appendChild(s);
+}
+
+function startKoppel(mode) {
+  showScreen('screen-koppel');
+  document.getElementById('koppel-maak-ui').style.display = 'none';
+  document.getElementById('koppel-join-ui').style.display = 'none';
+
+  loadKoppelScript(() => {
+    KoppelClient.on('session_created', ({code}) => {
+      state.code = code;
+      document.getElementById('display-code').textContent = code;
+    });
+    KoppelClient.on('both_connected', () => {
+      document.getElementById('wacht-partner').style.display = 'none';
+      document.getElementById('beide-verbonden').style.display = 'flex';
+      document.getElementById('beide-verbonden').style.flexDirection = 'column';
+    });
+    KoppelClient.on('session_joined', () => {
+      document.getElementById('join-wacht').style.display = 'none';
+      document.getElementById('join-klaar').style.display = 'block';
+    });
+    KoppelClient.on('session_error', ({message}) => {
+      document.getElementById('koppel-error').textContent = message;
+      document.getElementById('koppel-error').style.display = 'block';
+      document.getElementById('join-wacht').style.display = 'none';
+    });
+    KoppelClient.on('session_complete', ({state: s}) => {
+      // Beide klaar — verwerk partner data
+      const partnerKey = state.player === '1' ? 'p2' : 'p1';
+      if (s[partnerKey]) {
+        state.partnerData = s[partnerKey];
+        buildReveal();
+        showScreen('screen-reveal');
+      }
+    });
+    KoppelClient.on('session_update', ({state: s}) => {
+      const partnerKey = state.player === '1' ? 'p2' : 'p1';
+      if (s[partnerKey]?.done) {
+        state.partnerData = s[partnerKey];
+        buildReveal();
+        showScreen('screen-reveal');
+      }
+    });
+
+    if (mode === 'create') {
+      document.getElementById('koppel-titel').textContent = 'Sessie aanmaken';
+      document.getElementById('koppel-maak-ui').style.display = 'block';
+      state.player = '1';
+      KoppelClient.create('waarden');
+    } else {
+      document.getElementById('koppel-titel').textContent = 'Code invoeren';
+      document.getElementById('koppel-join-ui').style.display = 'block';
+      state.player = '2';
+    }
+  });
+}
+
+function doJoin() {
+  const code = document.getElementById('join-input').value.trim().toUpperCase();
+  if (code.length < 4) return;
+  state.code = code;
+  document.getElementById('join-wacht').style.display = 'block';
+  document.getElementById('koppel-error').style.display = 'none';
+  KoppelClient.join(code, 'waarden');
+}
+
+function startSolo() {
+  state.solo = true;
+  goIntro();
+}
+
+// ══════════════════════════════════════════════
+// INTRO → START
+// ══════════════════════════════════════════════
+function goIntro() { showScreen('screen-intro'); }
+
+function startFase1() {
+  state.fase = 1;
+  state.gekozenPartner = [];
+  state.gekozenZelf = [];
+  document.getElementById('fase-badge').textContent = 'Fase 1 van 2';
+  document.getElementById('selecteer-titel').textContent = TEKST.fase1_titel;
+  document.getElementById('selecteer-sub').textContent = TEKST.fase1_sub;
+  renderKaartenGrid(WAARDEN, 'partner');
+  updateSelectBar('partner');
+  showScreen('screen-selecteer');
+}
+
+function startFase2() {
+  state.fase = 2;
+  document.getElementById('fase-badge').textContent = 'Fase 2 van 2';
+  document.getElementById('selecteer-titel').textContent = TEKST.fase2_titel;
+  document.getElementById('selecteer-sub').textContent = TEKST.fase2_sub;
+  renderKaartenGrid(WAARDEN, 'zelf');
+  updateSelectBar('zelf');
+  showScreen('screen-selecteer');
+}
+
+// ══════════════════════════════════════════════
+// KAARTEN GRID
+// ══════════════════════════════════════════════
+function renderKaartenGrid(waarden, modus) {
+  const grid = document.getElementById('kaarten-grid');
+  grid.innerHTML = '';
+  const filter = state.huidigFilter;
+  const lijst = filter ? waarden.filter(w => w.cat === filter) : waarden;
+
+  lijst.forEach(w => {
+    const cfg = getCat(w.cat);
+    const isPartner = state.gekozenPartner.includes(w.id);
+    const isZelf = state.gekozenZelf.includes(w.id);
+    const klasse = isPartner ? 'geselecteerd-partner' : (isZelf ? 'geselecteerd-zelf' : '');
+    const check = isPartner ? '💌' : (isZelf ? '🌱' : '');
+
+    const el = document.createElement('div');
+    el.className = `waarde-kaart ${klasse}`;
+    el.style.cssText = `--cat-color:${cfg.kleur};--cat-rgb:${cfg.rgb};`;
+    el.dataset.id = w.id;
+    el.innerHTML = `
+      <div class="kaart-cat-label"><span class="kaart-cat-dot"></span>${w.cat}</div>
+      <div class="kaart-naam">${w.naam}</div>
+      <div class="kaart-desc">${w.desc}</div>
+      <div class="kaart-gewicht">${w.g}</div>
+      <div class="kaart-check">${check}</div>
+    `;
+    el.addEventListener('click', () => toggleKaart(w.id, modus));
+    grid.appendChild(el);
+  });
+}
+
+function filterCat(cat, el) {
+  state.huidigFilter = cat;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const modus = state.fase === 1 ? 'partner' : 'zelf';
+  renderKaartenGrid(WAARDEN, modus);
+}
+
+function toggleKaart(id, modus) {
+  const arr = modus === 'partner' ? state.gekozenPartner : state.gekozenZelf;
+  const idx = arr.indexOf(id);
+  if (idx > -1) {
+    arr.splice(idx, 1);
+  } else {
+    if (arr.length >= 3) {
+      // Vervang oudste
+      arr.shift();
+    }
+    arr.push(id);
+  }
+  renderKaartenGrid(WAARDEN, modus);
+  updateSelectBar(modus);
+}
+
+function updateSelectBar(modus) {
+  const arr = modus === 'partner' ? state.gekozenPartner : state.gekozenZelf;
+  const label = modus === 'partner' ? 'voor je partner' : 'voor jezelf';
+  const icon = modus === 'partner' ? '💌' : '🌱';
+
+  for (let i = 0; i < 3; i++) {
+    const slot = document.getElementById(`slot-${i}`);
+    if (arr[i]) {
+      const w = getWaarde(arr[i]);
+      slot.textContent = w ? w.naam.substring(0,2) : '✓';
+      slot.classList.add('filled');
+    } else {
+      slot.textContent = i + 1;
+      slot.classList.remove('filled');
+    }
+  }
+
+  const count = arr.length;
+  document.getElementById('selecteer-teller').textContent = `${count} / 3 geselecteerd`;
+  document.getElementById('select-label-main').textContent =
+    count === 3 ? `${icon} 3 kaarten ${label}` : `Kies ${3 - count} kaart${3-count!==1?'en':''}`;
+  document.getElementById('select-label-sub').textContent =
+    count === 3 ? 'Klaar? Tik op Klaar →' : `Tik een kaart om te selecteren`;
+
+  const btn = document.getElementById('select-confirm-btn');
+  if (count === 3) btn.classList.add('ready');
+  else btn.classList.remove('ready');
+}
+
+function confirmFase() {
+  if (state.fase === 1) {
+    if (state.gekozenPartner.length < 3) return;
+    startFase2();
+  } else {
+    if (state.gekozenZelf.length < 3) return;
+    submitKeuzes();
+  }
+}
+
+// ══════════════════════════════════════════════
+// SUBMIT & SYNC
+// ══════════════════════════════════════════════
+function submitKeuzes() {
+  const myData = {
+    gegeven: state.gekozenPartner,
+    zelf: state.gekozenZelf,
+    player: state.player,
+  };
+
+  if (!state.solo && window.KoppelClient && state.code) {
+    KoppelClient.done(myData);
+    showScreen('screen-wacht');
+  } else {
+    // Solo: simuleer partner met willekeurige keuze
+    state.partnerData = {
+      gegeven: shuffle(WAARDEN).slice(0,3).map(w=>w.id),
+      zelf: shuffle(WAARDEN).slice(0,3).map(w=>w.id),
+    };
+    buildReveal();
+    showScreen('screen-reveal');
+  }
+}
+
+// ══════════════════════════════════════════════
+// REVEAL
+// ══════════════════════════════════════════════
+function buildReveal() {
+  const pd = state.partnerData;
+
+  // Partner gaf jou = pd.gegeven
+  renderRevealSet('reveal-partner-gaf', pd ? pd.gegeven : []);
+  // Jij gaf partner = jouw gekozenPartner
+  renderRevealSet('reveal-jij-gaf', state.gekozenPartner);
+  // Overlap (jij gaf partner ∩ partner gaf jou)
+  const overlap = state.gekozenPartner.filter(id => pd && pd.gegeven.includes(id));
+  if (overlap.length > 0) {
+    document.getElementById('overlap-sectie').style.display = 'block';
+    renderRevealSet('reveal-overlap', overlap);
+  }
+  // Jij voor jezelf
+  renderRevealSet('reveal-jij-zelf', state.gekozenZelf);
+  // Partner voor zichzelf
+  renderRevealSet('reveal-partner-zelf', pd ? pd.zelf : []);
+}
+
+function renderRevealSet(containerId, ids) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  ids.forEach(id => {
+    const w = getWaarde(id);
+    if (!w) return;
+    const cfg = getCat(w.cat);
+    const el = document.createElement('div');
+    el.className = 'reveal-kaart pop-in';
+    el.innerHTML = `
+      <div class="reveal-kaart-kleur" style="background:${cfg.kleur};"></div>
+      <div class="reveal-kaart-tekst">
+        <div class="reveal-kaart-naam">${w.naam}</div>
+        <div class="reveal-kaart-desc">${w.desc}</div>
+      </div>
+    `;
+    container.appendChild(el);
+  });
+}
+
+// ══════════════════════════════════════════════
+// GESPREK
+// ══════════════════════════════════════════════
+function goGesprek() {
+  // Bouw een gepersonaliseerde vragenlijst op basis van gekozen waarden
+  const vragen = buildGesprekVragen();
+  state.gesprekLijst = vragen;
+  state.gesprekIdx = 0;
+  renderGesprek();
+  showScreen('screen-gesprek');
+}
+
+function buildGesprekVragen() {
+  const vragen = [];
+
+  // Starters over wat je de ander gaf
+  const gegevenStarters = GESPREKSSTARTERS.filter(g => g.type === 'gegeven');
+  vragen.push(...shuffle(gegevenStarters).slice(0, 3));
+
+  // Starters over wat je voor jezelf koos
+  const zelfStarters = GESPREKSSTARTERS.filter(g => g.type === 'zelf');
+  vragen.push(...shuffle(zelfStarters).slice(0, 3));
+
+  // Samen reflecteren
+  const samenStarters = GESPREKSSTARTERS.filter(g => g.type === 'samen');
+  vragen.push(...shuffle(samenStarters).slice(0, 3));
+
+  // Verdiepingsvragen
+  const verdieping = GESPREKSSTARTERS.filter(g => g.type === 'verdieping');
+  vragen.push(...shuffle(verdieping).slice(0, 3));
+
+  return shuffle(vragen);
+}
+
+function renderGesprek() {
+  const v = state.gesprekLijst[state.gesprekIdx];
+  if (!v) return;
+
+  const typeConfig = {
+    gegeven:    {icon:'💌', label:'Over wat jij de ander gaf'},
+    zelf:       {icon:'🌱', label:'Over wat jij voor jezelf koos'},
+    samen:      {icon:'✨', label:'Over jullie samen'},
+    verdieping: {icon:'🔮', label:'Verdieping'},
+  };
+  const tc = typeConfig[v.type] || typeConfig.samen;
+
+  document.getElementById('gesprek-voor-icon').textContent = tc.icon;
+  document.getElementById('gesprek-voor-tekst').textContent = tc.label;
+  document.getElementById('gesprek-vraag').textContent = v.v;
+  document.getElementById('gesprek-teller').textContent =
+    `${state.gesprekIdx + 1} / ${state.gesprekLijst.length}`;
+
+  // Dots
+  const dots = document.getElementById('gesprek-dots');
+  dots.innerHTML = '';
+  const max = Math.min(state.gesprekLijst.length, 12);
+  for (let i = 0; i < max; i++) {
+    const d = document.createElement('div');
+    d.className = 'gesprek-dot' + (i === state.gesprekIdx ? ' active' : '');
+    dots.appendChild(d);
+  }
+
+  // Context: toon relevante waarden
+  const ctx = document.getElementById('gesprek-context');
+  ctx.innerHTML = '';
+  const alleIds = [...state.gekozenPartner, ...state.gekozenZelf];
+  if (v.type !== 'samen' && alleIds.length > 0) {
+    const w = getWaarde(alleIds[state.gesprekIdx % alleIds.length]);
+    if (w) {
+      const cfg = getCat(w.cat);
+      ctx.innerHTML = `<div class="reveal-kaart" style="opacity:0.6;">
+        <div class="reveal-kaart-kleur" style="background:${cfg.kleur};"></div>
+        <div class="reveal-kaart-tekst">
+          <div class="reveal-kaart-naam" style="font-size:0.85rem;">${w.naam}</div>
+          <div class="reveal-kaart-desc">${w.desc}</div>
+        </div>
+      </div>`;
+    }
+  }
+
+  document.getElementById('prev-btn').style.opacity = state.gesprekIdx === 0 ? '0.3' : '1';
+  document.getElementById('next-btn').textContent =
+    state.gesprekIdx === state.gesprekLijst.length - 1 ? '✓' : '›';
+}
+
+function nextGesprek() {
+  if (state.gesprekIdx < state.gesprekLijst.length - 1) {
+    state.gesprekIdx++;
+    renderGesprek();
+  } else {
+    showScreen('screen-menu-end');
+  }
+}
+
+function prevGesprek() {
+  if (state.gesprekIdx > 0) {
+    state.gesprekIdx--;
+    renderGesprek();
+  }
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+window.addEventListener('load', () => {
+  if (window.ProfielClient) ProfielClient.init();
+});
+</script>
+
+<script>
+window.KOPPEL_BACKEND_URL = 'https://snakesandladdders-production.up.railway.app';
+</script>
+<script src="profiel.js" onerror="window.ProfielClient=null"></script>
+</body>
+</html>
