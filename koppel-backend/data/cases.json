@@ -2317,89 +2317,98 @@
         {
           "question_id": "q1_reaction",
           "step": "reaction",
-          "prompt": "Wat gebeurt er als eerste in jou?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "prompt": "Wat gebeurt er in jou wanneer je partner dit doet?",
+          "helper_text": "Kies wat het meest herkenbaar is, niet wat het netst klinkt.",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik voel ontspanning.",
+              "label": "Ik voel rust — alsof iemand mij thuis brengt.",
               "tags": {
-                "needs.rest": 1,
-                "centers.body": 1
-              }
-            },
-            {
-              "option_id": "B",
-              "label": "Ik voel me gezien.",
-              "tags": {
-                "needs.recognition": 2,
+                "needs.connection": 2,
+                "needs.reassurance": 1,
                 "centers.heart": 1
               }
             },
             {
-              "option_id": "C",
-              "label": "Ik durf iets meer te delen.",
+              "option_id": "B",
+              "label": "Ik word warm vanbinnen, maar durf het nauwelijks te laten zien.",
               "tags": {
+                "needs.closeness": 2,
                 "skills.vulnerability": 1
               }
             },
             {
-              "option_id": "D",
-              "label": "Ik vind het fijn, maar ook wat kwetsbaar.",
+              "option_id": "C",
+              "label": "Ik voel blijdschap — en een lichte verrassing dat dit mij zo raakt.",
               "tags": {
-                "sensitive_points.vulnerability": 1
+                "needs.recognition": 2,
+                "needs.attention": 1
+              }
+            },
+            {
+              "option_id": "D",
+              "label": "Ik neem het mee, maar check vanbinnen of het wel echt is.",
+              "tags": {
+                "needs.reassurance": 2,
+                "sensitive_points.not_chosen": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Ik wil dit vaker bewust doen.",
+              "label": "Ik merk dat zulke momenten mij eigenlijk niet zo sterk raken.",
               "tags": {
-                "skills.intentional_practice": 1
+                "protections.withdraw": 1,
+                "needs.freedom": 1
               }
             }
           ]
         },
         {
-          "question_id": "q2_interpretation",
-          "step": "interpretation",
-          "prompt": "Wat maak jij hiervan of wat raakt dit?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "question_id": "q2_need",
+          "step": "need",
+          "prompt": "Wat heeft dit moment voor jou?",
+          "helper_text": "Welke behoefte wordt hier geraakt?",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Dit voedt verbinding.",
+              "label": "Het zegt: jij telt voor mij. Dat heb ik nodig.",
               "tags": {
-                "needs.closeness": 2
+                "needs.recognition": 2,
+                "needs.attention": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Dit geeft vertrouwen.",
+              "label": "Het geeft mij toestemming om er ook te mogen zijn.",
               "tags": {
-                "needs.trust": 2
+                "needs.reassurance": 2,
+                "skills.vulnerability": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Dit laat zien wat voor mij belangrijk is.",
+              "label": "Het voelt als verbinding die ik in drukkere periodes mis.",
               "tags": {
-                "needs.meaning": 1
+                "needs.connection": 2,
+                "needs.closeness": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Dit helpt mij ontvangen.",
+              "label": "Het is fijn, maar ik weet niet goed hoe ik het moet ontvangen.",
               "tags": {
-                "skills.receiving": 1
+                "skills.vulnerability": 1,
+                "sensitive_points.not_important": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Dit is klein, maar belangrijk.",
+              "label": "Het geeft energie — contact na drukte is voor mij opladen.",
               "tags": {
-                "skills.noticing_small_good": 2
+                "needs.closeness": 2,
+                "centers.body": 1
               }
             }
           ]
@@ -2407,22 +2416,22 @@
       ],
       "outputs": {
         "solo": {
-          "mirror": "Deze situatie raakt aan de vraag van Verbinding & nabijheid: Zoek je mij?",
-          "protection_reflection": "Je reactie probeert iets waardevols te beschermen: verbinding, veiligheid, vrijheid of waardigheid.",
-          "need_reflection": "Onder je reactie zit waarschijnlijk een behoefte die serieus genomen mag worden.",
-          "chance": "Je kans is dat je scherper leert zien wat liefde, vertrouwen en volwassenheid in dit domein kunnen betekenen.",
-          "challenge": "Je uitdaging is om je behoefte niet via verwijt, terugtrekken of testen te laten spreken, maar helder en mild.",
-          "experiment": "Vraag vandaag één keer: 'Wanneer voelde jij je deze week dicht bij mij?'",
-          "gentle_phrase": "Wat hier geraakt wordt, is niet raar. Het laat zien dat dit domein belangrijk voor je is."
+          "mirror": "Dit kleine gebaar raakt een grote behoefte: gezocht worden voordat jij zelf iets vraagt. Hoe jij hierop reageert, zegt iets over wat verbinding voor jou betekent.",
+          "protection_reflection": "Als je dit moeilijk vindt te ontvangen of er niet op vertrouwt, beschermt dat je voor teleurstelling als het de volgende keer niet klopt.",
+          "need_reflection": "De behoefte die hier leeft is simpel en diep: gezien worden voordat je er zelf om vraagt.",
+          "chance": "Je kans is nabijheid leren ontvangen zonder het meteen te toetsen.",
+          "challenge": "Je uitdaging is dit soort momenten niet de lucht in te laten gaan door verlegenheid of wantrouwen.",
+          "experiment": "Zeg deze week één keer hardop: 'Ik was blij dat je even bij mij landde.'",
+          "gentle_phrase": "Verbinding hebben nodig is niet veel vragen — het is jezelf kennen."
         },
         "couple": {
-          "comparison_intro": "Deze casus helpt jullie ontdekken wat ieder hoort, bedoelt en beschermt.",
-          "what_a_may_hear": "A kan iets horen dat dieper raakt dan de feitelijke situatie.",
-          "what_b_may_hear": "B kan zich beoordeeld voelen terwijl er misschien ook een verlangen onder ligt.",
-          "what_each_protects": "Ieder beschermt iets waardevols: verbinding, rust, vrijheid, veiligheid, waardering of eigenheid.",
-          "shared_chance": "Jullie kans is om verschil niet als bedreiging te zien, maar als ingang naar begrip.",
-          "shared_challenge": "De uitdaging is niet te snel schuld te verdelen, maar te vertragen en te vragen wat er onder zit.",
-          "shared_experiment": "Gebruik de zin: 'Wat probeerde jij in dit moment te beschermen?'"
+          "comparison_intro": "Ieder van jullie ervaart nabijheid anders — ook in kleine gebaren.",
+          "what_a_may_hear": "A kan horen: ik ben echt gewenst, ik mag er zijn.",
+          "what_b_may_hear": "B kan horen: mijn gebaar was te klein om echt aan te komen.",
+          "what_each_protects": "De één beschermt zichzelf voor teleurstelling als nabijheid niet aankomt. De ander houdt gebaren soms klein om geen druk te zetten.",
+          "shared_chance": "Jullie kans is contact expliciet benoemen — ook als het goed gaat.",
+          "shared_challenge": "De uitdaging is nabijheid niet als vanzelfsprekend behandelen, maar als iets dat gezien mag worden.",
+          "shared_experiment": "Benoem deze week één moment: 'Dit deed iets met mij — dit voelde als verbinding.'"
         }
       },
       "profile_tags": {
@@ -2529,91 +2538,101 @@
       ],
       "questions": [
         {
-          "question_id": "q1_reaction",
-          "step": "reaction",
-          "prompt": "Wat gebeurt er als eerste in jou?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "question_id": "q1_emotion",
+          "step": "emotion",
+          "prompt": "Wat merk je vanbinnen tijdens zo'n wandeling?",
+          "helper_text": "Geen goed of fout — wat is echt?",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik voel ontspanning.",
+              "label": "Ik voel me rustig — de stille aanwezigheid van de ander is genoeg.",
               "tags": {
-                "needs.rest": 1,
-                "centers.body": 1
-              }
-            },
-            {
-              "option_id": "B",
-              "label": "Ik voel me gezien.",
-              "tags": {
-                "needs.recognition": 2,
+                "needs.closeness": 2,
+                "needs.safety": 1,
                 "centers.heart": 1
               }
             },
             {
-              "option_id": "C",
-              "label": "Ik durf iets meer te delen.",
+              "option_id": "B",
+              "label": "Ik geniet, maar heb ook lichte spanning: is dit genoeg, doen we het goed?",
               "tags": {
+                "needs.reassurance": 1,
+                "sensitive_points.not_important": 1
+              }
+            },
+            {
+              "option_id": "C",
+              "label": "Ik voel dat ik mezelf kan zijn — er is geen verwachting.",
+              "tags": {
+                "needs.freedom": 2,
+                "needs.safety": 1,
                 "skills.vulnerability": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Ik vind het fijn, maar ook wat kwetsbaar.",
+              "label": "Ik wil graag meer zeggen of delen, maar weet niet hoe ik dat begin.",
               "tags": {
-                "sensitive_points.vulnerability": 1
+                "needs.connection": 2,
+                "protections.silence": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Ik wil dit vaker bewust doen.",
+              "label": "Zulke stille momenten laten mij juist beseffen hoe druk het normaal is.",
               "tags": {
-                "skills.intentional_practice": 1
+                "needs.safety": 1,
+                "centers.head": 1
               }
             }
           ]
         },
         {
-          "question_id": "q2_interpretation",
-          "step": "interpretation",
-          "prompt": "Wat maak jij hiervan of wat raakt dit?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "question_id": "q2_need",
+          "step": "need",
+          "prompt": "Wat heeft stilte-samen voor jou?",
+          "helper_text": "Wat zit er voor jou in dit soort nabijheid?",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Dit voedt verbinding.",
+              "label": "Het bevestigt: we mogen er allebei zijn zonder te presteren.",
               "tags": {
-                "needs.closeness": 2
+                "needs.reassurance": 2,
+                "needs.connection": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Dit geeft vertrouwen.",
+              "label": "Het voelt als nabijheid die ik in drukkere periodes mis.",
               "tags": {
-                "needs.trust": 2
+                "needs.closeness": 2,
+                "needs.attention": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Dit laat zien wat voor mij belangrijk is.",
+              "label": "Ik heb eigenlijk behoefte aan meer gedeeld contact — gesprek of aanraking.",
               "tags": {
-                "needs.meaning": 1
+                "needs.connection": 2,
+                "needs.closeness": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Dit helpt mij ontvangen.",
+              "label": "Ik moet er eerlijk gezegd aan wennen — rust en samen zijn tegelijk is voor mij niet vanzelfsprekend.",
               "tags": {
-                "skills.receiving": 1
+                "needs.safety": 1,
+                "protections.withdraw": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Dit is klein, maar belangrijk.",
+              "label": "Dit is voor mij de mooiste vorm van verbinding.",
               "tags": {
-                "skills.noticing_small_good": 2
+                "needs.connection": 2,
+                "centers.heart": 1
               }
             }
           ]
@@ -2621,22 +2640,22 @@
       ],
       "outputs": {
         "solo": {
-          "mirror": "Deze situatie raakt aan de vraag van Verbinding & nabijheid: Zoek je mij?",
-          "protection_reflection": "Je reactie probeert iets waardevols te beschermen: verbinding, veiligheid, vrijheid of waardigheid.",
-          "need_reflection": "Onder je reactie zit waarschijnlijk een behoefte die serieus genomen mag worden.",
-          "chance": "Je kans is dat je scherper leert zien wat liefde, vertrouwen en volwassenheid in dit domein kunnen betekenen.",
-          "challenge": "Je uitdaging is om je behoefte niet via verwijt, terugtrekken of testen te laten spreken, maar helder en mild.",
-          "experiment": "Vraag vandaag één keer: 'Wanneer voelde jij je deze week dicht bij mij?'",
-          "gentle_phrase": "Wat hier geraakt wordt, is niet raar. Het laat zien dat dit domein belangrijk voor je is."
+          "mirror": "Nabijheid zonder woorden is een eigen taal. Dat jij hierop reageert — met rust, met spanning of met een wens naar meer — zegt iets over wat verbinding voor jou betekent.",
+          "protection_reflection": "Als stille nabijheid spanning geeft, beschermt dat je voor het gevoel dat de verbinding niet genoeg is.",
+          "need_reflection": "De behoefte die hier leeft: aanwezig zijn mag, rustig mag. Verbinding verdien je niet met gesprek of actie.",
+          "chance": "Je kans is leren zien dat eenvoudige aanwezigheid ook verbinding is.",
+          "challenge": "Je uitdaging is aanwezig zijn zonder te checken of het goed genoeg is.",
+          "experiment": "Ga deze week bewust een stille wandeling. Zeg daarna één ding dat je opviel of voelde.",
+          "gentle_phrase": "Verbinding klinkt niet altijd. Soms is het gewoon naast elkaar lopen."
         },
         "couple": {
-          "comparison_intro": "Deze casus helpt jullie ontdekken wat ieder hoort, bedoelt en beschermt.",
-          "what_a_may_hear": "A kan iets horen dat dieper raakt dan de feitelijke situatie.",
-          "what_b_may_hear": "B kan zich beoordeeld voelen terwijl er misschien ook een verlangen onder ligt.",
-          "what_each_protects": "Ieder beschermt iets waardevols: verbinding, rust, vrijheid, veiligheid, waardering of eigenheid.",
-          "shared_chance": "Jullie kans is om verschil niet als bedreiging te zien, maar als ingang naar begrip.",
-          "shared_challenge": "De uitdaging is niet te snel schuld te verdelen, maar te vertragen en te vragen wat er onder zit.",
-          "shared_experiment": "Gebruik de zin: 'Wat probeerde jij in dit moment te beschermen?'"
+          "comparison_intro": "Wat stilte voor jullie allebei betekent, is misschien niet hetzelfde.",
+          "what_a_may_hear": "A kan horen: samen zijn zonder iets te hoeven is genoeg.",
+          "what_b_may_hear": "B kan horen: jij wil meer van mij dan ik op dit moment geef.",
+          "what_each_protects": "De één beschermt zichzelf door niet te hoeven. De ander beschermt soms de verbinding door actief te blijven.",
+          "shared_chance": "Jullie kans is stilte als contact te gaan zien, niet als afstand.",
+          "shared_challenge": "De uitdaging is niet vullen wat leeg lijkt, maar onderzoeken wat de stilte zegt.",
+          "shared_experiment": "Ga samen wandelen: geen telefoon, geen agenda. Zeg daarna één ding dat je tijdens de wandeling voelde."
         }
       },
       "profile_tags": {
@@ -2745,45 +2764,50 @@
         {
           "question_id": "q1_reaction",
           "step": "reaction",
-          "prompt": "Wat gebeurt er als eerste in jou?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "prompt": "Wat doet dit terugkomen met jou?",
+          "helper_text": "Als de ander na spanning bewust terugkomt.",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik voel ontspanning.",
+              "label": "Ik voel opluchting — dit bewijst dat we er samen doorheen kunnen.",
               "tags": {
-                "needs.rest": 1,
-                "centers.body": 1
+                "needs.safety": 2,
+                "needs.connection": 1,
+                "skills.repair": 2
               }
             },
             {
               "option_id": "B",
-              "label": "Ik voel me gezien.",
+              "label": "Ik voel iets van weerstand — ik was er zelf nog niet aan toe.",
               "tags": {
-                "needs.recognition": 2,
-                "centers.heart": 1
+                "needs.safety": 2,
+                "protections.withdraw": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Ik durf iets meer te delen.",
+              "label": "Ik voel dankbaarheid — dit soort stappen kosten iets, ik zie dat.",
               "tags": {
-                "skills.vulnerability": 1
+                "needs.connection": 2,
+                "skills.repair": 1,
+                "centers.heart": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Ik vind het fijn, maar ook wat kwetsbaar.",
+              "label": "Ik ben blij maar voel ook de druk om het nu goed te doen.",
               "tags": {
-                "sensitive_points.vulnerability": 1
+                "needs.reassurance": 2,
+                "sensitive_points.failure": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Ik wil dit vaker bewust doen.",
+              "label": "Ik neem het met enige afstand aan — ik wil zien of dit patroon blijft.",
               "tags": {
-                "skills.intentional_practice": 1
+                "needs.trust": 2,
+                "protections.avoid": 1
               }
             }
           ]
@@ -2791,43 +2815,48 @@
         {
           "question_id": "q2_interpretation",
           "step": "interpretation",
-          "prompt": "Wat maak jij hiervan of wat raakt dit?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "prompt": "Wat zegt dit terugkomen over jullie relatie?",
+          "helper_text": "Wat hoor jij erin?",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Dit voedt verbinding.",
+              "label": "Het zegt dat we herstellen kunnen — dat is sterker dan nooit botsen.",
               "tags": {
-                "needs.closeness": 2
+                "skills.repair": 2,
+                "needs.connection": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Dit geeft vertrouwen.",
+              "label": "Het zegt dat mijn gevoel er mocht zijn, ook al was het lastig.",
               "tags": {
-                "needs.trust": 2
+                "needs.recognition": 2,
+                "needs.reassurance": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Dit laat zien wat voor mij belangrijk is.",
+              "label": "Het roept ook angst op — ik weet niet of ik dit volledig kan vertrouwen.",
               "tags": {
-                "needs.meaning": 1
+                "needs.trust": 2,
+                "sensitive_points.alone": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Dit helpt mij ontvangen.",
+              "label": "Het voelt als bewijs: jij kiest voor ons, ook als het moeilijk is.",
               "tags": {
-                "skills.receiving": 1
+                "needs.reassurance": 2,
+                "needs.connection": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Dit is klein, maar belangrijk.",
+              "label": "Het is een begin — maar ik wil het herstel pas echt geloven als ik het vaker zie.",
               "tags": {
-                "skills.noticing_small_good": 2
+                "needs.trust": 2,
+                "needs.safety": 1
               }
             }
           ]
@@ -2835,22 +2864,22 @@
       ],
       "outputs": {
         "solo": {
-          "mirror": "Deze situatie raakt aan de vraag van Verbinding & nabijheid: Zoek je mij?",
-          "protection_reflection": "Je reactie probeert iets waardevols te beschermen: verbinding, veiligheid, vrijheid of waardigheid.",
-          "need_reflection": "Onder je reactie zit waarschijnlijk een behoefte die serieus genomen mag worden.",
-          "chance": "Je kans is dat je scherper leert zien wat liefde, vertrouwen en volwassenheid in dit domein kunnen betekenen.",
-          "challenge": "Je uitdaging is om je behoefte niet via verwijt, terugtrekken of testen te laten spreken, maar helder en mild.",
-          "experiment": "Vraag vandaag één keer: 'Wanneer voelde jij je deze week dicht bij mij?'",
-          "gentle_phrase": "Wat hier geraakt wordt, is niet raar. Het laat zien dat dit domein belangrijk voor je is."
+          "mirror": "Terugkomen na ruimte vraagt iets van allebei — loslaten én de deur openhouden. Hoe jij hierop reageert, raakt aan vertrouwen: durf je het herstel aan?",
+          "protection_reflection": "Als terugkomen spanning geeft, beschermt dat je voor teleurstelling als het de volgende keer niet lukt.",
+          "need_reflection": "De behoefte die hier leeft is veiligheid in herstel: ik kan weggaan en terugkomen, en jij bent er nog.",
+          "chance": "Je kans is leren zien dat herstel niet perfect hoeft — het hoeft alleen echt te zijn.",
+          "challenge": "Je uitdaging is het terugkomen niet meteen te toetsen op garanties.",
+          "experiment": "De volgende keer dat je ruimte neemt: kondig het aan én maak een terugkommoment. 'Ik ben er om acht uur weer.'",
+          "gentle_phrase": "Teruggaan kost moed. Teruggelaten worden ook."
         },
         "couple": {
-          "comparison_intro": "Deze casus helpt jullie ontdekken wat ieder hoort, bedoelt en beschermt.",
-          "what_a_may_hear": "A kan iets horen dat dieper raakt dan de feitelijke situatie.",
-          "what_b_may_hear": "B kan zich beoordeeld voelen terwijl er misschien ook een verlangen onder ligt.",
-          "what_each_protects": "Ieder beschermt iets waardevols: verbinding, rust, vrijheid, veiligheid, waardering of eigenheid.",
-          "shared_chance": "Jullie kans is om verschil niet als bedreiging te zien, maar als ingang naar begrip.",
-          "shared_challenge": "De uitdaging is niet te snel schuld te verdelen, maar te vertragen en te vragen wat er onder zit.",
-          "shared_experiment": "Gebruik de zin: 'Wat probeerde jij in dit moment te beschermen?'"
+          "comparison_intro": "Ruimte nemen en ruimte geven vragen allebei iets — en ieder ervaart dat anders.",
+          "what_a_may_hear": "A kan horen: mijn terugkomen werd gezien en gewaardeerd.",
+          "what_b_may_hear": "B kan horen: ik moet nu beschikbaar zijn, ook als ik er nog niet klaar voor ben.",
+          "what_each_protects": "De terugkomer beschermt de verbinding. De ontvanger beschermt zichzelf voor nog een teleurstelling.",
+          "shared_chance": "Jullie kans is herstelrituelen te bouwen — kleine vaste stappen die vertrouwen laten groeien.",
+          "shared_challenge": "De uitdaging is ruimte en terugkomst niet te laten afhangen van het juiste gevoel, maar van de keuze.",
+          "shared_experiment": "Spreek af: als iemand ruimte nodig heeft, geeft diegene ook aan wanneer en hoe het terugkomen gaat."
         }
       },
       "profile_tags": {
@@ -2957,91 +2986,100 @@
       ],
       "questions": [
         {
-          "question_id": "q1_reaction",
-          "step": "reaction",
-          "prompt": "Wat gebeurt er als eerste in jou?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "question_id": "q1_emotion",
+          "step": "emotion",
+          "prompt": "Wat merk je in jezelf in dit moment van samen lachen?",
+          "helper_text": "Wat gebeurt er vanbinnen?",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik voel ontspanning.",
+              "label": "Ik voel me thuis — dit is waarvoor ik kies in een relatie.",
               "tags": {
-                "needs.rest": 1,
-                "centers.body": 1
-              }
-            },
-            {
-              "option_id": "B",
-              "label": "Ik voel me gezien.",
-              "tags": {
-                "needs.recognition": 2,
+                "needs.connection": 2,
+                "needs.closeness": 1,
                 "centers.heart": 1
               }
             },
             {
-              "option_id": "C",
-              "label": "Ik durf iets meer te delen.",
+              "option_id": "B",
+              "label": "Ik merk dat ik voor even alles loslaat — de luchtigheid is een verademing.",
               "tags": {
-                "skills.vulnerability": 1
+                "needs.freedom": 2,
+                "needs.safety": 1
+              }
+            },
+            {
+              "option_id": "C",
+              "label": "Ik voel ons dichterbij komen — dit soort momenten bewaar ik.",
+              "tags": {
+                "needs.closeness": 2,
+                "needs.connection": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Ik vind het fijn, maar ook wat kwetsbaar.",
+              "label": "Ik word blij maar ook weemoedig — dit is de relatie die ik wil maar soms mis.",
               "tags": {
-                "sensitive_points.vulnerability": 1
+                "needs.closeness": 2,
+                "sensitive_points.not_chosen": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Ik wil dit vaker bewust doen.",
+              "label": "Ik ben aanwezig maar merk dat ik het snel weer loslaat.",
               "tags": {
-                "skills.intentional_practice": 1
+                "protections.avoid": 1,
+                "centers.head": 1
               }
             }
           ]
         },
         {
-          "question_id": "q2_interpretation",
-          "step": "interpretation",
-          "prompt": "Wat maak jij hiervan of wat raakt dit?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "question_id": "q2_need",
+          "step": "need",
+          "prompt": "Wat heeft dit lichte contact voor jou?",
+          "helper_text": "Wat zit er voor jou in lachen-samen?",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Dit voedt verbinding.",
+              "label": "Het zegt: wij zijn ook gewoon plezier — niet alleen verantwoordelijkheid.",
               "tags": {
-                "needs.closeness": 2
+                "needs.connection": 2,
+                "needs.closeness": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Dit geeft vertrouwen.",
+              "label": "Het geeft energie — luchtigheid is voor mij een taal van verbinding.",
               "tags": {
-                "needs.trust": 2
+                "needs.closeness": 2,
+                "centers.body": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Dit laat zien wat voor mij belangrijk is.",
+              "label": "Het herinnert mij eraan dat er onder alles iets goeds is.",
               "tags": {
-                "needs.meaning": 1
+                "needs.safety": 2,
+                "needs.reassurance": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Dit helpt mij ontvangen.",
+              "label": "Het maakt iets open wat overdag dicht zit.",
               "tags": {
-                "skills.receiving": 1
+                "needs.connection": 2,
+                "skills.vulnerability": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Dit is klein, maar belangrijk.",
+              "label": "Ik wil hier vaker bij zijn, maar weet niet hoe ik die ruimte maak.",
               "tags": {
-                "skills.noticing_small_good": 2
+                "needs.closeness": 1,
+                "needs.freedom": 1
               }
             }
           ]
@@ -3049,22 +3087,22 @@
       ],
       "outputs": {
         "solo": {
-          "mirror": "Deze situatie raakt aan de vraag van Verbinding & nabijheid: Zoek je mij?",
-          "protection_reflection": "Je reactie probeert iets waardevols te beschermen: verbinding, veiligheid, vrijheid of waardigheid.",
-          "need_reflection": "Onder je reactie zit waarschijnlijk een behoefte die serieus genomen mag worden.",
-          "chance": "Je kans is dat je scherper leert zien wat liefde, vertrouwen en volwassenheid in dit domein kunnen betekenen.",
-          "challenge": "Je uitdaging is om je behoefte niet via verwijt, terugtrekken of testen te laten spreken, maar helder en mild.",
-          "experiment": "Vraag vandaag één keer: 'Wanneer voelde jij je deze week dicht bij mij?'",
-          "gentle_phrase": "Wat hier geraakt wordt, is niet raar. Het laat zien dat dit domein belangrijk voor je is."
+          "mirror": "Verbinding hoeft niet zwaar te zijn. Dit moment laat zien dat jullie ook 'wij' zijn in het kleine. Hoe jij hierop reageert, zegt iets over hoe jij nabijheid ervaart.",
+          "protection_reflection": "Als zulke momenten snel voorbijgaan of een lichte weemoed brengen, kan dat betekenen: ik durf er niet te veel van te verwachten.",
+          "need_reflection": "De behoefte die hier leeft: mogen spelen. Mogen lachen zonder agenda. Verbinding ook in het lichte.",
+          "chance": "Je kans is dit soort kleine verbindingsmomenten bewust te herkennen en te benoemen.",
+          "challenge": "Je uitdaging is niet te wachten op grote romantische momenten — ze zitten in de kleine dingen.",
+          "experiment": "Benoem deze week één licht moment: 'Dit was fijn. Dit is wat ik bedoel met samen zijn.'",
+          "gentle_phrase": "Lachen is een van de kortste wegen naar verbinding."
         },
         "couple": {
-          "comparison_intro": "Deze casus helpt jullie ontdekken wat ieder hoort, bedoelt en beschermt.",
-          "what_a_may_hear": "A kan iets horen dat dieper raakt dan de feitelijke situatie.",
-          "what_b_may_hear": "B kan zich beoordeeld voelen terwijl er misschien ook een verlangen onder ligt.",
-          "what_each_protects": "Ieder beschermt iets waardevols: verbinding, rust, vrijheid, veiligheid, waardering of eigenheid.",
-          "shared_chance": "Jullie kans is om verschil niet als bedreiging te zien, maar als ingang naar begrip.",
-          "shared_challenge": "De uitdaging is niet te snel schuld te verdelen, maar te vertragen en te vragen wat er onder zit.",
-          "shared_experiment": "Gebruik de zin: 'Wat probeerde jij in dit moment te beschermen?'"
+          "comparison_intro": "Lichte momenten kunnen voor ieder iets anders betekenen.",
+          "what_a_may_hear": "A kan horen: we zijn meer dan onze problemen.",
+          "what_b_may_hear": "B kan horen: jij hebt deze luchtigheid net zo hard nodig als ik.",
+          "what_each_protects": "De één beschermt de relatie door licht te houden. De ander beschermt zichzelf door niet te veel te hopen.",
+          "shared_chance": "Jullie kans is kleine verbindingsmomenten bewust te benoemen zodat ze niet vanzelfsprekend worden.",
+          "shared_challenge": "De uitdaging is niet wachten op het grote moment maar het kleine te eren.",
+          "shared_experiment": "Noem elke avond één moment van die dag dat jullie samen maakte — hoe klein ook."
         }
       },
       "profile_tags": {
@@ -3173,44 +3211,50 @@
         {
           "question_id": "q1_reaction",
           "step": "reaction",
-          "prompt": "Wat gebeurt er als eerste in jou?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "prompt": "Wat is jouw eerste beweging als je partner zegt: 'Kan het even later?'",
+          "helper_text": "Wat gebeurt er in je — van binnen of van buiten?",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik trek me terug.",
+              "label": "Ik trek me terug en voel de afstand meteen groter worden.",
               "tags": {
-                "protections.withdraw": 2
+                "protections.withdraw": 2,
+                "sensitive_points.not_important": 1,
+                "needs.connection": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Ik word boos of scherp.",
+              "label": "Ik word boos of verdrietig — dit voelt als afwijzing.",
               "tags": {
-                "protections.protest": 2
+                "protections.protest": 1,
+                "sensitive_points.rejection": 2,
+                "centers.heart": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Ik ga harder mijn best doen.",
+              "label": "Ik snap het intellectueel, maar voel me toch niet gezien.",
               "tags": {
-                "protections.perform": 1
+                "needs.recognition": 2,
+                "sensitive_points.not_seen": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Ik ga analyseren wat dit betekent.",
+              "label": "Ik zeg oké, maar voel vanbinnen een muur optrekken.",
               "tags": {
-                "centers.head": 1,
-                "protections.analyze": 1
+                "protections.silence": 2,
+                "needs.connection": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Ik probeer het rustig te benoemen.",
+              "label": "Ik wacht echt rustig — ik snap dat de ander rust nodig heeft.",
               "tags": {
-                "skills.gentle_confrontation": 2
+                "skills.generous_interpretation": 2,
+                "needs.safety": 1
               }
             }
           ]
@@ -3218,43 +3262,49 @@
         {
           "question_id": "q2_interpretation",
           "step": "interpretation",
-          "prompt": "Wat maak jij hiervan of wat raakt dit?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "prompt": "Wat hoor jij als je partner dit zegt?",
+          "helper_text": "Niet wat objectief waar is — wat jij ervaart.",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik ben niet belangrijk genoeg.",
+              "label": "Jij hebt op dit moment liever iets anders dan mij.",
               "tags": {
-                "sensitive_points.not_important": 2
+                "sensitive_points.not_chosen": 2,
+                "needs.reassurance": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Ik sta er alleen voor.",
+              "label": "Mijn behoefte is te groot of te lastig.",
               "tags": {
-                "sensitive_points.alone": 2
+                "sensitive_points.too_much": 2,
+                "needs.recognition": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Ik word niet begrepen.",
+              "label": "Je bent moe — dit gaat niet over mij.",
               "tags": {
-                "needs.understanding": 2
+                "skills.generous_interpretation": 2,
+                "centers.head": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Mijn grens of behoefte telt niet.",
+              "label": "We zijn op dit moment uit sync — dat is eenzaam.",
               "tags": {
-                "needs.respect": 2
+                "needs.connection": 2,
+                "sensitive_points.alone": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Misschien is dit een misverstand dat we kunnen bespreken.",
+              "label": "Ik moet leren mijn timing beter te kiezen.",
               "tags": {
-                "skills.generous_interpretation": 2
+                "needs.understanding": 1,
+                "centers.head": 1,
+                "skills.asking_directly": 1
               }
             }
           ]
@@ -3262,22 +3312,22 @@
       ],
       "outputs": {
         "solo": {
-          "mirror": "Deze situatie raakt aan de vraag van Verbinding & nabijheid: Zoek je mij?",
-          "protection_reflection": "Je reactie probeert iets waardevols te beschermen: verbinding, veiligheid, vrijheid of waardigheid.",
-          "need_reflection": "Onder je reactie zit waarschijnlijk een behoefte die serieus genomen mag worden.",
-          "chance": "Je kans is dat je scherper leert zien wat liefde, vertrouwen en volwassenheid in dit domein kunnen betekenen.",
-          "challenge": "Je uitdaging is om je behoefte niet via verwijt, terugtrekken of testen te laten spreken, maar helder en mild.",
-          "experiment": "Vraag vandaag één keer: 'Wanneer voelde jij je deze week dicht bij mij?'",
-          "gentle_phrase": "Wat hier geraakt wordt, is niet raar. Het laat zien dat dit domein belangrijk voor je is."
+          "mirror": "Dit moment raakt de kern van verbinding: jij wil contact, en juist dan is er geen ruimte. Dat maakt de behoefte groter — en de afstand voelbaar.",
+          "protection_reflection": "Hoe je reageert — terugtrekken, protest of wachten — bewaakt iets waardevols: je waardigheid, je verbinding, of je rust.",
+          "need_reflection": "Onder dit moment zit de behoefte: gezien worden op het moment dat je er klaar voor bent. Dat is menselijk en legitiem.",
+          "chance": "Je kans is leren zeggen wat je nodig hebt vóórdat de spanning oploopt.",
+          "challenge": "Je uitdaging is het 'later' niet meteen te vertalen naar 'nooit' of 'ik ben niet belangrijk'.",
+          "experiment": "Oefen deze zin: 'Ik wil straks graag even contact. Wanneer past het jou?'",
+          "gentle_phrase": "Dat jij dit voelt, betekent dat jij de verbinding serieus neemt."
         },
         "couple": {
-          "comparison_intro": "Deze casus helpt jullie ontdekken wat ieder hoort, bedoelt en beschermt.",
-          "what_a_may_hear": "A kan iets horen dat dieper raakt dan de feitelijke situatie.",
-          "what_b_may_hear": "B kan zich beoordeeld voelen terwijl er misschien ook een verlangen onder ligt.",
-          "what_each_protects": "Ieder beschermt iets waardevols: verbinding, rust, vrijheid, veiligheid, waardering of eigenheid.",
-          "shared_chance": "Jullie kans is om verschil niet als bedreiging te zien, maar als ingang naar begrip.",
-          "shared_challenge": "De uitdaging is niet te snel schuld te verdelen, maar te vertragen en te vragen wat er onder zit.",
-          "shared_experiment": "Gebruik de zin: 'Wat probeerde jij in dit moment te beschermen?'"
+          "comparison_intro": "In dit moment botsen twee goede behoeften: nabijheid en rust. Ieder verdedigt iets echts.",
+          "what_a_may_hear": "A kan horen: ik ben niet gewenst op dit moment.",
+          "what_b_may_hear": "B kan horen: ik doe het opnieuw verkeerd — ik geef niet genoeg.",
+          "what_each_protects": "De nabijheid-zoeker beschermt de verbinding. De ruimte-zoeker beschermt zichzelf om straks beter aanwezig te kunnen zijn.",
+          "shared_chance": "Jullie kans is een signaal te ontwikkelen: 'ik heb even ruimte nodig — ik ben er over X terug.'",
+          "shared_challenge": "De uitdaging is nabijheid en rust niet als tegengestelden te zien, maar als wissels die je kunt leren omgaan.",
+          "shared_experiment": "Spreek een simpele zin af die rust vraagt zonder afstand te zeggen. Oefen hem deze week."
         }
       },
       "profile_tags": {
@@ -3386,46 +3436,51 @@
       ],
       "questions": [
         {
-          "question_id": "q1_reaction",
-          "step": "reaction",
-          "prompt": "Wat gebeurt er als eerste in jou?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "question_id": "q1_emotion",
+          "step": "emotion",
+          "prompt": "Wat voel je vanbinnen als je merkt dat jullie al uren parallel naast elkaar leven?",
+          "helper_text": "Jullie zijn allebei thuis, maar ieder in eigen wereld.",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik trek me terug.",
+              "label": "Een lichte onrust — een gevoel van gemis zonder dat er iets is.",
               "tags": {
-                "protections.withdraw": 2
+                "needs.connection": 2,
+                "sensitive_points.alone": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Ik word boos of scherp.",
+              "label": "Niets bijzonders — dit is gewoon hoe drukke periodes gaan.",
               "tags": {
-                "protections.protest": 2
+                "protections.avoid": 1,
+                "centers.head": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Ik ga harder mijn best doen.",
+              "label": "Ik wil contact maar weet niet hoe ik het moet beginnen.",
               "tags": {
-                "protections.perform": 1
+                "needs.connection": 2,
+                "protections.silence": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Ik ga analyseren wat dit betekent.",
+              "label": "Ik voel me eenzaam terwijl ik niet alleen ben — dat is verwarrend.",
               "tags": {
-                "centers.head": 1,
-                "protections.analyze": 1
+                "sensitive_points.alone": 2,
+                "needs.closeness": 1,
+                "centers.heart": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Ik probeer het rustig te benoemen.",
+              "label": "Ik irriteer me — dit is niet de relatie die ik voor ogen had.",
               "tags": {
-                "skills.gentle_confrontation": 2
+                "protections.protest": 1,
+                "needs.closeness": 2
               }
             }
           ]
@@ -3433,43 +3488,48 @@
         {
           "question_id": "q2_interpretation",
           "step": "interpretation",
-          "prompt": "Wat maak jij hiervan of wat raakt dit?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "prompt": "Wat zegt dit patroon over jullie verbinding?",
+          "helper_text": "Wat maak jij hiervan?",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik ben niet belangrijk genoeg.",
+              "label": "We zijn uit verbinding — en dat baart me zorgen.",
               "tags": {
-                "sensitive_points.not_important": 2
+                "needs.connection": 2,
+                "needs.safety": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Ik sta er alleen voor.",
+              "label": "We hebben allebei ons eigen leven — dat is eigenlijk gezond.",
               "tags": {
-                "sensitive_points.alone": 2
+                "needs.freedom": 2,
+                "protections.avoid": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Ik word niet begrepen.",
+              "label": "We zijn druk — dit is tijdelijk, maar ik mis de vroegere verbinding.",
               "tags": {
-                "needs.understanding": 2
+                "needs.closeness": 2,
+                "needs.connection": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Mijn grens of behoefte telt niet.",
+              "label": "Ik weet het niet meer — ik voel me al een tijdje niet echt gezien.",
               "tags": {
-                "needs.respect": 2
+                "sensitive_points.not_seen": 2,
+                "needs.recognition": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Misschien is dit een misverstand dat we kunnen bespreken.",
+              "label": "Iemand moet de eerste stap zetten — en dat ben ik bijna altijd.",
               "tags": {
-                "skills.generous_interpretation": 2
+                "patterns.pursue_withdraw": 1,
+                "needs.connection": 1
               }
             }
           ]
@@ -3477,22 +3537,22 @@
       ],
       "outputs": {
         "solo": {
-          "mirror": "Deze situatie raakt aan de vraag van Verbinding & nabijheid: Zoek je mij?",
-          "protection_reflection": "Je reactie probeert iets waardevols te beschermen: verbinding, veiligheid, vrijheid of waardigheid.",
-          "need_reflection": "Onder je reactie zit waarschijnlijk een behoefte die serieus genomen mag worden.",
-          "chance": "Je kans is dat je scherper leert zien wat liefde, vertrouwen en volwassenheid in dit domein kunnen betekenen.",
-          "challenge": "Je uitdaging is om je behoefte niet via verwijt, terugtrekken of testen te laten spreken, maar helder en mild.",
-          "experiment": "Vraag vandaag één keer: 'Wanneer voelde jij je deze week dicht bij mij?'",
-          "gentle_phrase": "Wat hier geraakt wordt, is niet raar. Het laat zien dat dit domein belangrijk voor je is."
+          "mirror": "Samen zijn zonder echt contact is een van de stilste vormen van eenzaamheid. Wat jij hier voelt, verdient aandacht.",
+          "protection_reflection": "Als je niets doet met dit gevoel, kan dat een bescherming zijn: als ik het benoem, wordt het groter of conflictueuzer.",
+          "need_reflection": "De behoefte hier is niet groot maar helder: echt contact, ook in een gewone avond. Gezocht worden, niet alleen geduld worden.",
+          "chance": "Je kans is de eerste stap te zetten, ook als jij vindt dat de ander dat eigenlijk zou moeten doen.",
+          "challenge": "Je uitdaging is wachten niet verwarren met geduld — soms is bewegen de enige uitweg uit stagnatie.",
+          "experiment": "Zeg vanavond: 'Ik mis je even. Kan ik vijf minuten bij je zijn?'",
+          "gentle_phrase": "Nabijheid aanvragen is geen zwakte. Het is eerlijk zijn over wat je nodig hebt."
         },
         "couple": {
-          "comparison_intro": "Deze casus helpt jullie ontdekken wat ieder hoort, bedoelt en beschermt.",
-          "what_a_may_hear": "A kan iets horen dat dieper raakt dan de feitelijke situatie.",
-          "what_b_may_hear": "B kan zich beoordeeld voelen terwijl er misschien ook een verlangen onder ligt.",
-          "what_each_protects": "Ieder beschermt iets waardevols: verbinding, rust, vrijheid, veiligheid, waardering of eigenheid.",
-          "shared_chance": "Jullie kans is om verschil niet als bedreiging te zien, maar als ingang naar begrip.",
-          "shared_challenge": "De uitdaging is niet te snel schuld te verdelen, maar te vertragen en te vragen wat er onder zit.",
-          "shared_experiment": "Gebruik de zin: 'Wat probeerde jij in dit moment te beschermen?'"
+          "comparison_intro": "Ieder ervaart 'samen zijn' anders — de één mist contact, de ander heeft misschien rust nodig of merkt het niet.",
+          "what_a_may_hear": "A kan horen: ik ben niet genoeg voor je — je wil meer dan ik kan geven.",
+          "what_b_may_hear": "B kan horen: ik ben een slechte partner als ik niet altijd actief verbinding zoek.",
+          "what_each_protects": "De één beschermt de verbinding door te vragen. De ander beschermt energie of grens.",
+          "shared_chance": "Jullie kans is samen een klein ritueel te maken: een moment van de dag dat van jullie allebei is.",
+          "shared_challenge": "De uitdaging is aanwezig zijn zonder de telefoon — ook als het maar tien minuten is.",
+          "shared_experiment": "Spreek af: elke avond tien minuten zonder scherm. Geen agenda — gewoon zijn."
         }
       },
       "profile_tags": {
@@ -3603,44 +3663,49 @@
         {
           "question_id": "q1_reaction",
           "step": "reaction",
-          "prompt": "Wat gebeurt er als eerste in jou?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "prompt": "Wat doe je met het gevoel dat jij altijd degene bent die vraagt?",
+          "helper_text": "Hoe ga jij hiermee om?",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik trek me terug.",
+              "label": "Ik ga door, maar er groeit vanbinnen een rekening.",
               "tags": {
-                "protections.withdraw": 2
+                "patterns.give_receive": 2,
+                "protections.perform": 1,
+                "needs.recognition": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Ik word boos of scherp.",
+              "label": "Ik stop een tijdje en kijk of de ander iets initieert.",
               "tags": {
-                "protections.protest": 2
+                "protections.withdraw": 2,
+                "needs.reassurance": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Ik ga harder mijn best doen.",
+              "label": "Ik benoem het, ook al vind ik dat moeilijk.",
               "tags": {
-                "protections.perform": 1
+                "skills.asking_directly": 2,
+                "needs.recognition": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Ik ga analyseren wat dit betekent.",
+              "label": "Ik vertel het mezelf anders: hij/zij is gewoon niet zo initiatiefnemend van aard.",
               "tags": {
-                "centers.head": 1,
-                "protections.analyze": 1
+                "skills.generous_interpretation": 2,
+                "centers.head": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Ik probeer het rustig te benoemen.",
+              "label": "Ik voel me moe van het altijd trekken.",
               "tags": {
-                "skills.gentle_confrontation": 2
+                "needs.appreciation": 2,
+                "sensitive_points.not_chosen": 1
               }
             }
           ]
@@ -3648,43 +3713,48 @@
         {
           "question_id": "q2_interpretation",
           "step": "interpretation",
-          "prompt": "Wat maak jij hiervan of wat raakt dit?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "prompt": "Wat zegt dit gebrek aan initiatief over hoe gewenst jij je voelt?",
+          "helper_text": "Niet wat objectief waar is — wat jij ervaart.",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik ben niet belangrijk genoeg.",
+              "label": "Het zegt dat mijn aanwezigheid niet actief verlangd wordt.",
               "tags": {
-                "sensitive_points.not_important": 2
+                "sensitive_points.not_chosen": 2,
+                "needs.attention": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Ik sta er alleen voor.",
+              "label": "Het zegt niets over zijn/haar gevoel voor mij — maar ik ervaar het wel zo.",
               "tags": {
-                "sensitive_points.alone": 2
+                "centers.head": 1,
+                "needs.reassurance": 2
               }
             },
             {
               "option_id": "C",
-              "label": "Ik word niet begrepen.",
+              "label": "Het roept een oude vraag op: kies jij echt voor mij?",
               "tags": {
-                "needs.understanding": 2
+                "sensitive_points.not_chosen": 2,
+                "needs.closeness": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Mijn grens of behoefte telt niet.",
+              "label": "Het maakt mij klein — ik vraag me af of ik te veel wil.",
               "tags": {
-                "needs.respect": 2
+                "sensitive_points.too_much": 2,
+                "needs.recognition": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Misschien is dit een misverstand dat we kunnen bespreken.",
+              "label": "Ik snap het rationeel, maar vanbinnen klopt er iets niet.",
               "tags": {
-                "skills.generous_interpretation": 2
+                "needs.connection": 2,
+                "centers.heart": 1
               }
             }
           ]
@@ -3692,22 +3762,22 @@
       ],
       "outputs": {
         "solo": {
-          "mirror": "Deze situatie raakt aan de vraag van Verbinding & nabijheid: Zoek je mij?",
-          "protection_reflection": "Je reactie probeert iets waardevols te beschermen: verbinding, veiligheid, vrijheid of waardigheid.",
-          "need_reflection": "Onder je reactie zit waarschijnlijk een behoefte die serieus genomen mag worden.",
-          "chance": "Je kans is dat je scherper leert zien wat liefde, vertrouwen en volwassenheid in dit domein kunnen betekenen.",
-          "challenge": "Je uitdaging is om je behoefte niet via verwijt, terugtrekken of testen te laten spreken, maar helder en mild.",
-          "experiment": "Vraag vandaag één keer: 'Wanneer voelde jij je deze week dicht bij mij?'",
-          "gentle_phrase": "Wat hier geraakt wordt, is niet raar. Het laat zien dat dit domein belangrijk voor je is."
+          "mirror": "Altijd degene zijn die verbinding zoekt, vraagt iets van je. Het roept een heel echte vraag op: zoek jij mij ook?",
+          "protection_reflection": "Als je stopt met vragen om te testen of de ander iets initieert, beschermt dat je voor het antwoord — maar laat het ook in het midden.",
+          "need_reflection": "De behoefte hier is wederzijdsheid: niet altijd de laatste zijn die vraagt, maar ook soms onverwacht gekozen worden.",
+          "chance": "Je kans is dit hardop te benoemen — niet als verwijt, maar als behoefte.",
+          "challenge": "Je uitdaging is wachten op bewijs dat je gewenst bent, terwijl de ander dit misschien gewoon niet expliciet laat zien.",
+          "experiment": "Zeg één keer, rustig: 'Ik merk dat ik bijna altijd degene ben die initiatief neemt. Dat raakt mij.'",
+          "gentle_phrase": "De vraag 'zoek jij mij ook?' is niet kinderachtig. Het is de meest menselijke vraag die er is."
         },
         "couple": {
-          "comparison_intro": "Deze casus helpt jullie ontdekken wat ieder hoort, bedoelt en beschermt.",
-          "what_a_may_hear": "A kan iets horen dat dieper raakt dan de feitelijke situatie.",
-          "what_b_may_hear": "B kan zich beoordeeld voelen terwijl er misschien ook een verlangen onder ligt.",
-          "what_each_protects": "Ieder beschermt iets waardevols: verbinding, rust, vrijheid, veiligheid, waardering of eigenheid.",
-          "shared_chance": "Jullie kans is om verschil niet als bedreiging te zien, maar als ingang naar begrip.",
-          "shared_challenge": "De uitdaging is niet te snel schuld te verdelen, maar te vertragen en te vragen wat er onder zit.",
-          "shared_experiment": "Gebruik de zin: 'Wat probeerde jij in dit moment te beschermen?'"
+          "comparison_intro": "Iemand neemt altijd meer initiatief in een relatie. Maar wat het betekent voor ieder, is niet hetzelfde.",
+          "what_a_may_hear": "A kan horen: je bent niet genoeg voor me — ik moet steeds achter je aan lopen.",
+          "what_b_may_hear": "B kan horen: ik doe het fout door niet vaker initiatief te nemen.",
+          "what_each_protects": "De initiatiefnemer beschermt de verbinding. De minder-initiatiefnemer beschermt soms zijn/haar ruimte of is zich simpelweg niet bewust van het effect.",
+          "shared_chance": "Jullie kans is bespreken hoe jullie allebei verbinding initieren — in woorden én in kleine daden.",
+          "shared_challenge": "De uitdaging is dit niet als klaagzang te bespreken, maar als vraag: hoe wil jij gezocht worden?",
+          "shared_experiment": "Spreek af: ieder neemt deze week één keer bewust initiatief voor samen-tijd."
         }
       },
       "profile_tags": {
@@ -3818,44 +3888,49 @@
         {
           "question_id": "q1_reaction",
           "step": "reaction",
-          "prompt": "Wat gebeurt er als eerste in jou?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "prompt": "Wat doet het met jou als je dit patroon opmerkt?",
+          "helper_text": "Partner maakt makkelijk tijd voor anderen, maar minder voor jullie samen.",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik trek me terug.",
+              "label": "Ik word jaloers op de aandacht die vrienden of anderen krijgen.",
               "tags": {
-                "protections.withdraw": 2
+                "needs.attention": 2,
+                "sensitive_points.not_chosen": 1,
+                "centers.heart": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Ik word boos of scherp.",
+              "label": "Ik grijp me vast aan begrip, maar voel onderhuids onvrede.",
               "tags": {
-                "protections.protest": 2
+                "protections.silence": 2,
+                "needs.recognition": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Ik ga harder mijn best doen.",
+              "label": "Ik geef de ander vrijheid, maar begin me minder gezien te voelen.",
               "tags": {
-                "protections.perform": 1
+                "needs.recognition": 2,
+                "sensitive_points.not_seen": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Ik ga analyseren wat dit betekent.",
+              "label": "Ik benoem het — en dat voelt meteen als klagen, wat ik niet wil zijn.",
               "tags": {
-                "centers.head": 1,
-                "protections.analyze": 1
+                "needs.recognition": 2,
+                "sensitive_points.too_much": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Ik probeer het rustig te benoemen.",
+              "label": "Ik trek me terug en investeer zelf ook minder in samen-tijd.",
               "tags": {
-                "skills.gentle_confrontation": 2
+                "protections.withdraw": 2,
+                "patterns.pursue_withdraw": 1
               }
             }
           ]
@@ -3863,43 +3938,48 @@
         {
           "question_id": "q2_interpretation",
           "step": "interpretation",
-          "prompt": "Wat maak jij hiervan of wat raakt dit?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "prompt": "Wat hoor jij vanbinnen?",
+          "helper_text": "Welke gedachte of gevoel leeft er onder dit patroon?",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik ben niet belangrijk genoeg.",
+              "label": "Ik sta op de tweede plek.",
               "tags": {
-                "sensitive_points.not_important": 2
+                "sensitive_points.not_chosen": 2,
+                "needs.attention": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Ik sta er alleen voor.",
+              "label": "Vrijheid is voor hem/haar belangrijker dan verbinding met mij.",
               "tags": {
-                "sensitive_points.alone": 2
+                "needs.connection": 2,
+                "sensitive_points.not_important": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Ik word niet begrepen.",
+              "label": "Ik vraag te veel — anderen stellen dit niet van hun partner.",
               "tags": {
-                "needs.understanding": 2
+                "sensitive_points.too_much": 2,
+                "needs.reassurance": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Mijn grens of behoefte telt niet.",
+              "label": "Dit doet mij denken aan momenten eerder in mijn leven dat ik ook buiten de boot viel.",
               "tags": {
-                "needs.respect": 2
+                "sensitive_points.not_chosen": 2,
+                "centers.heart": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Misschien is dit een misverstand dat we kunnen bespreken.",
+              "label": "Ik moet leren loslaten — dit is gewoon zijn/haar manier van zijn.",
               "tags": {
-                "skills.generous_interpretation": 2
+                "skills.generous_interpretation": 2,
+                "needs.freedom": 1
               }
             }
           ]
@@ -3907,22 +3987,22 @@
       ],
       "outputs": {
         "solo": {
-          "mirror": "Deze situatie raakt aan de vraag van Verbinding & nabijheid: Zoek je mij?",
-          "protection_reflection": "Je reactie probeert iets waardevols te beschermen: verbinding, veiligheid, vrijheid of waardigheid.",
-          "need_reflection": "Onder je reactie zit waarschijnlijk een behoefte die serieus genomen mag worden.",
-          "chance": "Je kans is dat je scherper leert zien wat liefde, vertrouwen en volwassenheid in dit domein kunnen betekenen.",
-          "challenge": "Je uitdaging is om je behoefte niet via verwijt, terugtrekken of testen te laten spreken, maar helder en mild.",
-          "experiment": "Vraag vandaag één keer: 'Wanneer voelde jij je deze week dicht bij mij?'",
-          "gentle_phrase": "Wat hier geraakt wordt, is niet raar. Het laat zien dat dit domein belangrijk voor je is."
+          "mirror": "De vraag 'waar sta ik op jouw lijst?' is pijnlijk en echt. Het raakt iets dieps: kies jij voor mij, ook als er keuzes te maken zijn?",
+          "protection_reflection": "Terugtrekken of stilzwijgen beschermt je voor het risico dat benoemen dingen groter maakt — of voor het antwoord dat je vreest.",
+          "need_reflection": "De behoefte hier is prioriteit — niet boven alles, maar soms bewust gekozen worden.",
+          "chance": "Je kans is dit bespreekbaar maken als behoefte, niet als concurrentie met vrienden.",
+          "challenge": "Je uitdaging is dit niet te laten sudderen totdat het uitbarst, maar het vroeg en mild te benoemen.",
+          "experiment": "Zeg één keer: 'Ik merk dat ik behoefte heb aan meer samen-tijd. Niet ten koste van jouw leven — maar bewuster naast.'",
+          "gentle_phrase": "Gezien willen worden door degene die je koos, is geen eis. Het is een wens."
         },
         "couple": {
-          "comparison_intro": "Deze casus helpt jullie ontdekken wat ieder hoort, bedoelt en beschermt.",
-          "what_a_may_hear": "A kan iets horen dat dieper raakt dan de feitelijke situatie.",
-          "what_b_may_hear": "B kan zich beoordeeld voelen terwijl er misschien ook een verlangen onder ligt.",
-          "what_each_protects": "Ieder beschermt iets waardevols: verbinding, rust, vrijheid, veiligheid, waardering of eigenheid.",
-          "shared_chance": "Jullie kans is om verschil niet als bedreiging te zien, maar als ingang naar begrip.",
-          "shared_challenge": "De uitdaging is niet te snel schuld te verdelen, maar te vertragen en te vragen wat er onder zit.",
-          "shared_experiment": "Gebruik de zin: 'Wat probeerde jij in dit moment te beschermen?'"
+          "comparison_intro": "Vriendschappen en relaties zijn allebei nodig. Maar hoe die balans aanvoelt, verschilt per persoon.",
+          "what_a_may_hear": "A kan horen: je leven buiten ons is een probleem.",
+          "what_b_may_hear": "B kan horen: ik geef niet genoeg — ik kies niet echt voor ons.",
+          "what_each_protects": "De één beschermt de verbinding door prioriteit te vragen. De ander beschermt zijn/haar eigenheid en identiteit.",
+          "shared_chance": "Jullie kans is samen te bespreken wat 'gekozen worden' voor ieder betekent — in kleine concrete gebaren.",
+          "shared_challenge": "De uitdaging is vrijheid en verbinding niet als vijanden te zien, maar als waarden die samen kunnen bestaan.",
+          "shared_experiment": "Plan deze week één moment dat van jullie is — klein maar bewust gepland door de partner die normaal minder initiatief neemt."
         }
       },
       "profile_tags": {
@@ -4031,89 +4111,102 @@
       ],
       "questions": [
         {
-          "question_id": "q1_reaction",
-          "step": "reaction",
-          "prompt": "Wat gebeurt er als eerste in jou?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "question_id": "q1_emotion",
+          "step": "emotion",
+          "prompt": "Wat herken jij in jezelf — nabijheid willen én er tegelijk voor terugschrikken?",
+          "helper_text": "Je verlangt naar contact, maar schrikt als het te dichtbij komt.",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik voel verdriet.",
+              "label": "Ik herken het — als het te echt wordt, ga ik afstand scheppen.",
               "tags": {
-                "centers.heart": 2
+                "protections.withdraw": 2,
+                "needs.safety": 1,
+                "sensitive_points.loss_of_self": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Ik schaam me voor mijn behoefte.",
+              "label": "Ik verlang ernaar maar geloof ergens niet dat het zal blijven.",
               "tags": {
-                "sensitive_points.shame": 2
+                "needs.safety": 2,
+                "sensitive_points.not_chosen": 1,
+                "needs.reassurance": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Ik bescherm mezelf door niets te zeggen.",
+              "label": "Ik merk dat ik de ander op afstand houd als hij/zij te dicht bij komt.",
               "tags": {
-                "protections.withdraw": 2
+                "protections.control": 2,
+                "needs.safety": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Ik verlang naar echte ontmoeting.",
+              "label": "Ik wil het maar weet niet hoe ik me moet overgeven aan nabijheid.",
               "tags": {
-                "needs.closeness": 2
+                "skills.vulnerability": 1,
+                "needs.closeness": 2,
+                "centers.heart": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Ik wil dit voorzichtig leren benoemen.",
+              "label": "Dit herken ik niet zo in mezelf.",
               "tags": {
-                "skills.vulnerability": 2
+                "centers.head": 1,
+                "needs.freedom": 1
               }
             }
           ]
         },
         {
-          "question_id": "q2_interpretation",
-          "step": "interpretation",
-          "prompt": "Wat maak jij hiervan of wat raakt dit?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "question_id": "q2_sensitive_point",
+          "step": "sensitive_point",
+          "prompt": "Wat is voor jou het risico van echt dichtbij laten komen?",
+          "helper_text": "Wat staat op het spel als je je echt laat zien?",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Dit raakt iets ouds.",
+              "label": "Dat ik mezelf verlies als de ander te veel ruimte inneemt.",
               "tags": {
-                "sensitive_points.old_pain": 2
+                "sensitive_points.loss_of_self": 2,
+                "needs.freedom": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Ik ben bang te veel te zijn.",
+              "label": "Dat ik genegeerd of verlaten word als ik me echt laat zien.",
               "tags": {
-                "sensitive_points.too_much": 2
+                "sensitive_points.not_chosen": 2,
+                "needs.safety": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Ik wil gezien worden zonder te moeten strijden.",
+              "label": "Dat ik pijn krijg als ik te veel geef.",
               "tags": {
-                "needs.recognition": 2
+                "sensitive_points.rejection": 2,
+                "protections.avoid": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Ik wil leren vragen zonder schaamte.",
+              "label": "Dat ik ontdek dat echte nabijheid niet bestaat — dat het altijd oppervlakkig blijft.",
               "tags": {
-                "skills.asking_directly": 2
+                "needs.closeness": 2,
+                "sensitive_points.alone": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Ik wil begrijpen wat ik bescherm.",
+              "label": "Ik weet het eigenlijk niet — ik voel alleen dat het eng is.",
               "tags": {
-                "skills.self_reflection": 2
+                "centers.heart": 1,
+                "needs.safety": 1
               }
             }
           ]
@@ -4121,22 +4214,22 @@
       ],
       "outputs": {
         "solo": {
-          "mirror": "Deze situatie raakt aan de vraag van Verbinding & nabijheid: Zoek je mij?",
-          "protection_reflection": "Je reactie probeert iets waardevols te beschermen: verbinding, veiligheid, vrijheid of waardigheid.",
-          "need_reflection": "Onder je reactie zit waarschijnlijk een behoefte die serieus genomen mag worden.",
-          "chance": "Je kans is dat je scherper leert zien wat liefde, vertrouwen en volwassenheid in dit domein kunnen betekenen.",
-          "challenge": "Je uitdaging is om je behoefte niet via verwijt, terugtrekken of testen te laten spreken, maar helder en mild.",
-          "experiment": "Vraag vandaag één keer: 'Wanneer voelde jij je deze week dicht bij mij?'",
-          "gentle_phrase": "Wat hier geraakt wordt, is niet raar. Het laat zien dat dit domein belangrijk voor je is."
+          "mirror": "Willen en schrikken tegelijk is niet tegenstrijdig — het is het bewijs dat nabijheid voor jou iets kost en iets waard is.",
+          "protection_reflection": "Afstand scheppen als het dichtbij komt beschermt je voor het risico van verlies. Het is ooit slim geworden.",
+          "need_reflection": "De behoefte is veiligheid in nabijheid: dichtbij kunnen zijn zonder jezelf te verliezen of pijn te riskeren.",
+          "chance": "Je kans is kleine stappen naar vertrouwen te zetten — niet alles opengooien, maar iets toelaten.",
+          "challenge": "Je uitdaging is nabijheid niet te laten afhangen van garanties die er nooit zijn.",
+          "experiment": "Laat deze week één keer iets toe dat je normaal weghoudt — een aanraking, een zin, een stilte.",
+          "gentle_phrase": "Bang zijn voor wat je ook nodig hebt, maakt je niet zwak. Het maakt je menselijk."
         },
         "couple": {
-          "comparison_intro": "Deze casus helpt jullie ontdekken wat ieder hoort, bedoelt en beschermt.",
-          "what_a_may_hear": "A kan iets horen dat dieper raakt dan de feitelijke situatie.",
-          "what_b_may_hear": "B kan zich beoordeeld voelen terwijl er misschien ook een verlangen onder ligt.",
-          "what_each_protects": "Ieder beschermt iets waardevols: verbinding, rust, vrijheid, veiligheid, waardering of eigenheid.",
-          "shared_chance": "Jullie kans is om verschil niet als bedreiging te zien, maar als ingang naar begrip.",
-          "shared_challenge": "De uitdaging is niet te snel schuld te verdelen, maar te vertragen en te vragen wat er onder zit.",
-          "shared_experiment": "Gebruik de zin: 'Wat probeerde jij in dit moment te beschermen?'"
+          "comparison_intro": "Ieder van jullie heeft een eigen relatie met nabijheid. Wat veilig voelt voor de één, kan overweldigend zijn voor de ander.",
+          "what_a_may_hear": "A kan horen: ik wil dichter bij je zijn maar weet nog niet hoe.",
+          "what_b_may_hear": "B kan horen: ik doe iets verkeerd als jij terugschrikt.",
+          "what_each_protects": "De terugschrikker beschermt zichzelf. De nabijer beschermt de verbinding — maar kan ook druk zetten zonder het te weten.",
+          "shared_chance": "Jullie kans is nabijheid in kleine dosissen te oefenen — zodat veiligheid groeit zonder dat iemand overweldigd raakt.",
+          "shared_challenge": "De uitdaging is niet meer nabijheid eisen, maar de ander uitnodigen op zijn/haar tempo.",
+          "shared_experiment": "Spreek af: één moment van bewust fysiek contact per dag — hoe klein ook. Benoem daarna wat het deed."
         }
       },
       "profile_tags": {
@@ -4245,89 +4338,100 @@
       ],
       "questions": [
         {
-          "question_id": "q1_reaction",
-          "step": "reaction",
-          "prompt": "Wat gebeurt er als eerste in jou?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "question_id": "q1_sensitive_point",
+          "step": "sensitive_point",
+          "prompt": "Wanneer komt het gevoel van 'niet gekozen zijn' het sterkst naar boven?",
+          "helper_text": "De pijn is ouder dan deze relatie — maar leeft er wel in.",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Ik voel verdriet.",
+              "label": "Als mijn partner iemand anders lijkt te kiezen — voor aandacht, tijd of interesse.",
               "tags": {
-                "centers.heart": 2
+                "sensitive_points.not_chosen": 2,
+                "needs.attention": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Ik schaam me voor mijn behoefte.",
+              "label": "Als ik iets deel en er weinig respons op is.",
               "tags": {
-                "sensitive_points.shame": 2
+                "sensitive_points.not_seen": 2,
+                "needs.recognition": 1,
+                "centers.heart": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Ik bescherm mezelf door niets te zeggen.",
+              "label": "Als ik zie dat de ander open is voor anderen, maar gesloten voor mij.",
               "tags": {
-                "protections.withdraw": 2
+                "sensitive_points.not_chosen": 2,
+                "needs.closeness": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Ik verlang naar echte ontmoeting.",
+              "label": "Als ik moe word van altijd degene te zijn die geeft en vraagt.",
               "tags": {
-                "needs.closeness": 2
+                "patterns.give_receive": 2,
+                "needs.appreciation": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Ik wil dit voorzichtig leren benoemen.",
+              "label": "Het leeft eigenlijk altijd op de achtergrond — als een lage toon.",
               "tags": {
-                "skills.vulnerability": 2
+                "needs.reassurance": 2,
+                "sensitive_points.not_chosen": 1
               }
             }
           ]
         },
         {
-          "question_id": "q2_interpretation",
-          "step": "interpretation",
-          "prompt": "Wat maak jij hiervan of wat raakt dit?",
-          "helper_text": "Kies wat het meest herkenbaar is, niet wat het meest netjes klinkt.",
+          "question_id": "q2_protection",
+          "step": "protection",
+          "prompt": "Wat doe jij met dit gevoel?",
+          "helper_text": "Hoe bescherm jij jezelf ertegen?",
           "input_type": "single_choice",
           "options": [
             {
               "option_id": "A",
-              "label": "Dit raakt iets ouds.",
+              "label": "Ik verberg het — het voelt te groot en te oud om aan te raken.",
               "tags": {
-                "sensitive_points.old_pain": 2
+                "protections.silence": 2,
+                "sensitive_points.too_much": 1
               }
             },
             {
               "option_id": "B",
-              "label": "Ik ben bang te veel te zijn.",
+              "label": "Ik ga harder mijn best doen om gekozen te worden.",
               "tags": {
-                "sensitive_points.too_much": 2
+                "protections.perform": 2,
+                "needs.recognition": 1
               }
             },
             {
               "option_id": "C",
-              "label": "Ik wil gezien worden zonder te moeten strijden.",
+              "label": "Ik trek me terug en wacht — als jij mij wil, zoek je mij maar op.",
               "tags": {
-                "needs.recognition": 2
+                "protections.withdraw": 2,
+                "needs.reassurance": 1
               }
             },
             {
               "option_id": "D",
-              "label": "Ik wil leren vragen zonder schaamte.",
+              "label": "Ik benoem het, ook al weet ik dat het kwetsbaar is.",
               "tags": {
-                "skills.asking_directly": 2
+                "skills.vulnerability": 2,
+                "skills.asking_directly": 1
               }
             },
             {
               "option_id": "E",
-              "label": "Ik wil begrijpen wat ik bescherm.",
+              "label": "Ik zoek bevestiging buiten de relatie — vrienden, werk, iets anders.",
               "tags": {
-                "skills.self_reflection": 2
+                "protections.distraction": 2,
+                "needs.recognition": 1
               }
             }
           ]
@@ -4335,22 +4439,22 @@
       ],
       "outputs": {
         "solo": {
-          "mirror": "Deze situatie raakt aan de vraag van Verbinding & nabijheid: Zoek je mij?",
-          "protection_reflection": "Je reactie probeert iets waardevols te beschermen: verbinding, veiligheid, vrijheid of waardigheid.",
-          "need_reflection": "Onder je reactie zit waarschijnlijk een behoefte die serieus genomen mag worden.",
-          "chance": "Je kans is dat je scherper leert zien wat liefde, vertrouwen en volwassenheid in dit domein kunnen betekenen.",
-          "challenge": "Je uitdaging is om je behoefte niet via verwijt, terugtrekken of testen te laten spreken, maar helder en mild.",
-          "experiment": "Vraag vandaag één keer: 'Wanneer voelde jij je deze week dicht bij mij?'",
-          "gentle_phrase": "Wat hier geraakt wordt, is niet raar. Het laat zien dat dit domein belangrijk voor je is."
+          "mirror": "Dit gevoel — niet gekozen worden — is ouder dan deze relatie. Het leeft niet omdat jij zwak bent, maar omdat het eens pijn heeft gedaan en sindsdien op de loer ligt.",
+          "protection_reflection": "Hoe je omgaat met dit gevoel — verbergen, harder proberen of terugtrekken — is een bescherming die je ooit goed heeft gediend.",
+          "need_reflection": "De behoefte hier is diep en eerlijk: actief gewenst worden. Niet als vanzelfsprekendheid, maar als keuze.",
+          "chance": "Je kans is dit gevoel te benoemen — niet als verwijt, maar als kwetsbaarheid die je deelt.",
+          "challenge": "Je uitdaging is te beseffen dat de ander je misschien al kiest — maar op een manier die jij nog niet leert zien.",
+          "experiment": "Zeg één keer, zacht: 'Ik heb soms het gevoel dat ik niet jouw eerste keuze ben. Dat is niet per se waar — maar ik wil het je zeggen.'",
+          "gentle_phrase": "De pijn van niet gekozen zijn is een van de diepste menselijke pijnen. Die mag je voelen zonder dat het alles verklaart."
         },
         "couple": {
-          "comparison_intro": "Deze casus helpt jullie ontdekken wat ieder hoort, bedoelt en beschermt.",
-          "what_a_may_hear": "A kan iets horen dat dieper raakt dan de feitelijke situatie.",
-          "what_b_may_hear": "B kan zich beoordeeld voelen terwijl er misschien ook een verlangen onder ligt.",
-          "what_each_protects": "Ieder beschermt iets waardevols: verbinding, rust, vrijheid, veiligheid, waardering of eigenheid.",
-          "shared_chance": "Jullie kans is om verschil niet als bedreiging te zien, maar als ingang naar begrip.",
-          "shared_challenge": "De uitdaging is niet te snel schuld te verdelen, maar te vertragen en te vragen wat er onder zit.",
-          "shared_experiment": "Gebruik de zin: 'Wat probeerde jij in dit moment te beschermen?'"
+          "comparison_intro": "Dit gevoel — niet gekozen zijn — is oud en diep. Het speelt in de relatie maar komt niet alleen uit de relatie.",
+          "what_a_may_hear": "A kan horen: ik doe nooit genoeg voor jou.",
+          "what_b_may_hear": "B kan horen: jij ziet niet wat ik al kies en doe.",
+          "what_each_protects": "De één beschermt zichzelf voor pijn van verwerping. De ander beschermt zichzelf voor het gevoel nooit goed genoeg te zijn.",
+          "shared_chance": "Jullie kans is dit gevoel samen te verkennen — niet om het op te lossen, maar om het te begrijpen.",
+          "shared_challenge": "De uitdaging is dit gesprek te voeren zonder te bewijzen of aan te vallen — alleen te luisteren.",
+          "shared_experiment": "Elk van jullie deelt één moment van die week: 'Ik voelde mij gekozen toen...'"
         }
       },
       "profile_tags": {

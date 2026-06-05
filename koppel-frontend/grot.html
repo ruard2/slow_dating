@@ -1011,10 +1011,13 @@ function skipCase() {
 // ── Detecteer of case 'unieke' vragen heeft ──────────────
 // Alleen D1 cases hebben volledig uitgewerkte unieke opties.
 // D2-D15 hebben template-boilerplate — die tonen we als kaart.
+// Domeinen met volledig uitgewerkte, unieke vragen:
+const UITGEWERKTE_DOMEINEN = new Set(['D1', 'D2']);
+
 function heeftUniekeVragen(casus) {
   if (!casus) return false;
   const domein = casus.domain?.domain_id || '';
-  return domein === 'D1'; // Alleen D1 is volledig uitgewerkt
+  return UITGEWERKTE_DOMEINEN.has(domein);
 }
 
 // ── Vragen ───────────────────────────────────────────────
