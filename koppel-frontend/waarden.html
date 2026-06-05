@@ -8,235 +8,35 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;background:#0f0820;color:#f0e6d3;font-family:'Inter',sans-serif;overflow:hidden;}
-
 body::before{content:'';position:fixed;inset:0;
   background:radial-gradient(ellipse at 20% 30%,#2d1050 0%,transparent 55%),
-             radial-gradient(ellipse at 80% 70%,#102840 0%,transparent 55%),
-             #0a0618;z-index:0;}
-
+             radial-gradient(ellipse at 80% 70%,#102840 0%,transparent 55%),#0a0618;z-index:0;}
 .screen{display:none;position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;z-index:1;}
 .screen.active{display:flex;flex-direction:column;align-items:center;}
-
-/* ── Fonts ─────────────────────────────────── */
-h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;
+h1{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;
   background:linear-gradient(135deg,#d4af37,#f5e070,#d4af37);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
   text-align:center;line-height:1.2;}
-h2{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#f0e6d3;text-align:center;}
+h2{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:400;color:#f0e6d3;text-align:center;}
 .sub{color:#9080a8;font-size:0.85rem;text-align:center;line-height:1.6;}
-.gold{color:#d4af37;}
-
-/* ── Buttons ─────────────────────────────── */
 .btn{display:block;width:100%;padding:14px 20px;border:none;border-radius:14px;
-  font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;
-  font-family:'Inter',sans-serif;}
+  font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
 .btn-gold{background:linear-gradient(135deg,#d4af37,#f0d060);color:#1a0a2e;}
 .btn-gold:active{transform:scale(0.97);}
 .btn-outline{background:transparent;border:1.5px solid #d4af3766;color:#d4af37;}
-.btn-outline:active{background:#d4af3715;}
 .btn-ghost{background:rgba(255,255,255,0.07);color:#f0e6d3;border:1px solid rgba(255,255,255,0.1);}
 .btn-ghost:active{background:rgba(255,255,255,0.13);}
 .btn-sm{padding:9px 14px;font-size:0.82rem;border-radius:10px;}
-
-/* ── Layout ──────────────────────────────── */
 .pad{padding:20px;width:100%;max-width:440px;}
 .gap{display:flex;flex-direction:column;gap:12px;}
 .gap-sm{display:flex;flex-direction:column;gap:8px;}
-.row{display:flex;gap:8px;}.row .btn{flex:1;}
 .divider{height:1px;background:rgba(255,255,255,0.08);margin:4px 0;}
 .center{text-align:center;}
-
-/* ── Category colors ─────────────────────── */
-:root{
-  --c-autonomie:#4a90e2;  --c-relatie:#e27a9e;    --c-zorg:#e2a47a;
-  --c-groei:#7ac47a;      --c-prestatie:#d4af37;  --c-vrijheid:#9e7ace;
-  --c-gemeenschap:#7acec4;--c-plezier:#e2d47a;    --c-veiligheid:#7a9ec4;
-  --c-spiritueel:#c47ae2; --c-balans:#7ae2c4;     --c-karakter:#c4a07a;
-  --c-bijdrage:#a0c47a;   --c-verbondenheid:#c47a8a;
-}
-
-/* ── Kaart grid ──────────────────────────── */
-.kaarten-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
-  gap:10px;width:100%;padding:0 16px 100px;
-}
-
-/* ── Waarden kaart ───────────────────────── */
-.waarde-kaart{
-  border-radius:14px;padding:16px 12px 14px;
-  border:1.5px solid rgba(255,255,255,0.1);
-  background:rgba(255,255,255,0.04);
-  cursor:pointer;transition:all .22s;
-  display:flex;flex-direction:column;gap:6px;
-  position:relative;overflow:hidden;
-  min-height:140px;
-}
-.waarde-kaart::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:var(--cat-color);border-radius:14px 14px 0 0;
-}
-.waarde-kaart:active{transform:scale(0.96);}
-.waarde-kaart.geselecteerd-partner{
-  border-color:var(--cat-color);
-  background:rgba(var(--cat-rgb),0.12);
-  box-shadow:0 0 16px rgba(var(--cat-rgb),0.25);
-}
-.waarde-kaart.geselecteerd-zelf{
-  border-color:var(--cat-color);
-  background:rgba(var(--cat-rgb),0.18);
-  box-shadow:0 0 20px rgba(var(--cat-rgb),0.35);
-}
-.kaart-cat-dot{width:7px;height:7px;border-radius:50%;
-  background:var(--cat-color);display:inline-block;margin-right:5px;}
-.kaart-cat-label{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;
-  color:rgba(255,255,255,0.45);display:flex;align-items:center;}
-.kaart-naam{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;
-  color:#f0e6d3;line-height:1.2;}
-.kaart-desc{font-size:0.72rem;color:#8878a0;line-height:1.45;flex:1;}
-.kaart-gewicht{position:absolute;bottom:10px;right:10px;
-  font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;
-  color:rgba(255,255,255,0.25);}
-.kaart-check{position:absolute;top:8px;right:8px;width:20px;height:20px;
-  border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:0.7rem;opacity:0;transition:all .2s;}
-.waarde-kaart.geselecteerd-partner .kaart-check,
-.waarde-kaart.geselecteerd-zelf .kaart-check{opacity:1;background:var(--cat-color);color:#fff;}
-
-/* ── Info knop ───────────────────────────── */
-.kaart-info-btn{
-  position:absolute;bottom:8px;left:10px;
-  width:18px;height:18px;border-radius:50%;
-  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
-  color:rgba(255,255,255,0.45);font-size:0.6rem;font-weight:700;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:all .2s;z-index:2;
-  font-family:'Inter',sans-serif;
-}
-.kaart-info-btn:hover,.kaart-info-btn:active{
-  background:rgba(255,255,255,0.2);color:#fff;transform:scale(1.1);}
-
-/* ── Info bottom sheet ───────────────────── */
-.info-overlay{
-  position:fixed;inset:0;z-index:500;
-  background:rgba(0,0,0,0);pointer-events:none;
-  transition:background .3s;
-}
-.info-overlay.open{background:rgba(0,0,0,0.65);pointer-events:all;}
-.info-sheet{
-  position:absolute;bottom:0;left:50%;transform:translate(-50%,100%);
-  width:100%;max-width:440px;
-  background:linear-gradient(180deg,#1e1240 0%,#150e30 100%);
-  border:1px solid rgba(255,255,255,0.1);
-  border-radius:24px 24px 0 0;
-  padding:0 20px 40px;
-  transition:transform .38s cubic-bezier(.32,0,.15,1);
-  max-height:85vh;overflow-y:auto;
-}
-.info-overlay.open .info-sheet{transform:translate(-50%,0);}
-.info-handle{width:36px;height:4px;border-radius:2px;
-  background:rgba(255,255,255,0.2);margin:12px auto 20px;}
-.info-cat-stripe{height:3px;border-radius:3px;margin-bottom:18px;
-  background:var(--info-color,#d4af37);}
-.info-naam{font-family:'Playfair Display',serif;font-size:1.5rem;
-  font-weight:700;color:#f0e6d3;margin-bottom:6px;}
-.info-desc{font-size:0.88rem;color:#a090b8;line-height:1.6;margin-bottom:20px;}
-.info-sectie{margin-bottom:18px;}
-.info-sectie-label{font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;
-  color:#d4af37;margin-bottom:7px;display:flex;align-items:center;gap:6px;}
-.info-sectie-tekst{font-size:0.9rem;color:#f0e6d3;line-height:1.6;}
-.info-voorbeeld{background:rgba(255,255,255,0.05);border-left:3px solid var(--info-color,#d4af37);
-  border-radius:0 10px 10px 0;padding:12px 14px;
-  font-size:0.88rem;color:#d4cfe8;font-style:italic;line-height:1.55;}
-.info-vraag{background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25);
-  border-radius:12px;padding:14px 16px;
-  font-family:'Playfair Display',serif;font-size:1rem;
-  color:#f0e6d3;font-style:italic;line-height:1.55;}
-.info-acties{display:flex;gap:10px;margin-top:20px;}
-.info-acties .btn{flex:1;padding:12px;font-size:0.9rem;}
-
-/* ── Filter bar ──────────────────────────── */
-.filter-bar{display:flex;gap:6px;overflow-x:auto;padding:10px 16px;
-  scrollbar-width:none;flex-shrink:0;width:100%;}
-.filter-bar::-webkit-scrollbar{display:none;}
-.filter-chip{padding:6px 12px;border-radius:20px;font-size:0.72rem;
-  font-weight:500;cursor:pointer;white-space:nowrap;transition:all .2s;
-  border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);
-  color:rgba(255,255,255,0.6);}
-.filter-chip.active{background:rgba(212,175,55,0.2);border-color:#d4af37;color:#d4af37;}
-
-/* ── Select counter bar ───────────────────── */
-.select-bar{
-  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-  width:100%;max-width:440px;
-  background:linear-gradient(to top,rgba(10,6,24,0.98) 70%,transparent);
-  padding:16px 20px 24px;z-index:100;
-}
-.select-bar-inner{background:rgba(30,20,50,0.95);border:1px solid rgba(212,175,55,0.3);
-  border-radius:16px;padding:12px 16px;
-  display:flex;align-items:center;gap:12px;}
-.select-slots{display:flex;gap:6px;}
-.slot{width:28px;height:28px;border-radius:8px;border:1.5px dashed rgba(212,175,55,0.4);
-  display:flex;align-items:center;justify-content:center;font-size:0.65rem;
-  transition:all .2s;color:rgba(255,255,255,0.3);}
-.slot.filled{background:rgba(212,175,55,0.25);border-color:#d4af37;border-style:solid;
-  color:#d4af37;}
-.select-label{flex:1;font-size:0.8rem;color:#9080a8;line-height:1.3;}
-.select-label strong{color:#f0e6d3;display:block;}
-.select-confirm{padding:8px 16px;border-radius:10px;font-size:0.82rem;
-  font-weight:600;border:none;cursor:pointer;font-family:'Inter',sans-serif;
-  background:linear-gradient(135deg,#d4af37,#f0d060);color:#1a0a2e;
-  white-space:nowrap;opacity:0.4;pointer-events:none;transition:all .2s;}
-.select-confirm.ready{opacity:1;pointer-events:auto;}
-
-/* ── Reveal kaart ────────────────────────── */
-.reveal-set{display:flex;flex-direction:column;gap:10px;width:100%;}
-.reveal-kaart{border-radius:14px;padding:14px 16px;
-  border:1.5px solid rgba(255,255,255,0.12);
-  background:rgba(255,255,255,0.05);
-  display:flex;align-items:flex-start;gap:12px;}
-.reveal-kaart-kleur{width:4px;border-radius:4px;align-self:stretch;min-height:40px;flex-shrink:0;}
-.reveal-kaart-tekst{}
-.reveal-kaart-naam{font-family:'Playfair Display',serif;font-size:1rem;color:#f0e6d3;margin-bottom:3px;}
-.reveal-kaart-desc{font-size:0.75rem;color:#8878a0;line-height:1.4;}
-
-/* ── Gesprek kaart ───────────────────────── */
-.gesprek-kaart{border-radius:16px;padding:20px;width:100%;
-  background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.1);}
-.gesprek-voor{font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;
-  color:#d4af37;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.gesprek-vraag{font-family:'Playfair Display',serif;font-size:1.05rem;font-style:italic;
-  color:#f0e6d3;line-height:1.55;}
-.gesprek-nav{display:flex;justify-content:space-between;align-items:center;margin-top:12px;}
-.gesprek-dot-row{display:flex;gap:5px;}
-.gesprek-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.15);transition:.2s;}
-.gesprek-dot.active{background:#d4af37;}
-
-/* ── Bevestig kaart ──────────────────────── */
-.bevestig-kaart{display:flex;align-items:center;gap:14px;padding:14px 16px;
-  border-radius:14px;border:1.5px solid rgba(255,255,255,0.1);
-  background:rgba(255,255,255,0.04);cursor:pointer;transition:all .2s;}
-.bevestig-kaart.ja{border-color:var(--cat-color);background:rgba(var(--cat-rgb),0.15);}
-.bevestig-kaart-toggle{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);
-  flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  font-size:0.85rem;transition:all .2s;}
-.bevestig-kaart.ja .bevestig-kaart-toggle{background:var(--cat-color);border-color:var(--cat-color);color:#fff;}
-.bevestig-kaart-tekst{}
-.bevestig-kaart-naam{font-family:'Playfair Display',serif;font-size:0.95rem;color:#f0e6d3;}
-.bevestig-kaart-desc{font-size:0.75rem;color:#8878a0;margin-top:2px;line-height:1.4;}
-
-/* ── Intro steps ─────────────────────────── */
-.intro-step{text-align:center;padding:12px 0;}
-.intro-icon{font-size:2.5rem;margin-bottom:10px;}
-.intro-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:#f0e6d3;margin-bottom:6px;}
-.intro-desc{font-size:0.82rem;color:#9080a8;line-height:1.55;}
-
-/* ── Progress ────────────────────────────── */
 .fase-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
-  border-radius:20px;font-size:0.72rem;font-weight:600;letter-spacing:0.06em;
+  border-radius:20px;font-size:0.72rem;font-weight:600;
   background:rgba(212,175,55,0.12);color:#d4af37;border:1px solid #d4af3730;}
 
-/* ── Koppel / code ───────────────────────── */
+/* ── Koppelcode ─────────────────────── */
 .big-code{font-size:2.2rem;letter-spacing:0.4em;font-weight:700;color:#f0d060;
   font-family:'Playfair Display',serif;text-align:center;}
 .code-input{text-align:center;font-size:1.6rem;letter-spacing:0.3em;text-transform:uppercase;
@@ -247,58 +47,187 @@ h2{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#
 .waiting-dots span:nth-child(3){animation-delay:.4s;}
 @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
 
+/* ── Familie kaarten ────────────────── */
+.families-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;padding:0 16px 24px;}
+.familie-kaart{border-radius:18px;padding:18px 14px;cursor:pointer;transition:all .22s;
+  border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);
+  display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden;}
+.familie-kaart::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--fc);border-radius:18px 18px 0 0;}
+.familie-kaart:active{transform:scale(0.96);}
+.familie-kaart.geselecteerd{border-color:var(--fc);background:rgba(var(--fr),0.15);
+  box-shadow:0 0 20px rgba(var(--fr),0.3);}
+.familie-emoji{font-size:1.8rem;}
+.familie-naam{font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;color:#f0e6d3;}
+.familie-desc{font-size:0.7rem;color:#8878a0;line-height:1.4;}
+.familie-count{font-size:0.65rem;color:rgba(255,255,255,0.3);margin-top:2px;}
+.familie-check{position:absolute;top:10px;right:10px;width:20px;height:20px;
+  border-radius:50%;background:var(--fc);color:#fff;font-size:0.7rem;
+  display:none;align-items:center;justify-content:center;}
+.familie-kaart.geselecteerd .familie-check{display:flex;}
+
+/* ── Swipe deck ─────────────────────── */
+.swipe-arena{position:relative;width:100%;max-width:340px;height:420px;flex-shrink:0;}
+.swipe-card{position:absolute;inset:0;border-radius:24px;padding:28px 24px;
+  border:1.5px solid rgba(255,255,255,0.1);
+  display:flex;flex-direction:column;gap:10px;
+  user-select:none;touch-action:none;cursor:grab;
+  background:linear-gradient(160deg,#1e1240 0%,#150e30 100%);
+  box-shadow:0 12px 40px rgba(0,0,0,0.5);}
+.swipe-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;
+  background:var(--cc);border-radius:24px 24px 0 0;}
+.swipe-card.animating{transition:transform .35s cubic-bezier(.4,0,.2,1),opacity .35s;}
+.swipe-overlay{position:absolute;top:24px;padding:6px 14px;border-radius:8px;
+  font-size:1rem;font-weight:700;letter-spacing:0.1em;opacity:0;transition:opacity .1s;pointer-events:none;}
+.swipe-overlay.ja{left:20px;background:rgba(122,196,122,0.9);color:#0f2e0f;}
+.swipe-overlay.nee{right:20px;background:rgba(200,80,80,0.9);color:#fff;}
+.swipe-cat{font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--cc);opacity:0.8;}
+.swipe-naam{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:#f0e6d3;line-height:1.2;}
+.swipe-desc{font-size:0.83rem;color:#a090b8;line-height:1.55;flex:1;}
+.swipe-voorbeeld{background:rgba(255,255,255,0.05);border-left:3px solid var(--cc);
+  border-radius:0 10px 10px 0;padding:10px 12px;font-size:0.78rem;color:#d4cfe8;font-style:italic;line-height:1.5;}
+.swipe-ontdek{font-family:'Playfair Display',serif;font-size:0.88rem;font-style:italic;
+  color:#d4af37;line-height:1.5;padding-top:4px;}
+.swipe-btns{display:flex;gap:16px;justify-content:center;width:100%;}
+.swipe-btn{width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+  font-size:1.4rem;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;flex-shrink:0;}
+.swipe-btn-nee{background:rgba(200,80,80,0.15);border:2px solid rgba(200,80,80,0.4);color:#e07070;}
+.swipe-btn-nee:active{transform:scale(0.9);background:rgba(200,80,80,0.3);}
+.swipe-btn-ja{background:rgba(122,196,122,0.15);border:2px solid rgba(122,196,122,0.4);color:#7ac47a;}
+.swipe-btn-ja:active{transform:scale(0.9);background:rgba(122,196,122,0.3);}
+.swipe-progress{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;max-width:260px;}
+.swipe-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.15);}
+.swipe-dot.done-ja{background:#7ac47a;}
+.swipe-dot.done-nee{background:rgba(255,255,255,0.2);}
+.swipe-dot.current{background:#d4af37;width:8px;height:8px;}
+.swipe-counter{font-size:0.78rem;color:#9080a8;}
+
+/* ── Pile (gelikte kaarten) ─────────── */
+.pile-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;}
+.pile-kaart{border-radius:12px;padding:12px;cursor:pointer;transition:all .2s;
+  border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);
+  position:relative;min-height:80px;}
+.pile-kaart::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--cc);border-radius:12px 12px 0 0;}
+.pile-kaart.gekozen{border-color:var(--cc);background:rgba(var(--cr),0.18);
+  box-shadow:0 0 14px rgba(var(--cr),0.3);}
+.pile-kaart-naam{font-family:'Playfair Display',serif;font-size:0.9rem;color:#f0e6d3;margin-top:4px;}
+.pile-kaart-cat{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;
+  color:rgba(255,255,255,0.35);margin-bottom:4px;}
+.pile-nr{position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;
+  background:var(--cc);color:#fff;font-size:0.65rem;font-weight:700;
+  display:none;align-items:center;justify-content:center;}
+.pile-kaart.gekozen .pile-nr{display:flex;}
+.kies-slot-bar{display:flex;gap:8px;justify-content:center;}
+.kies-slot{width:32px;height:32px;border-radius:8px;border:1.5px dashed rgba(212,175,55,0.4);
+  display:flex;align-items:center;justify-content:center;font-size:0.7rem;
+  color:rgba(255,255,255,0.25);transition:all .2s;}
+.kies-slot.vol{background:rgba(212,175,55,0.2);border-color:#d4af37;border-style:solid;color:#d4af37;}
+
+/* ── Reveal ─────────────────────────── */
+.reveal-kaart{border-radius:14px;padding:14px 16px;
+  border:1.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);
+  display:flex;align-items:flex-start;gap:12px;}
+.reveal-kleur{width:4px;border-radius:4px;align-self:stretch;min-height:40px;flex-shrink:0;}
+.reveal-naam{font-family:'Playfair Display',serif;font-size:0.95rem;color:#f0e6d3;margin-bottom:2px;}
+.reveal-desc{font-size:0.72rem;color:#8878a0;line-height:1.4;}
+
+/* ── Bevestig ───────────────────────── */
+.bevestig-kaart{display:flex;align-items:center;gap:14px;padding:14px 16px;
+  border-radius:14px;border:1.5px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.04);cursor:pointer;transition:all .2s;}
+.bevestig-kaart.ja{border-color:var(--cc);background:rgba(var(--cr),0.15);}
+.bevestig-toggle{width:28px;height:28px;border-radius:50%;
+  border:2px solid rgba(255,255,255,0.2);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:0.8rem;transition:all .2s;}
+.bevestig-kaart.ja .bevestig-toggle{background:var(--cc);border-color:var(--cc);color:#fff;}
+.bevestig-naam{font-family:'Playfair Display',serif;font-size:0.95rem;color:#f0e6d3;}
+.bevestig-desc{font-size:0.72rem;color:#8878a0;margin-top:2px;line-height:1.4;}
+
+/* ── Gesprek ────────────────────────── */
+.gesprek-kaart{border-radius:18px;padding:22px;width:100%;
+  background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.1);}
+.gesprek-type{font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;
+  color:#d4af37;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.gesprek-vraag{font-family:'Playfair Display',serif;font-size:1.05rem;font-style:italic;
+  color:#f0e6d3;line-height:1.6;}
+.gesprek-nav{display:flex;justify-content:space-between;align-items:center;margin-top:14px;}
+.gdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.15);}
+.gdot.active{background:#d4af37;}
+.gesprek-context{border-radius:10px;padding:12px 14px;
+  background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.15);
+  font-size:0.78rem;color:#a090b8;line-height:1.5;}
+.gesprek-context strong{color:#d4af37;}
+
+/* ── Info sheet ─────────────────────── */
+.info-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0);
+  pointer-events:none;transition:background .3s;}
+.info-overlay.open{background:rgba(0,0,0,0.65);pointer-events:all;}
+.info-sheet{position:absolute;bottom:0;left:50%;transform:translate(-50%,100%);
+  width:100%;max-width:440px;
+  background:linear-gradient(180deg,#1e1240 0%,#150e30 100%);
+  border:1px solid rgba(255,255,255,0.1);border-radius:24px 24px 0 0;
+  padding:0 20px 40px;transition:transform .38s cubic-bezier(.32,0,.15,1);
+  max-height:85vh;overflow-y:auto;}
+.info-overlay.open .info-sheet{transform:translate(-50%,0);}
+.info-handle{width:36px;height:4px;border-radius:2px;
+  background:rgba(255,255,255,0.2);margin:12px auto 20px;}
+.info-stripe{height:3px;border-radius:3px;margin-bottom:18px;}
+.info-naam{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#f0e6d3;margin-bottom:6px;}
+.info-desc-txt{font-size:0.88rem;color:#a090b8;line-height:1.6;margin-bottom:20px;}
+.info-label{font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;
+  color:#d4af37;margin-bottom:7px;}
+.info-voorbeeld{background:rgba(255,255,255,0.05);border-left:3px solid var(--ic,#d4af37);
+  border-radius:0 10px 10px 0;padding:12px 14px;
+  font-size:0.88rem;color:#d4cfe8;font-style:italic;line-height:1.55;margin-bottom:18px;}
+.info-vraag{background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25);
+  border-radius:12px;padding:14px 16px;
+  font-family:'Playfair Display',serif;font-size:1rem;color:#f0e6d3;
+  font-style:italic;line-height:1.55;}
+
 .back-btn{position:fixed;top:10px;left:10px;z-index:9999;
   background:rgba(0,0,0,0.45);color:#d4af37;border:1px solid #d4af3755;
   border-radius:20px;padding:5px 12px;font-size:0.75rem;text-decoration:none;
-  font-family:serif;letter-spacing:0.05em;backdrop-filter:blur(6px);}
-
-/* ── Animations ──────────────────────────── */
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-.fade-up{animation:fadeUp .35s ease forwards;}
-@keyframes popIn{0%{transform:scale(0.8);opacity:0}60%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
-.pop-in{animation:popIn .4s cubic-bezier(.34,1.56,.64,1) forwards;}
+  font-family:serif;backdrop-filter:blur(6px);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.fade-up{animation:fadeUp .3s ease forwards;}
+@keyframes popIn{0%{transform:scale(0.85);opacity:0}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+.pop-in{animation:popIn .38s cubic-bezier(.34,1.56,.64,1) forwards;}
 </style>
 </head>
 <body>
-
 <a href="world.html" class="back-btn">← Kaart</a>
 
-<!-- ══════════════════════════════════════
-     SCREEN: START
-══════════════════════════════════════ -->
+<!-- START -->
 <div id="screen-start" class="screen active">
   <div class="pad gap" style="padding-top:60px;">
     <div class="center">
-      <div style="font-size:3.2rem;margin-bottom:6px;">🧭</div>
+      <div style="font-size:3rem;margin-bottom:8px;">🧭</div>
       <h1>Waarden</h1>
-      <p class="sub" style="margin-top:8px;">Wat drijft jou? Wat zie jij in de ander?<br>Ontdek waar jullie harten liggen.</p>
+      <p class="sub" style="margin-top:8px;">Ontdek wat jullie echt drijft.<br>Swipe door families van waarden.</p>
     </div>
     <div class="divider"></div>
-    <button class="btn btn-gold" onclick="startKoppel('create')">✦ Begin samen — maak sessie</button>
+    <button class="btn btn-gold" onclick="startKoppel('create')">✦ Begin samen</button>
     <button class="btn btn-outline" onclick="startKoppel('join')">Doe mee met koppelcode</button>
     <button class="btn btn-ghost" onclick="startSolo()">Solo verkennen</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     SCREEN: KOPPELCODE
-══════════════════════════════════════ -->
+<!-- KOPPELCODE -->
 <div id="screen-koppel" class="screen">
   <div class="pad gap" style="padding-top:60px;">
     <h2 id="koppel-titel">Sessie aanmaken</h2>
-    <div id="koppel-maak-ui" style="display:none;" class="gap">
+    <div id="koppel-maak" style="display:none;" class="gap">
       <p class="sub">Jouw koppelcode:</p>
       <div class="big-code" id="display-code">···</div>
-      <p class="sub">Geef deze code aan je partner</p>
-      <div id="wacht-partner">
-        <p class="sub waiting-dots center">Wachten op partner<span>.</span><span>.</span><span>.</span></p>
-      </div>
-      <div id="beide-verbonden" style="display:none;" class="gap">
+      <div id="wacht-p"><p class="sub waiting-dots center">Wachten op partner<span>.</span><span>.</span><span>.</span></p></div>
+      <div id="beide-ok" style="display:none;" class="gap">
         <p style="color:#7ac47a;text-align:center;">✓ Beide verbonden!</p>
-        <button class="btn btn-gold" onclick="goIntro()">Begin ✦</button>
+        <button class="btn btn-gold" onclick="goFamilies()">Begin ✦</button>
       </div>
     </div>
-    <div id="koppel-join-ui" style="display:none;" class="gap">
+    <div id="koppel-join" style="display:none;" class="gap">
       <input class="code-input" id="join-input" maxlength="6" placeholder="ABCDE"
              oninput="this.value=this.value.toUpperCase()"/>
       <button class="btn btn-gold" onclick="doJoin()">Verbinden ›</button>
@@ -309,1178 +238,820 @@ h2{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#
         <p style="color:#7ac47a;">✓ Verbonden! Wacht op host...</p>
       </div>
     </div>
-    <p id="koppel-error" style="color:#e07070;text-align:center;display:none;"></p>
+    <p id="koppel-err" style="color:#e07070;text-align:center;display:none;"></p>
     <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-start')">← Terug</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     SCREEN: INTRO / UITLEG
-══════════════════════════════════════ -->
-<div id="screen-intro" class="screen">
-  <div class="pad gap" style="padding-top:50px;">
-    <div class="center">
-      <div class="fase-badge">Hoe werkt het?</div>
+<!-- FAMILIES KIEZEN -->
+<div id="screen-families" class="screen">
+  <div style="width:100%;max-width:440px;padding:50px 0 20px;">
+    <div class="pad gap-sm" style="padding-bottom:12px;">
+      <div class="center fase-badge" id="families-fase-badge">Fase 1 van 2</div>
+      <h2 id="families-titel" style="margin-top:8px;">Welke families spreken jou aan?</h2>
+      <p class="sub" id="families-sub">Kies 1 of 2 families om door te swipen</p>
     </div>
-
-    <div class="intro-step fade-up">
-      <div class="intro-icon">🃏</div>
-      <div class="intro-title">Blader door de kaarten</div>
-      <div class="intro-desc">95 waarden verdeeld over 14 thema's. Van licht en speels tot diep en wezenlijk.</div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="intro-step">
-      <div class="intro-icon">💌</div>
-      <div class="intro-title">Kies 3 kaarten voor je partner</div>
-      <div class="intro-desc">"Dit zie ik in jou" — welke waarden stralen van de ander af? Of wat wil je hem/haar geven?</div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="intro-step">
-      <div class="intro-icon">🌱</div>
-      <div class="intro-title">Kies 3 kaarten voor jezelf</div>
-      <div class="intro-desc">"Dit verlang ik" — welke waarden wil jij meer leven? Wat heb jij nodig?</div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="intro-step">
-      <div class="intro-icon">💬</div>
-      <div class="intro-title">Ontdek en bespreek</div>
-      <div class="intro-desc">Zie wat de ander koos en praat erover aan de hand van gerichte vragen. Hier begint het echte gesprek.</div>
-    </div>
-
-    <button class="btn btn-gold" onclick="startFase1()">Begin met de kaarten ✦</button>
-    <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-start')">← Terug</button>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     SCREEN: KAARTEN SELECTEREN (fase 1 + 2)
-══════════════════════════════════════ -->
-<div id="screen-selecteer" class="screen">
-  <div style="width:100%;max-width:440px;display:flex;flex-direction:column;min-height:100%;">
-
-    <!-- Header -->
-    <div style="padding:16px 16px 8px;flex-shrink:0;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-        <div class="fase-badge" id="fase-badge">Fase 1 van 2</div>
-        <span style="font-size:0.78rem;color:#9080a8;" id="selecteer-teller">0 kaarten</span>
-      </div>
-      <h2 id="selecteer-titel" style="text-align:left;font-size:1.15rem;margin-top:6px;">Dit zie ik in jou</h2>
-      <p class="sub" id="selecteer-sub" style="text-align:left;font-size:0.78rem;margin-top:2px;">Kies 3 waarden die je aan je partner wilt geven</p>
-    </div>
-
-    <!-- Filter bar -->
-    <div class="filter-bar" id="filter-bar">
-      <div class="filter-chip active" onclick="filterCat('', this)">Alles</div>
-      <div class="filter-chip" onclick="filterCat('autonomie',this)">Autonomie</div>
-      <div class="filter-chip" onclick="filterCat('relatie',this)">Relatie</div>
-      <div class="filter-chip" onclick="filterCat('zorg',this)">Zorg</div>
-      <div class="filter-chip" onclick="filterCat('groei',this)">Groei</div>
-      <div class="filter-chip" onclick="filterCat('prestatie',this)">Prestatie</div>
-      <div class="filter-chip" onclick="filterCat('vrijheid',this)">Vrijheid</div>
-      <div class="filter-chip" onclick="filterCat('gemeenschap',this)">Gemeenschap</div>
-      <div class="filter-chip" onclick="filterCat('plezier',this)">Plezier</div>
-      <div class="filter-chip" onclick="filterCat('veiligheid',this)">Veiligheid</div>
-      <div class="filter-chip" onclick="filterCat('spiritueel',this)">Spiritueel</div>
-      <div class="filter-chip" onclick="filterCat('balans',this)">Balans</div>
-      <div class="filter-chip" onclick="filterCat('karakter',this)">Karakter</div>
-      <div class="filter-chip" onclick="filterCat('bijdrage',this)">Bijdrage</div>
-      <div class="filter-chip" onclick="filterCat('verbondenheid',this)">Verbondenheid</div>
-    </div>
-
-    <!-- Grid -->
-    <div class="kaarten-grid" id="kaarten-grid"></div>
-  </div>
-
-  <!-- Select bar (fixed bottom) -->
-  <div class="select-bar">
-    <div class="select-bar-inner">
-      <div class="select-slots" id="select-slots">
-        <div class="slot" id="slot-0">1</div>
-        <div class="slot" id="slot-1">2</div>
-        <div class="slot" id="slot-2">3</div>
-      </div>
-      <div class="select-label">
-        <strong id="select-label-main">Kies 3 kaarten</strong>
-        <span id="select-label-sub">Tik een kaart om te selecteren</span>
-      </div>
-      <button class="select-confirm" id="select-confirm-btn" onclick="confirmFase()">
-        Klaar ›
+    <div class="families-grid" id="families-grid"></div>
+    <div class="pad gap">
+      <div class="kies-slot-bar" id="families-slots"></div>
+      <button class="btn btn-gold" id="families-btn" onclick="startSwipen()" style="opacity:0.4;pointer-events:none;">
+        Swipen maar ›
       </button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     SCREEN: WACHTEN OP PARTNER
-══════════════════════════════════════ -->
+<!-- SWIPE -->
+<div id="screen-swipe" class="screen">
+  <div style="width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;
+              gap:14px;padding:16px 16px 24px;">
+    <div style="width:100%;display:flex;justify-content:space-between;align-items:center;">
+      <button class="btn btn-ghost btn-sm" onclick="backToFamilies()" style="width:auto;padding:7px 12px;">← Families</button>
+      <span class="swipe-counter" id="swipe-counter">1 / 14</span>
+      <span style="font-size:0.8rem;color:#7ac47a;" id="swipe-ja-teller">0 ❤️</span>
+    </div>
+
+    <div class="swipe-progress" id="swipe-dots"></div>
+
+    <div class="swipe-arena" id="swipe-arena">
+      <div class="swipe-card" id="swipe-card">
+        <div class="swipe-overlay ja" id="overlay-ja">JA ❤️</div>
+        <div class="swipe-overlay nee" id="overlay-nee">SKIP 💨</div>
+        <div class="swipe-cat" id="sc-cat"></div>
+        <div class="swipe-naam" id="sc-naam"></div>
+        <div class="swipe-desc" id="sc-desc"></div>
+        <div class="swipe-voorbeeld" id="sc-vb"></div>
+        <div class="swipe-ontdek" id="sc-ontdek"></div>
+      </div>
+    </div>
+
+    <div class="swipe-btns">
+      <button class="swipe-btn swipe-btn-nee" onclick="swipeNee()">✕</button>
+      <button class="swipe-btn swipe-btn-ja" onclick="swipeJa()">❤</button>
+    </div>
+    <p class="sub" style="font-size:0.72rem;">Swipe of tik de knoppen • ❤ = resoneer, ✕ = skip</p>
+  </div>
+</div>
+
+<!-- PILE — kies top 3 -->
+<div id="screen-pile" class="screen">
+  <div class="pad gap" style="padding-top:50px;padding-bottom:40px;">
+    <div class="center gap-sm">
+      <div class="fase-badge" id="pile-badge">Fase 1 van 2</div>
+      <h2 id="pile-titel" style="margin-top:8px;">Kies je top 3</h2>
+      <p class="sub" id="pile-sub">Tik de 3 waarden aan die het meest resoneren</p>
+      <div class="kies-slot-bar" id="pile-slots">
+        <div class="kies-slot" id="ps-0">1</div>
+        <div class="kies-slot" id="ps-1">2</div>
+        <div class="kies-slot" id="ps-2">3</div>
+      </div>
+    </div>
+    <div class="pile-grid" id="pile-grid"></div>
+    <p class="sub" id="pile-empty" style="display:none;padding:20px 0;">
+      Je hebt niets geswiped 😄<br>Ga terug en swipe minimaal 3 kaarten naar rechts.
+    </p>
+    <button class="btn btn-ghost btn-sm" onclick="backToFamilies()">← Nog een familie verkennen</button>
+    <button class="btn btn-gold" id="pile-confirm-btn" onclick="confirmPile()" style="opacity:0.4;pointer-events:none;">
+      Dit zijn mijn 3 ›
+    </button>
+  </div>
+</div>
+
+<!-- WACHT -->
 <div id="screen-wacht" class="screen">
   <div class="pad gap" style="padding-top:120px;align-items:center;text-align:center;">
     <div style="font-size:3rem;">✨</div>
-    <h2>Jouw keuze is ingediend</h2>
-    <p class="sub waiting-dots">Wachten op je partner<span>.</span><span>.</span><span>.</span></p>
-    <p class="sub" style="margin-top:8px;font-style:italic;">"De mooiste ontdekkingen komen als je even wacht."</p>
+    <h2>Keuze ingediend</h2>
+    <p class="sub waiting-dots">Wachten op partner<span>.</span><span>.</span><span>.</span></p>
+    <p class="sub" style="margin-top:12px;font-style:italic;">"De mooiste ontdekkingen vragen een moment van stilte."</p>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     SCREEN: REVEAL
-══════════════════════════════════════ -->
-<div id="screen-reveal" class="screen">
-  <div class="pad gap" style="padding-top:50px;padding-bottom:40px;">
-
-    <div class="center" id="reveal-header">
-      <h1 style="font-size:1.6rem;">De onthulling</h1>
-      <p class="sub" id="reveal-sub">Kijk wat jullie voor elkaar kozen</p>
-    </div>
-
-    <!-- Partner gaf jou (verborgen bij solo) -->
-    <div id="sectie-partner-gaf">
-      <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#d4af37;margin-bottom:10px;">
-        💌 Partner gaf jou deze waarden
-      </p>
-      <div class="reveal-set" id="reveal-partner-gaf"></div>
-    </div>
-    <div class="divider" id="divider-1"></div>
-
-    <!-- Jij gaf partner (verborgen bij solo) -->
-    <div id="sectie-jij-gaf">
-      <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#9e7ace;margin-bottom:10px;">
-        🎁 Jij gaf je partner deze waarden
-      </p>
-      <div class="reveal-set" id="reveal-jij-gaf"></div>
-    </div>
-    <div class="divider" id="divider-2"></div>
-
-    <!-- Overlap (verborgen bij solo) -->
-    <div id="overlap-sectie" style="display:none;">
-      <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#7ae2c4;margin-bottom:10px;">
-        ✨ Dit kozen jullie allebei
-      </p>
-      <div class="reveal-set" id="reveal-overlap"></div>
-      <div class="divider"></div>
-    </div>
-
-    <!-- Eigen keuzes (altijd zichtbaar) -->
-    <div id="sectie-jij-zelf">
-      <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#7ac47a;margin-bottom:10px;" id="label-jij-zelf">
-        🌱 Dit verlang jij voor jezelf
-      </p>
-      <div class="reveal-set" id="reveal-jij-zelf"></div>
-    </div>
-    <div class="divider" id="divider-3"></div>
-
-    <!-- Partner zelf (verborgen bij solo) -->
-    <div id="sectie-partner-zelf">
-      <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#e2a47a;margin-bottom:10px;">
-        🌱 Dit verlangt je partner voor zichzelf
-      </p>
-      <div class="reveal-set" id="reveal-partner-zelf"></div>
-    </div>
-
-    <button class="btn btn-gold" id="reveal-btn-verder" onclick="goBevestig()">Bevestigen & verder ›</button>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════
-     SCREEN: BEVESTIGEN (partner-keuzes)
-══════════════════════════════════════ -->
+<!-- BEVESTIG -->
 <div id="screen-bevestig" class="screen">
   <div class="pad gap" style="padding-top:50px;padding-bottom:40px;">
-
     <div class="center gap-sm">
       <h2>Herken jij dit in jezelf?</h2>
       <p class="sub">Je partner koos deze waarden voor jou.<br>Vink aan welke jij ook in jezelf herkent.</p>
     </div>
-
     <div id="bevestig-kaarten" class="gap"></div>
-
-    <div class="divider"></div>
-    <p class="sub" style="font-size:0.78rem;">Alleen de waarden die jij bevestigt worden aan jouw profiel toegevoegd.</p>
+    <p class="sub" style="font-size:0.75rem;">Alleen wat jij bevestigt gaat naar jouw profiel.</p>
     <button class="btn btn-gold" onclick="confirmBevestig()">Dit klopt — ga verder ✦</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     SCREEN: GESPREK
-══════════════════════════════════════ -->
+<!-- REVEAL -->
+<div id="screen-reveal" class="screen">
+  <div class="pad gap" style="padding-top:50px;padding-bottom:40px;">
+    <div class="center">
+      <h1 style="font-size:1.55rem;">De onthulling</h1>
+      <p class="sub" id="reveal-sub">Kijk wat jullie voor elkaar kozen</p>
+    </div>
+    <div id="sectie-partner-gaf">
+      <p style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:#d4af37;margin-bottom:10px;">💌 Partner gaf jou</p>
+      <div class="gap-sm" id="reveal-partner-gaf"></div>
+    </div>
+    <div class="divider" id="d1"></div>
+    <div id="sectie-jij-gaf">
+      <p style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:#9e7ace;margin-bottom:10px;">🎁 Jij gaf je partner</p>
+      <div class="gap-sm" id="reveal-jij-gaf"></div>
+    </div>
+    <div class="divider" id="d2"></div>
+    <div id="overlap-sectie" style="display:none;">
+      <p style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:#7ae2c4;margin-bottom:10px;">✨ Jullie kozen allebei</p>
+      <div class="gap-sm" id="reveal-overlap"></div>
+      <div class="divider"></div>
+    </div>
+    <div>
+      <p style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:#7ac47a;margin-bottom:10px;" id="label-zelf">🌱 Jij voor jezelf</p>
+      <div class="gap-sm" id="reveal-jij-zelf"></div>
+    </div>
+    <div class="divider" id="d3"></div>
+    <div id="sectie-partner-zelf">
+      <p style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:#e2a47a;margin-bottom:10px;">🌱 Partner voor zichzelf</p>
+      <div class="gap-sm" id="reveal-partner-zelf"></div>
+    </div>
+    <button class="btn btn-gold" id="reveal-verder-btn" onclick="goBevestig()">Verder ›</button>
+  </div>
+</div>
+
+<!-- GESPREK -->
 <div id="screen-gesprek" class="screen">
   <div class="pad gap" style="padding-top:50px;padding-bottom:40px;">
-
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <div class="fase-badge">Gesprek</div>
-      <span style="font-size:0.78rem;color:#9080a8;" id="gesprek-teller">1 / ?</span>
+      <span style="font-size:0.78rem;color:#9080a8;" id="g-teller">1/12</span>
     </div>
-
-    <div class="gesprek-kaart" id="gesprek-kaart">
-      <div class="gesprek-voor" id="gesprek-voor">
-        <span id="gesprek-voor-icon">💌</span>
-        <span id="gesprek-voor-tekst">Over de waarden die je gaf</span>
-      </div>
-      <div class="gesprek-vraag" id="gesprek-vraag">...</div>
+    <div class="gesprek-kaart">
+      <div class="gesprek-type" id="g-type"></div>
+      <div class="gesprek-vraag" id="g-vraag"></div>
       <div class="gesprek-nav">
-        <div class="gesprek-dot-row" id="gesprek-dots"></div>
+        <div style="display:flex;gap:4px;" id="g-dots"></div>
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-ghost btn-sm" onclick="prevGesprek()" id="prev-btn"
-            style="width:auto;padding:6px 12px;">‹</button>
-          <button class="btn btn-ghost btn-sm" onclick="nextGesprek()" id="next-btn"
-            style="width:auto;padding:6px 12px;">›</button>
+          <button class="btn btn-ghost btn-sm" onclick="prevG()" style="width:auto;padding:6px 12px;">‹</button>
+          <button class="btn btn-ghost btn-sm" onclick="nextG()" id="g-next-btn" style="width:auto;padding:6px 12px;">›</button>
         </div>
       </div>
     </div>
-
-    <!-- Waarden-context -->
-    <div id="gesprek-context" class="gap-sm"></div>
-
+    <div class="gesprek-context" id="g-context" style="display:none;"></div>
     <div class="divider"></div>
-
-    <button class="btn btn-gold" onclick="showScreen('screen-menu-end')">Afronden ✦</button>
+    <button class="btn btn-gold" onclick="showScreen('screen-eind')">Afronden ✦</button>
     <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-reveal')">← Terug naar overzicht</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     SCREEN: AFSLUITING
-══════════════════════════════════════ -->
-<div id="screen-menu-end" class="screen">
+<!-- EIND -->
+<div id="screen-eind" class="screen">
   <div class="pad gap" style="padding-top:80px;align-items:center;text-align:center;">
     <div style="font-size:3rem;">🌟</div>
     <h1 style="font-size:1.6rem;">Goed gedaan</h1>
-    <p class="sub">Jullie hebben elkaars waarden ontdekt.<br>Dat is een gave — bewaar het goed.</p>
-    <div class="divider" style="width:100%;margin:8px 0;"></div>
-    <button class="btn btn-gold" onclick="showScreen('screen-intro')">Opnieuw spelen</button>
-    <button class="btn btn-outline" onclick="window.location='world.html'">Terug naar de kaart</button>
+    <p class="sub">Jullie waarden zijn opgeslagen in jullie profiel.<br>Het gesprek gaat verder in het echte leven.</p>
+    <div class="divider" style="width:100%;"></div>
+    <button class="btn btn-gold" onclick="location.reload()">Opnieuw spelen</button>
+    <button class="btn btn-outline" onclick="location.href='world.html'">Terug naar de kaart</button>
+  </div>
+</div>
+
+<!-- INFO SHEET -->
+<div class="info-overlay" id="info-overlay" onclick="sluitInfo(event)">
+  <div class="info-sheet" id="info-sheet">
+    <div class="info-handle"></div>
+    <div class="info-stripe" id="info-stripe"></div>
+    <div class="info-naam" id="info-naam"></div>
+    <div class="info-desc-txt" id="info-desc"></div>
+    <div class="info-label">✦ Voorbeeld</div>
+    <div class="info-voorbeeld" id="info-vb"></div>
+    <div class="info-label">🔍 Is dit jouw waarde?</div>
+    <div class="info-vraag" id="info-ontdek"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button class="btn btn-ghost btn-sm" onclick="sluitInfo()" style="flex:1;">Sluiten</button>
+    </div>
   </div>
 </div>
 
 <script>
 // ══════════════════════════════════════════════
-// TEKST (i18n-klaar object)
+// FAMILIES
 // ══════════════════════════════════════════════
-const TEKST = {
-  fase1_titel: 'Dit zie ik in jou',
-  fase1_sub: 'Kies 3 waarden die jij in je partner ziet of hem/haar wil geven',
-  fase2_titel: 'Dit verlang ik voor mezelf',
-  fase2_sub: 'Kies 3 waarden die jij meer wilt leven of nodig hebt',
-};
+const FAMILIES = [
+  {id:'vrijheid',  naam:'Vrijheid',    emoji:'🦋', desc:'Hoe jij ruimte en jezelf ervaart', kleur:'#9e7ace', rgb:'158,122,206'},
+  {id:'verbinding',naam:'Verbinding',  emoji:'🫂', desc:'Hoe jij liefde geeft en ontvangt',  kleur:'#e27a9e', rgb:'226,122,158'},
+  {id:'zorg',      naam:'Zorg',        emoji:'🌱', desc:'Hoe jij voor anderen en jezelf zorgt',kleur:'#e2a47a',rgb:'226,164,122'},
+  {id:'vuur',      naam:'Vuur',        emoji:'🔥', desc:'Wat jij najaagt als je op je best bent',kleur:'#d4af37',rgb:'212,175,55'},
+  {id:'karakter',  naam:'Karakter',    emoji:'🧭', desc:'Wie jij wil zijn, ongeacht de wereld',kleur:'#c4a07a',rgb:'196,160,122'},
+  {id:'genot',     naam:'Genot',       emoji:'✨', desc:'Wat het leven laat smaken en voelen', kleur:'#e2d47a',rgb:'226,212,122'},
+  {id:'zin',       naam:'Zin',         emoji:'🌌', desc:'Waarom jij hier bent',               kleur:'#c47ae2',rgb:'196,122,226'},
+];
 
 // ══════════════════════════════════════════════
-// WAARDEN DATABASE (95 waarden — research-based)
-// Brené Brown, Rokeach, Schwartz, VIA, NVC
+// WAARDEN (95 — verdeeld over families)
 // ══════════════════════════════════════════════
 const WAARDEN = [
-  // AUTONOMIE
-  {id:'v001',naam:'Vrijheid',desc:'De ruimte om je eigen keuzes te maken en jezelf te zijn zonder belemmeringen',cat:'autonomie',g:'medium',
-   ex:'Je slaat een goedbetaalde baan af omdat je baas je werktijden zou bepalen.',
-   ontdek:'Is er een moment geweest dat jij iets opgaf — geld, gemak, zekerheid — puur om vrij te zijn?'},
-  {id:'v002',naam:'Onafhankelijkheid',desc:'Op jezelf kunnen steunen en je eigen weg gaan',cat:'autonomie',g:'medium',
-   ex:'Je lost problemen het liefst zelf op voor je anderen om hulp vraagt.',
-   ontdek:'Wanneer voelde jij je het meest jezelf — was dat alleen of juist samen met anderen?'},
-  {id:'v003',naam:'Authenticiteit',desc:'Echt jezelf zijn, ook als dat niet past bij wat anderen verwachten',cat:'autonomie',g:'diep',
-   ex:'Je zegt in een gezelschap iets wat niemand wil horen, maar dat jij oprecht denkt.',
-   ontdek:'Is er een deel van jezelf dat je in bepaalde situaties verbergt? Hoe voelt dat?'},
-  {id:'v004',naam:'Avontuur',desc:'Het onbekende opzoeken en nieuwe ervaringen omarmen',cat:'autonomie',g:'licht',
-   ex:'Je boekt een reis naar een land dat je niet kent, zonder vast plan.',
-   ontdek:'Wanneer was de laatste keer dat je iets deed wat je écht nerveus maakte — en blij dat je het deed?'},
-  {id:'v005',naam:'Nieuwsgierigheid',desc:'Een open, onderzoekende houding naar de wereld, ideeën en mensen',cat:'autonomie',g:'licht',
-   ex:'Je verdiept je in een onderwerp dat niets met je werk te maken heeft, puur omdat het je fascineert.',
-   ontdek:'Waar kon jij als kind uren over nadenken? En doet dat nu nog iets met je?'},
-  {id:'v006',naam:'Zelfbeschikking',desc:'De bevoegdheid om je eigen leven in te richten zoals jij dat wilt',cat:'autonomie',g:'diep',
-   ex:'Je neemt een grote beslissing bewust zonder de goedkeuring van familie te zoeken.',
-   ontdek:'Heb je ooit het gevoel gehad dat je leven werd geleefd voor iemand anders? Wat deed je daarmee?'},
-  // RELATIE
-  {id:'v007',naam:'Liefde',desc:'Diepe genegenheid en verbondenheid geven en ontvangen',cat:'relatie',g:'diep',
-   ex:'Je past je agenda aan zonder te klagen, omdat iemand die je liefhebt je nodig heeft.',
-   ontdek:'Wanneer voelde jij je voor het laatste echt liefgehad — niet om wat je deed, maar om wie je bent?'},
-  {id:'v008',naam:'Intimiteit',desc:'Je kwetsbaar durven opstellen en echt gekend worden door een ander',cat:'relatie',g:'diep',
-   ex:'Je vertelt iemand iets wat je normaal voor jezelf houdt, en het voelt als opluchting.',
-   ontdek:'Is er iets wat jij nooit vertelt aan mensen, maar waarbij je stiekem hoopt dat iemand het toch ziet?'},
-  {id:'v009',naam:'Trouw',desc:'Betrouwbaar en standvastig aanwezig zijn voor wie op je rekent',cat:'relatie',g:'diep',
-   ex:'Je bent er voor een vriend in een moeilijke periode, ook als het ongelegen komt.',
-   ontdek:'Noem iemand die jij absoluut nooit zou laten vallen. Wat zegt dat over wat trouw voor jou betekent?'},
-  {id:'v010',naam:'Verbinding',desc:'Betekenisvolle banden hebben en het gevoel erbij te horen',cat:'relatie',g:'medium',
-   ex:'Je investeert tijd in een gesprek omdat je echt wilt weten hoe het met iemand gaat.',
-   ontdek:'In welk gezelschap voel jij je écht thuis — waar je niet hoeft te presteren of te filteren?'},
-  {id:'v011',naam:'Vriendschap',desc:'Warme, eerlijke relaties met mensen die je leven rijker maken',cat:'relatie',g:'medium',
-   ex:'Je belt een vriend op, niet omdat er iets te vieren is, maar gewoon om te horen hoe het gaat.',
-   ontdek:'Wie is de persoon buiten je romantische relatie die jou het beste kent? Hoe is die vriendschap gegroeid?'},
-  {id:'v012',naam:'Acceptatie',desc:'Mensen verwelkomen zoals ze zijn, zonder oordeel',cat:'relatie',g:'medium',
-   ex:'Je laat iemand zijn eigen keuze maken zonder commentaar, ook als jij het anders zou doen.',
-   ontdek:'Is er iemand in je leven die jij volledig accepteert, inclusief de dingen die je irriteren? Hoe voelt dat?'},
-  {id:'v013',naam:'Vergeving',desc:'Loslaten van wrok en ruimte maken voor herstel na pijn',cat:'relatie',g:'diep',
-   ex:'Je zegt eerlijk dat iets je heeft geraakt, maar kiest bewust om het niet te blijven meedragen.',
-   ontdek:'Is er iets wat jij jezelf nog niet volledig vergeven hebt? Wat zou het betekenen als je dat deed?'},
-  {id:'v014',naam:'Wederzijdsheid',desc:'Geven en nemen in balans zodat beide partners zich gezien voelen',cat:'relatie',g:'medium',
-   ex:'Je merkt op wanneer jij altijd degene bent die belt, en spreekt dat bespreekbaar.',
-   ontdek:'Wanneer voel jij je in een relatie echt gelijkwaardig — en wanneer niet?'},
-  {id:'v015',naam:'Saamhorigheid',desc:'Samen ergens bij horen en voor elkaar door het vuur gaan',cat:'relatie',g:'medium',
-   ex:'Je staat op voor een collega die oneerlijk behandeld wordt, ook als het jou niet raakt.',
-   ontdek:'Wanneer voelde jij je onderdeel van iets groters dan jezelf? Wat gaf dat gevoel?'},
-  // ZORG
-  {id:'v016',naam:'Zorgzaamheid',desc:'Aandacht geven aan het welzijn van mensen die je dierbaar zijn',cat:'zorg',g:'medium',
-   ex:'Je onthoudt wat iemand heeft verteld en vraagt er later naar zonder dat ze erom vroegen.',
-   ontdek:'Aan wie geef jij je zorg het meest spontaan — zonder dat het je moeite kost?'},
-  {id:'v017',naam:'Empathie',desc:'Je inleven in wat een ander voelt zonder dat over te nemen',cat:'zorg',g:'medium',
-   ex:'Je hoeft niets op te lossen — je bent er gewoon, en de ander voelt zich begrepen.',
-   ontdek:'Is er een moment dat jij precies voelde wat iemand anders voelde, zonder dat ze het zeiden?'},
-  {id:'v018',naam:'Mededogen',desc:'Bewogen worden door het lijden van anderen en bewust helpen',cat:'zorg',g:'diep',
-   ex:'Je ziet iemand in nood en handelt, ook als je er zelf niets aan hebt.',
-   ontdek:'Wat raakt jou het meest — het leed van mensen om je heen, of een groter wereldleed? Waarom?'},
-  {id:'v019',naam:'Bescherming',desc:'Een veilige haven zijn voor de mensen die je liefhebt',cat:'zorg',g:'medium',
-   ex:'Je zorgt ervoor dat de mensen in je leven zich nooit alleen hoeven te voelen in moeilijkheden.',
-   ontdek:'Wie bescherm jij in je leven, en wie beschermt jou? Voelt die balans goed?'},
-  {id:'v020',naam:'Gastvrijheid',desc:'Anderen welkom heten en een warm thuis bieden',cat:'zorg',g:'licht',
-   ex:'Je zet altijd koffie als iemand langskomt, ook als het spontaan is en ongelegen.',
-   ontdek:'Hoe voelt het voor jou als mensen bij jou over de vloer komen — geeft dat energie of kost het je?'},
-  {id:'v021',naam:'Dienstbaarheid',desc:'Vreugde vinden in bijdragen zonder er iets voor terug te verwachten',cat:'zorg',g:'medium',
-   ex:'Je helpt een vreemde, en rijdt daarna door zonder te wachten op een bedankje.',
-   ontdek:'Wanneer help jij iemand en voelt dat écht goed — niet verplicht, maar oprecht?'},
-  // GROEI
-  {id:'v022',naam:'Groei',desc:'Jezelf voortdurend ontwikkelen en beter worden als persoon',cat:'groei',g:'medium',
-   ex:'Je kiest bewust voor een situatie die je uitdaagt, ook al is de makkelijkere optie beschikbaar.',
-   ontdek:'Wanneer kijk jij terug en denk je: "Ik ben echt anders geworden"? Wat veroorzaakte die verandering?'},
-  {id:'v023',naam:'Leren',desc:'Kennis en wijsheid opdoen als een levenslange passie',cat:'groei',g:'licht',
-   ex:'Je leest een boek buiten je vakgebied puur uit nieuwsgierigheid, zonder nuttig doel.',
-   ontdek:'Is er een onderwerp waarbij jij uren kwijt bent zonder het door te hebben? Wat zegt dat over jou?'},
-  {id:'v024',naam:'Zelfinzicht',desc:'Je eigen patronen en drijfveren eerlijk onder ogen zien',cat:'groei',g:'diep',
-   ex:'Je herkent in een conflict een patroon van jezelf en benoemt het hardop, ook als het pijnlijk is.',
-   ontdek:'Wat is een patroon in jezelf dat je al lang ziet, maar nog steeds niet volledig hebt veranderd?'},
-  {id:'v025',naam:'Moed',desc:'Handelen vanuit je waarden ook als het spannend of beangstigend is',cat:'groei',g:'diep',
-   ex:'Je zegt iets wat de sfeer kan bederven, omdat je weet dat het gezegd moet worden.',
-   ontdek:'Wanneer was jij moedig terwijl niemand het zag? Hoe voelde dat achteraf?'},
-  {id:'v026',naam:'Veerkracht',desc:'Opstaan na tegenslagen en sterker worden door moeilijkheden',cat:'groei',g:'medium',
-   ex:'Na een mislukking analyseer je wat er misging en begint opnieuw, zonder te lang stil te staan.',
-   ontdek:'Wat is de moeilijkste periode geweest die jij hebt doorgemaakt, en wat heb je daarin over jezelf ontdekt?'},
-  {id:'v027',naam:'Creativiteit',desc:'Nieuwe ideeën bedenken die iets bijzonders toevoegen',cat:'groei',g:'licht',
-   ex:'Je lost een probleem op een manier op die niemand had verwacht, en het werkt.',
-   ontdek:'Wanneer voel jij je het meest creatief — in welke omgeving, op welk moment van de dag?'},
-  {id:'v028',naam:'Wijsheid',desc:'Kennis omzetten naar goed oordelen in het echte leven',cat:'groei',g:'diep',
-   ex:'Je geeft een advies dat iemand niet wil horen, maar later dankbaar voor is.',
-   ontdek:'Welke les heeft het leven jou geleerd die jij nooit uit een boek had kunnen halen?'},
-  {id:'v029',naam:'Ambitie',desc:'Streven naar doelen die groter zijn dan wat je nu hebt',cat:'groei',g:'medium',
-   ex:'Je blijft werken aan iets wat jaren duurt, omdat je weet waarvoor je het doet.',
-   ontdek:'Wat is een droom die jij nog niet hardop hebt uitgesproken, maar al lang in je hoofd draagt?'},
-  // PRESTATIE
-  {id:'v030',naam:'Excellentie',desc:'Het beste uit jezelf halen en kwaliteit leveren in wat je doet',cat:'prestatie',g:'medium',
-   ex:'Je werkt iets nog een keer over, niet omdat het moet, maar omdat jij weet dat het beter kan.',
-   ontdek:'Op welk gebied houd jij jezelf aan een hogere standaard dan anderen van je eisen?'},
-  {id:'v031',naam:'Vakmanschap',desc:'Diep meesterschap ontwikkelen in iets wat je belangrijk vindt',cat:'prestatie',g:'medium',
-   ex:'Je besteedt jaren aan het verfijnen van één vaardigheid, terwijl anderen al verder zijn gegaan.',
-   ontdek:'Is er iets wat jij doet waarbij je echt trots bent op hoe goed je het bent geworden?'},
-  {id:'v032',naam:'Doorzettingsvermogen',desc:'Volhouden als het moeilijk wordt, niet opgeven voor je doel bereikt is',cat:'prestatie',g:'medium',
-   ex:'Je blijft doorgaan met een project terwijl iedereen om je heen al gestopt is.',
-   ontdek:'Wat is iets wat jij hebt afgemaakt, ondanks dat het je veel meer heeft gekost dan verwacht?'},
-  {id:'v033',naam:'Invloed',desc:'Een positief verschil maken in de wereld om je heen',cat:'prestatie',g:'medium',
-   ex:'Je verandert iets in je omgeving — klein of groot — dat anderen ten goede komt.',
-   ontdek:'Wanneer merkte jij voor het eerst dat jij daadwerkelijk invloed had op mensen om je heen?'},
-  {id:'v034',naam:'Erkenning',desc:'Gezien en gewaardeerd worden voor wat je bijdraagt en wie je bent',cat:'prestatie',g:'medium',
-   ex:'Je voelt een warme voldoening als iemand jouw inspanning opmerkt en benoemt.',
-   ontdek:'Wanneer heb jij iets gedaan waarvoor je nooit de erkenning hebt gekregen die je verdiende? Hoe voelde dat?'},
-  {id:'v035',naam:'Leiderschap',desc:'Anderen inspireren en meenemen richting een gemeenschappelijk doel',cat:'prestatie',g:'medium',
-   ex:'Je neemt het voortouw in een situatie waar niemand anders het durft, niet vanwege macht, maar vanwege richting.',
-   ontdek:'Wanneer voel jij de neiging om voorop te lopen — en wanneer stap jij bewust naar achteren?'},
-  {id:'v036',naam:'Succes',desc:'Je eigen definitie van succes nastreven en die bereiken',cat:'prestatie',g:'licht',
-   ex:'Je hebt een helder beeld van wat "slagen" voor jou betekent — en dat is niet per se wat anderen zien.',
-   ontdek:'Als je eerlijk bent: leef jij nu naar jouw definitie van succes, of naar die van iemand anders?'},
-  // VRIJHEID (integriteit)
-  {id:'v037',naam:'Eerlijkheid',desc:'De waarheid spreken ook als dat oncomfortabel is',cat:'vrijheid',g:'diep',
-   ex:'Je geeft feedback die pijn doet, omdat je weet dat de ander het nodig heeft om te groeien.',
-   ontdek:'Wanneer heb jij iets gezegd wat moeite kostte, maar achteraf precies het goede bleek?'},
-  {id:'v038',naam:'Integriteit',desc:'Leven in lijn met je waarden, ook als niemand meekijkt',cat:'vrijheid',g:'diep',
-   ex:'Je doet het goede ook als het jou persoonlijk benadeelt en niemand het ziet.',
-   ontdek:'Is er een moment geweest dat jij de makkelijke weg kon kiezen, maar dat niet deed? Wat hield je tegen?'},
-  {id:'v039',naam:'Openheid',desc:'Transparant zijn over wie je bent en wat je denkt',cat:'vrijheid',g:'medium',
-   ex:'Je deelt je echte mening, ook in een groep waar die niet welkom is.',
-   ontdek:'Over welk onderwerp ben jij het meest open — en waar houd jij dingen nog voor jezelf?'},
-  {id:'v040',naam:'Rechtvaardigheid',desc:'Eerlijk en onpartijdig behandeld worden en anderen zo behandelen',cat:'vrijheid',g:'diep',
-   ex:'Je spreekt ongelijkheid aan, ook als jij er niet direct last van hebt.',
-   ontdek:'Wat maakt jou echt boos als het gaat om onrechtvaardigheid — klein of groot?'},
-  {id:'v041',naam:'Gelijkwaardigheid',desc:'Geloven dat ieder mens gelijke waarde en rechten verdient',cat:'vrijheid',g:'diep',
-   ex:'Je behandelt de schoonmaker met evenveel respect als de directeur.',
-   ontdek:'Is er een situatie geweest waarbij jij bewust koos voor gelijkwaardigheid terwijl dat je iets kostte?'},
-  // GEMEENSCHAP
-  {id:'v042',naam:'Familie',desc:'Diepe verbondenheid met de mensen die je thuis noemt',cat:'gemeenschap',g:'diep',
-   ex:'Je past grote levenskeuzes aan om dicht bij de mensen te blijven die je liefhebt.',
-   ontdek:'Wie telt voor jou als "familie" — ook als ze geen bloed zijn? Wat maakt die band?'},
-  {id:'v043',naam:'Traditie',desc:'Waarde hechten aan gewoonten die verbinden met het verleden',cat:'gemeenschap',g:'medium',
-   ex:'Je houdt bepaalde rituelen in stand, niet omdat het moet, maar omdat ze verbinding geven.',
-   ontdek:'Welke traditie of gewoonte uit je opvoeding draag jij bewust mee, en waarom?'},
-  {id:'v044',naam:'Bijdragen',desc:'Iets achterlaten wat de wereld een klein beetje beter maakt',cat:'gemeenschap',g:'diep',
-   ex:'Je zet tijd en energie in iets wat jij niet meer zelf zult meemaken, maar anderen wel.',
-   ontdek:'Als jij morgen zou stoppen te bestaan — wat zou jij willen dat mensen van jou meegenomen hebben?'},
-  {id:'v045',naam:'Solidariteit',desc:'Naast mensen staan die het moeilijk hebben, ook als het je moeite kost',cat:'gemeenschap',g:'diep',
-   ex:'Je spreekt je uit voor iemand die zichzelf niet kan verdedigen, ook als het je populariteit kost.',
-   ontdek:'Wanneer heb jij voor iemand gekozen die het minder makkelijk had — wat dreef je daartoe?'},
-  {id:'v046',naam:'Samenwerking',desc:'Samen iets bereiken wat je alleen niet zou kunnen',cat:'gemeenschap',g:'licht',
-   ex:'Je deelt de eer, zelfs als jij het meeste werk hebt gedaan.',
-   ontdek:'In welk team of welke samenwerking heb jij het meest geleerd van anderen?'},
-  {id:'v047',naam:'Diversiteit',desc:'Rijkdom zien in de verscheidenheid van mensen en culturen',cat:'gemeenschap',g:'medium',
-   ex:'Je zoekt bewust mensen op met andere achtergronden om je eigen kijk te verbreden.',
-   ontdek:'Wie in jouw leven heeft jouw manier van denken het meest veranderd doordat ze zo anders was?'},
-  // PLEZIER
-  {id:'v048',naam:'Plezier',desc:'Genieten van het leven en ruimte maken voor luchtigheid',cat:'plezier',g:'licht',
-   ex:'Je maakt ruimte voor nonsens en lachen, ook als er nog van alles op de to-do lijst staat.',
-   ontdek:'Wanneer was de laatste keer dat jij echt hebt gelachen — niet beleefd, maar van binnen?'},
-  {id:'v049',naam:'Humor',desc:'De lichtere kant van het leven zien en anderen aan het lachen maken',cat:'plezier',g:'licht',
-   ex:'Je maakt een grap op een gespannen moment en ontspant de sfeer.',
-   ontdek:'Denk aan de grappigste versie van jezelf — wanneer kom jij die het vaakst tegen?'},
-  {id:'v050',naam:'Genot',desc:'Bewust genieten van mooie momenten, smaken en aanrakingen',cat:'plezier',g:'licht',
-   ex:'Je neemt de tijd voor een maaltijd, een bad of een wandeling — bewust, zonder afleiding.',
-   ontdek:'Wanneer ben jij het laatste keer echt aanwezig geweest bij iets prettigs, zonder al aan het volgende te denken?'},
-  {id:'v051',naam:'Spelen',desc:'Ruimte houden voor spelenderwijs ontdekken, zonder doel',cat:'plezier',g:'licht',
-   ex:'Je doet iets puur omdat je het leuk vindt — geen resultaat, geen doel, geen publiek.',
-   ontdek:'Wat deed jij als kind urenlang voor je plezier — en doe je dat nu nog ergens in?'},
-  {id:'v052',naam:'Schoonheid',desc:'Oog hebben voor esthetiek en natuur als voeding voor de ziel',cat:'plezier',g:'licht',
-   ex:'Je stopt even om een zonsondergang te bekijken, ook als je haast hebt.',
-   ontdek:'Wat vindt jij werkelijk mooi — op een manier die je raakt, niet alleen visueel?'},
-  {id:'v053',naam:'Passie',desc:'Iets doen met heel je hart en je er volledig in verliezen',cat:'plezier',g:'medium',
-   ex:'Je vergeet de tijd als je met iets bezig bent dat je echt drijft.',
-   ontdek:'Waar verlies jij jezelf volledig in — en hoe lang geleden was dat voor het laatste?'},
-  // VEILIGHEID
-  {id:'v054',naam:'Veiligheid',desc:'Een omgeving creëren waar je jezelf kunt zijn zonder angst',cat:'veiligheid',g:'medium',
-   ex:'Je zorgt er bewust voor dat de mensen om je heen zich niet hoeven in te houden.',
-   ontdek:'Bij wie of waar voel jij je volledig veilig — geen masker, geen filter?'},
-  {id:'v055',naam:'Stabiliteit',desc:'Houvast en voorspelbaarheid als fundament voor alles daarna',cat:'veiligheid',g:'medium',
-   ex:'Je kiest bewust voor continuïteit in je leven zodat je energie vrij is voor wat echt belangrijk is.',
-   ontdek:'Wat geeft jou in je dagelijks leven het meeste houvast — en wat zou er gebeuren als dat wegvalt?'},
-  {id:'v056',naam:'Zekerheid',desc:'Weten dat de basisbehoeften van jezelf en je dierbaren gedekt zijn',cat:'veiligheid',g:'medium',
-   ex:'Je zorgt voor een buffer — financieel, emotioneel — zodat je niet overgeleverd bent aan toeval.',
-   ontdek:'Wat moet er in jouw leven "in orde" zijn voordat jij je vrij voelt om te leven?'},
-  {id:'v057',naam:'Rust',desc:'Kalmte en stilte als noodzakelijke ruimte voor herstel',cat:'veiligheid',g:'medium',
-   ex:'Je beschermt je stille tijd, ook als iedereen om je heen druk is.',
-   ontdek:'Wanneer was de laatste keer dat jij werkelijk stil was — van binnen?'},
-  {id:'v058',naam:'Vertrouwen',desc:'Geloven in goede bedoelingen en je over kunnen geven aan anderen',cat:'veiligheid',g:'diep',
-   ex:'Je durft je volledig te geven aan iemand, wetende dat je je kwetsbaar maakt.',
-   ontdek:'Hoe lang duurt het voor jij iemand echt vertrouwt — en wat is het moment dat het kantelt?'},
-  {id:'v059',naam:'Thuis',desc:'Een plek of persoon waarbij je volledig tot rust kunt komen',cat:'veiligheid',g:'diep',
-   ex:'Er is een plek of persoon waarbij je de spanning uit je schouders voelt weggaan.',
-   ontdek:'Waar of bij wie voel jij je het meest thuis — en wat maakt dat zo?'},
-  // SPIRITUEEL
-  {id:'v060',naam:'Zingeving',desc:'Leven vanuit de diepe overtuiging dat wat je doet er echt toe doet',cat:'spiritueel',g:'diep',
-   ex:'Je maakt keuzes niet op basis van wat loont, maar op basis van wat betekenis heeft.',
-   ontdek:'Als jij terugkijkt op de afgelopen vijf jaar — welke momenten voelden het meest zinvol?'},
-  {id:'v061',naam:'Dankbaarheid',desc:'Het goede in je leven bewust opmerken en er warm van worden',cat:'spiritueel',g:'medium',
-   ex:'Je neemt even de tijd om op te merken wat goed gaat, ook op een slechte dag.',
-   ontdek:'Wat is iets kleins in je leven waar jij regelmatig dankbaar voor bent, maar zelden uitspreekt?'},
-  {id:'v062',naam:'Hoop',desc:'Geloven in een betere toekomst, ook als het nu moeilijk is',cat:'spiritueel',g:'medium',
-   ex:'In een crisis kies jij bewust voor de mogelijkheid dat het beter wordt.',
-   ontdek:'Wanneer was jij echt hoopvol over iets wat onzeker was — en hoe hield je dat vol?'},
-  {id:'v063',naam:'Innerlijke vrede',desc:'Een plek in jezelf vinden die rustig blijft als de wereld rumoerig is',cat:'spiritueel',g:'diep',
-   ex:'Je raakt niet van slag door externe chaos, omdat je een stabiel centrum in jezelf hebt.',
-   ontdek:'Wanneer voel jij die rust van binnenuit — los van omstandigheden?'},
-  {id:'v064',naam:'Verwondering',desc:'De wereld zien met de ogen van iemand die er voor het eerst naar kijkt',cat:'spiritueel',g:'licht',
-   ex:'Je staat stil bij een alledaags wonder — een spin, een wolk, een woord — en voelt oprechte verrassing.',
-   ontdek:'Wanneer heb jij voor het laatste iets gezien alsof je het voor de eerste keer ontdekte?'},
-  {id:'v065',naam:'Spiritualiteit',desc:'Verbinding zoeken met iets groters dan jezelf, hoe je dat ook noemt',cat:'spiritueel',g:'diep',
-   ex:'Je hebt een persoonlijk gevoel van verbondenheid — met de natuur, het universum, God of iets anders.',
-   ontdek:'Is er een moment geweest dat jij voelde dat je deel uitmaakte van iets veel groters?'},
-  // BALANS
-  {id:'v066',naam:'Balans',desc:'Zorg dragen voor een leven waarin werk, relaties en rust in evenwicht zijn',cat:'balans',g:'medium',
-   ex:'Je zegt nee tegen een mooie kans omdat het ten koste gaat van iets wat je al hebt.',
-   ontdek:'Op welk vlak in je leven voelt de balans nu het minst goed — en wat zou je daar voor nodig hebben?'},
-  {id:'v067',naam:'Gezondheid',desc:'Bewust omgaan met je lichaam en geest als fundament',cat:'balans',g:'medium',
-   ex:'Je beschermt je slaap, beweging en voeding, niet als verplichting maar als zelfrespect.',
-   ontdek:'Wanneer luister jij echt naar je lichaam — en wanneer negeer je het?'},
-  {id:'v068',naam:'Eenvoud',desc:'Kiezen voor het essentiële en loslaten wat overbodig is',cat:'balans',g:'medium',
-   ex:'Je ruimt dingen op — spullen, verplichtingen, relaties — die je leven zwaarder maken dan nodig.',
-   ontdek:'Als jij morgen drie dingen uit je leven kon schrappen zonder consequenties, wat zou je kiezen?'},
-  {id:'v069',naam:'Zelfzorg',desc:'Goed voor jezelf zorgen zodat je ook voor anderen kunt zorgen',cat:'balans',g:'medium',
-   ex:'Je reserveert tijd voor herstel, ook als anderen een beroep op je doen.',
-   ontdek:'Wanneer zorg jij echt goed voor jezelf — en wanneer stel je dat uit voor iemand anders?'},
-  {id:'v070',naam:'Aanwezigheid',desc:'Echt aanwezig zijn in het moment, zonder afgeleid te worden',cat:'balans',g:'medium',
-   ex:'Je legt je telefoon weg en geeft iemand je volledige aandacht.',
-   ontdek:'Wanneer ben jij écht aanwezig — niet met je gedachten ergens anders?'},
-  {id:'v071',naam:'Matigheid',desc:'Bewust kiezen voor genoeg in plaats van altijd meer willen',cat:'balans',g:'medium',
-   ex:'Je stopt met iets als je genoeg hebt, ook als meer mogelijk is.',
-   ontdek:'Is er een terrein in je leven waar jij moeite hebt met "genoeg" — en wat drijft dat?'},
-  // KARAKTER
-  {id:'v072',naam:'Bescheidenheid',desc:'Je sterke kanten kennen zonder er mee te pronken',cat:'karakter',g:'medium',
-   ex:'Je brengt je eigen bijdrage niet naar voren, ook als dat je meer waardering zou geven.',
-   ontdek:'Wanneer ben jij iets goeds gedaan zonder dat iemand het wist — en hoe voelde dat?'},
-  {id:'v073',naam:'Verantwoordelijkheid',desc:'Eigenaarschap nemen over je keuzes en hun gevolgen',cat:'karakter',g:'diep',
-   ex:'Je zegt "ik heb het fout gedaan" zonder te verwijzen naar omstandigheden of anderen.',
-   ontdek:'Wanneer was het moeilijkste moment dat jij volledig verantwoordelijkheid nam?'},
-  {id:'v074',naam:'Discipline',desc:'Doen wat nodig is, ook als je er geen zin in hebt',cat:'karakter',g:'medium',
-   ex:'Je houdt je aan je voornemen, ook als niemand het controleert en de verleiding groot is.',
-   ontdek:'Wat is iets in je leven waar jij meer discipline voor nodig hebt dan anderen van je weten?'},
-  {id:'v075',naam:'Geduld',desc:'Kunnen wachten en ruimte geven zonder dat ongeduld het overneemt',cat:'karakter',g:'licht',
-   ex:'Je laat een proces zijn tijd nemen, ook als je liever vandaag het resultaat ziet.',
-   ontdek:'Wanneer is geduld voor jou het moeilijkst — en wat helpt je dan?'},
-  {id:'v076',naam:'Kwetsbaarheid',desc:'Jezelf laten zien zoals je werkelijk bent, ook de imperfecte delen',cat:'karakter',g:'diep',
-   ex:'Je deelt iets moeilijks over jezelf in een gesprek, wetende dat je je niet kunt verstoppen.',
-   ontdek:'Is er iets van jezelf dat je kwetsbaar voelt om te laten zien — maar waarvan je weet dat het jou menselijker maakt?'},
-  {id:'v077',naam:'Moed',desc:'Overeind blijven bij tegenslagen en bang durven zijn zonder te vluchten',cat:'karakter',g:'diep',
-   ex:'Je loopt naar het moeilijke gesprek toe in plaats van het uit te stellen.',
-   ontdek:'Wat is iets wat jij steeds voor je uitschuift uit angst — en wat zou het betekenen als je het deed?'},
-  // BIJDRAGE
-  {id:'v078',naam:'Duurzaamheid',desc:'Keuzes maken die de aarde en toekomstige generaties respecteren',cat:'bijdrage',g:'medium',
-   ex:'Je kiest de minder gemakkelijke optie omdat die minder schade aanricht.',
-   ontdek:'Wanneer voel jij je verantwoordelijk voor iets buiten je eigen leven — voor de wereld na jou?'},
-  {id:'v079',naam:'Vrijgevigheid',desc:'Geven — van tijd, geld of aandacht — zonder bijbedoelingen',cat:'bijdrage',g:'medium',
-   ex:'Je geeft iets weg waarvan je weet dat je er zelf ook van had kunnen genieten.',
-   ontdek:'Wanneer gaf jij iets weg en voelde dat dat meer vreugde gaf dan het vasthouden ervan?'},
-  {id:'v080',naam:'Erfenis',desc:'Iets achterlaten dat voortleeft — een verhaal, werk of herinnering',cat:'bijdrage',g:'diep',
-   ex:'Je denkt bij grote beslissingen na: "Wat wil ik dat mensen na mij hiervan zeggen?"',
-   ontdek:'Wat wil jij dat mensen over jou zeggen als je er niet meer bent — niet over je prestaties, maar over wie je was?'},
-  {id:'v081',naam:'Onderwijs',desc:'Kennis doorgeven als een van de mooiste dingen die je kunt doen',cat:'bijdrage',g:'medium',
-   ex:'Je deelt wat je geleerd hebt, ook als je er zelf concurrentie door creëert.',
-   ontdek:'Wat is iets wat jij weet of kunt, dat je van harte zou willen doorgeven aan iemand anders?'},
-  {id:'v082',naam:'Rechtvaardigheid',desc:'Opkomen voor mensen die geen stem hebben',cat:'bijdrage',g:'diep',
-   ex:'Je spreekt je uit, ook als de persoon die het aangaat er niet bij is.',
-   ontdek:'Wanneer was jij getuige van onrecht en deed je iets — of hield je je in? Wat bepaalde dat?'},
-  // VERBONDENHEID
-  {id:'v083',naam:'Natuur',desc:'Je verbonden voelen met de wereld buiten de mens: dieren, planten, seizoenen',cat:'verbondenheid',g:'licht',
-   ex:'Je zoekt bewust de buitenlucht op als je je hoofd leeg wil maken.',
-   ontdek:'Welke plek in de natuur geeft jou het meeste rust of energie — en waarom juist die?'},
-  {id:'v084',naam:'Schoonheid in het alledaagse',desc:'De bijzonderheid zien in gewone dingen en momenten',cat:'verbondenheid',g:'licht',
-   ex:'Je merkt de lichtval op een muur op, de geur van regen, het geluid van een kinderstem.',
-   ontdek:'Wat is iets heel gewoons wat jij oprecht mooi vindt, maar zelden uitspreekt?'},
-  {id:'v085',naam:'Muziek',desc:'Geluid en ritme als een taal die dieper gaat dan woorden',cat:'verbondenheid',g:'licht',
-   ex:'Een liedje brengt je terug naar een gevoel dat je al jaren niet hebt gehad.',
-   ontdek:'Welk nummer raakt jou elke keer weer — en wat doet het met je?'},
-  {id:'v086',naam:'Verhalen',desc:'Betekenis geven aan het leven door het te vertellen en te horen',cat:'verbondenheid',g:'medium',
-   ex:'Je luistert naar het levensverhaal van een oude man en voelt je daarna rijker.',
-   ontdek:'Welk verhaal — van jezelf of een ander — heeft jou het diepst geraakt?'},
-  {id:'v087',naam:'Herinneringen',desc:'Het verleden koesteren als een deel van wie je nu bent',cat:'verbondenheid',g:'medium',
-   ex:'Je bewaart kleine voorwerpen of foto\'s omdat ze een moment vasthouden.',
-   ontdek:'Welke herinnering koester jij het meest — eentje waarvan je hoopt dat je die nooit vergeet?'},
-  {id:'v088',naam:'Rituelen',desc:'Betekenis geven aan overgangen en momenten door ze te markeren',cat:'verbondenheid',g:'medium',
-   ex:'Je hebt kleine gewoonten die de dag structuur en betekenis geven — koffie\'s ochtends, wandelen na het werk.',
-   ontdek:'Welk ritueel of welke gewoonte heeft het meeste betekenis voor jou — en waarom?'},
-  {id:'v089',naam:'Loyaliteit',desc:'Er zijn voor wie je liefhebt, ook als het lastig is',cat:'verbondenheid',g:'diep',
-   ex:'Je staat naast iemand die het moeilijk heeft, ook als de rest zich afwendt.',
-   ontdek:'Voor wie zou jij alles laten vallen als ze je nu belden? Wat zegt dat over jou?'},
-  {id:'v090',naam:'Wortels',desc:'Verbonden blijven met waar je vandaan komt als kracht, niet als last',cat:'verbondenheid',g:'diep',
-   ex:'Je draagt iets van je afkomst met trots mee, ook als je ver van huis bent.',
-   ontdek:'Wat uit je achtergrond of opvoeding ben jij blij mee te dragen — ook al was het niet allemaal makkelijk?'},
-  // Extra
-  {id:'v091',naam:'Eigenwaarde',desc:'Jezelf waardig achten — niet vanwege prestaties, maar vanwege wie je bent',cat:'karakter',g:'diep',
-   ex:'Je vraagt om wat je nodig hebt zonder je ervoor te verontschuldigen.',
-   ontdek:'Wanneer voel jij je de minste waardering voor jezelf hebben — en is dat reëel?'},
-  {id:'v092',naam:'Innerlijke harmonie',desc:'Vrede hebben met de verschillende kanten van jezelf',cat:'spiritueel',g:'diep',
-   ex:'Je hoeft niet meer te kiezen tussen wie je thuis bent en wie je buiten bent.',
-   ontdek:'Zijn er versies van jezelf die met elkaar botsen? Wat zou het kosten om ze te verzoenen?'},
-  {id:'v093',naam:'Speelsheid',desc:'Het kind in jezelf levend houden, ook als volwassene',cat:'plezier',g:'licht',
-   ex:'Je maakt onzin, danst in de keuken, of lacht om je eigen dommigheid.',
-   ontdek:'Wanneer ben jij echt speels — niet sociaal, maar vanuit een echt lichte plek in jezelf?'},
-  {id:'v094',naam:'Nieuw begin',desc:'De mogelijkheid zien om je leven op elk moment anders te schrijven',cat:'groei',g:'medium',
-   ex:'Je neemt een ingrijpende beslissing omdat je weet dat het nooit te laat is om anders te kiezen.',
-   ontdek:'Is er iets in jouw leven waarvan jij diep vanbinnen weet dat je er opnieuw over wilt nadenken?'},
-  {id:'v095',naam:'Verbondenheid met de kosmos',desc:'Het gevoel dat je deel uitmaakt van iets oneindig groters dan jezelf',cat:'spiritueel',g:'diep',
-   ex:'Onder een sterrenhemel of bij de oceaan voel je hoe klein en hoe verbonden je tegelijk bent.',
-   ontdek:'Wanneer voelde jij je voor het laatste onderdeel van iets dat veel groter was dan jijzelf?'},
+  // 🦋 VRIJHEID (14)
+  {id:'v001',f:'vrijheid',naam:'Vrijheid',       cat:'autonomie',  desc:'De ruimte om je eigen keuzes te maken en jezelf te zijn',ex:'Je slaat een goedbetaalde baan af puur om vrij te zijn.',ontdek:'Is er iets wat jij hebt opgegeven — geld, gemak, zekerheid — puur voor vrijheid?'},
+  {id:'v002',f:'vrijheid',naam:'Onafhankelijkheid',cat:'autonomie',desc:'Op jezelf kunnen steunen en je eigen weg gaan',ex:'Je lost problemen het liefst zelf op voor je om hulp vraagt.',ontdek:'Wanneer voel jij je het meest jezelf — alleen of juist samen?'},
+  {id:'v003',f:'vrijheid',naam:'Authenticiteit', cat:'autonomie',  desc:'Echt jezelf zijn, ook als dat niet past bij de verwachting',ex:'Je zegt in een gezelschap iets ongemakkelijks dat jij oprecht denkt.',ontdek:'Is er een deel van jezelf dat je in bepaalde situaties verbergt? Hoe voelt dat?'},
+  {id:'v004',f:'vrijheid',naam:'Avontuur',        cat:'autonomie',  desc:'Het onbekende opzoeken en nieuwe ervaringen omarmen',ex:'Je boekt een reis naar een onbekend land zonder vast plan.',ontdek:'Wanneer was de laatste keer dat je iets deed wat je écht nerveus maakte — en blij dat je het deed?'},
+  {id:'v005',f:'vrijheid',naam:'Nieuwsgierigheid',cat:'autonomie',  desc:'Een open, onderzoekende houding naar de wereld en mensen',ex:'Je verdiept je in een onderwerp puur omdat het je fascineert.',ontdek:'Waar kon jij als kind uren over nadenken? Raakt dat je nu nog?'},
+  {id:'v006',f:'vrijheid',naam:'Zelfbeschikking', cat:'autonomie',  desc:'De bevoegdheid om je eigen leven in te richten zoals jij wilt',ex:'Je neemt een grote beslissing bewust zonder goedkeuring te zoeken.',ontdek:'Heb je ooit het gevoel gehad dat je leven werd geleefd voor iemand anders?'},
+  {id:'v037',f:'vrijheid',naam:'Eerlijkheid',     cat:'integriteit',desc:'De waarheid spreken ook als dat oncomfortabel is',ex:'Je geeft feedback die pijn doet, omdat je weet dat het nodig is.',ontdek:'Wanneer heb jij iets gezegd wat moeite kostte maar achteraf precies goed bleek?'},
+  {id:'v038',f:'vrijheid',naam:'Integriteit',     cat:'integriteit',desc:'Leven in lijn met je waarden, ook als niemand meekijkt',ex:'Je doet het goede ook als het jou persoonlijk benadeelt.',ontdek:'Is er een moment dat jij de makkelijke weg kon kiezen maar dat niet deed?'},
+  {id:'v039',f:'vrijheid',naam:'Openheid',        cat:'integriteit',desc:'Transparant zijn over wie je bent en wat je denkt',ex:'Je deelt je echte mening, ook in een groep waar die niet welkom is.',ontdek:'Over welk onderwerp ben jij het meest open — en waar houd je dingen voor je?'},
+  {id:'v040',f:'vrijheid',naam:'Rechtvaardigheid',cat:'integriteit',desc:'Eerlijk en onpartijdig behandeld worden en anderen zo behandelen',ex:'Je spreekt ongelijkheid aan, ook als jij er niet direct last van hebt.',ontdek:'Wat maakt jou echt boos als het gaat om onrecht?'},
+  {id:'v041',f:'vrijheid',naam:'Gelijkwaardigheid',cat:'integriteit',desc:'Geloven dat ieder mens gelijke waarde en rechten verdient',ex:'Je behandelt de schoonmaker met evenveel respect als de directeur.',ontdek:'Is er een situatie waarbij jij bewust koos voor gelijkwaardigheid terwijl dat je iets kostte?'},
+  {id:'v068',f:'vrijheid',naam:'Eenvoud',         cat:'balans',     desc:'Kiezen voor het essentiële en loslaten wat overbodig is',ex:'Je ruimt bewust dingen op — spullen, verplichtingen — die je zwaarder maken.',ontdek:'Als jij drie dingen uit je leven kon schrappen zonder consequenties, wat zou je kiezen?'},
+  {id:'v070',f:'vrijheid',naam:'Aanwezigheid',    cat:'balans',     desc:'Echt aanwezig zijn in het moment, zonder afgeleid te worden',ex:'Je legt je telefoon weg en geeft iemand je volledige aandacht.',ontdek:'Wanneer ben jij écht aanwezig — niet met je gedachten ergens anders?'},
+  {id:'v091',f:'vrijheid',naam:'Eigenwaarde',     cat:'karakter',   desc:'Jezelf waardig achten — niet vanwege prestaties maar wie je bent',ex:'Je vraagt om wat je nodig hebt zonder je ervoor te verontschuldigen.',ontdek:'Wanneer voel jij je de minste waardering voor jezelf — en is dat reëel?'},
+
+  // 🫂 VERBINDING (15)
+  {id:'v007',f:'verbinding',naam:'Liefde',         cat:'relatie',   desc:'Diepe genegenheid en verbondenheid geven en ontvangen',ex:'Je past je agenda aan omdat iemand die je liefhebt je nodig heeft.',ontdek:'Wanneer voelde jij je voor het laatste echt liefgehad — niet om wat je deed maar wie je bent?'},
+  {id:'v008',f:'verbinding',naam:'Intimiteit',      cat:'relatie',   desc:'Je kwetsbaar durven opstellen en echt gekend worden',ex:'Je vertelt iemand iets wat je normaal voor jezelf houdt.',ontdek:'Is er iets wat jij nooit vertelt, maar waarbij je stiekem hoopt dat iemand het toch ziet?'},
+  {id:'v009',f:'verbinding',naam:'Trouw',           cat:'relatie',   desc:'Betrouwbaar en standvastig aanwezig zijn voor wie op je rekent',ex:'Je bent er voor een vriend ook als het ongelegen komt.',ontdek:'Noem iemand die jij absoluut nooit zou laten vallen. Wat zegt dat?'},
+  {id:'v010',f:'verbinding',naam:'Verbinding',      cat:'relatie',   desc:'Betekenisvolle banden hebben en het gevoel erbij te horen',ex:'Je investeert tijd in een gesprek omdat je echt wilt weten hoe het gaat.',ontdek:'In welk gezelschap voel jij je écht thuis — waar je niet hoeft te filteren?'},
+  {id:'v011',f:'verbinding',naam:'Vriendschap',     cat:'relatie',   desc:'Warme, eerlijke relaties met mensen die je leven rijker maken',ex:'Je belt een vriend op gewoon om te horen hoe het gaat.',ontdek:'Wie is de persoon die jou het beste kent buiten je romantische relatie?'},
+  {id:'v012',f:'verbinding',naam:'Acceptatie',      cat:'relatie',   desc:'Mensen verwelkomen zoals ze zijn, zonder oordeel',ex:'Je laat iemand zijn eigen keuze maken zonder commentaar.',ontdek:'Is er iemand die jij volledig accepteert, inclusief de dingen die je irriteren?'},
+  {id:'v013',f:'verbinding',naam:'Vergeving',       cat:'relatie',   desc:'Loslaten van wrok en ruimte maken voor herstel na pijn',ex:'Je zegt eerlijk dat iets je heeft geraakt maar kiest bewust om het niet mee te dragen.',ontdek:'Is er iets wat jij jezelf nog niet volledig vergeven hebt?'},
+  {id:'v014',f:'verbinding',naam:'Wederzijdsheid',  cat:'relatie',   desc:'Geven en nemen in balans zodat beide partners zich gezien voelen',ex:'Je merkt op wanneer jij altijd degene bent die belt, en spreekt dat aan.',ontdek:'Wanneer voel jij je in een relatie echt gelijkwaardig — en wanneer niet?'},
+  {id:'v015',f:'verbinding',naam:'Saamhorigheid',   cat:'relatie',   desc:'Samen ergens bij horen en voor elkaar door het vuur gaan',ex:'Je staat op voor een collega die oneerlijk behandeld wordt.',ontdek:'Wanneer voelde jij je onderdeel van iets groters dan jezelf?'},
+  {id:'v042',f:'verbinding',naam:'Familie',         cat:'gemeenschap',desc:'Diepe verbondenheid met de mensen die je thuis noemt',ex:'Je past grote levenskeuzes aan om dicht bij de mensen te blijven die je liefhebt.',ontdek:'Wie telt voor jou als "familie" — ook als ze geen bloed zijn?'},
+  {id:'v043',f:'verbinding',naam:'Traditie',        cat:'gemeenschap',desc:'Waarde hechten aan gewoonten die verbinden met het verleden',ex:'Je houdt bepaalde rituelen in stand omdat ze verbinding geven.',ontdek:'Welke traditie uit je opvoeding draag jij bewust mee?'},
+  {id:'v089',f:'verbinding',naam:'Loyaliteit',      cat:'verbondenheid',desc:'Er zijn voor wie je liefhebt, ook als het lastig is',ex:'Je staat naast iemand ook als de rest zich afwendt.',ontdek:'Voor wie zou jij alles laten vallen als ze je nu belden?'},
+  {id:'v087',f:'verbinding',naam:'Herinneringen',   cat:'verbondenheid',desc:'Het verleden koesteren als een deel van wie je nu bent',ex:'Je bewaart kleine voorwerpen of foto\'s omdat ze een moment vasthouden.',ontdek:'Welke herinnering koester jij het meest?'},
+  {id:'v088',f:'verbinding',naam:'Rituelen',        cat:'verbondenheid',desc:'Betekenis geven aan overgangen en momenten door ze te markeren',ex:'Je hebt kleine dagelijkse gewoonten die structuur en betekenis geven.',ontdek:'Welk ritueel heeft het meeste betekenis voor jou?'},
+  {id:'v090',f:'verbinding',naam:'Wortels',         cat:'verbondenheid',desc:'Verbonden blijven met waar je vandaan komt als kracht',ex:'Je draagt iets van je afkomst met trots mee, ook als je ver van huis bent.',ontdek:'Wat uit je achtergrond ben jij blij mee te dragen?'},
+
+  // 🌱 ZORG (14)
+  {id:'v016',f:'zorg',naam:'Zorgzaamheid',   cat:'zorg',      desc:'Aandacht geven aan het welzijn van mensen die je dierbaar zijn',ex:'Je onthoudt wat iemand heeft verteld en vraagt er later naar.',ontdek:'Aan wie geef jij je zorg het meest spontaan — zonder dat het je moeite kost?'},
+  {id:'v017',f:'zorg',naam:'Empathie',       cat:'zorg',      desc:'Je inleven in wat een ander voelt zonder dat over te nemen',ex:'Je hoeft niets op te lossen — je bent er gewoon, en de ander voelt zich begrepen.',ontdek:'Is er een moment dat jij precies voelde wat iemand anders voelde, zonder dat ze het zeiden?'},
+  {id:'v018',f:'zorg',naam:'Mededogen',      cat:'zorg',      desc:'Bewogen worden door het lijden van anderen en bewust helpen',ex:'Je ziet iemand in nood en handelt, ook als je er zelf niets aan hebt.',ontdek:'Wat raakt jou het meest — het leed om je heen of een groter wereldleed?'},
+  {id:'v019',f:'zorg',naam:'Bescherming',    cat:'zorg',      desc:'Een veilige haven zijn voor de mensen die je liefhebt',ex:'Je zorgt dat de mensen in je leven zich nooit alleen hoeven te voelen.',ontdek:'Wie bescherm jij — en wie beschermt jou? Voelt die balans goed?'},
+  {id:'v020',f:'zorg',naam:'Gastvrijheid',   cat:'zorg',      desc:'Anderen welkom heten en een warm thuis bieden',ex:'Je zet altijd koffie als iemand langskomt, ook als het spontaan is.',ontdek:'Hoe voelt het voor jou als mensen bij jou over de vloer komen?'},
+  {id:'v021',f:'zorg',naam:'Dienstbaarheid', cat:'zorg',      desc:'Vreugde vinden in bijdragen zonder er iets voor terug te verwachten',ex:'Je helpt een vreemde en rijdt door zonder te wachten op een bedankje.',ontdek:'Wanneer help jij iemand en voelt dat écht goed — niet verplicht?'},
+  {id:'v054',f:'zorg',naam:'Veiligheid',     cat:'veiligheid',desc:'Een omgeving creëren waar je jezelf kunt zijn zonder angst',ex:'Je zorgt bewust dat de mensen om je heen zich niet hoeven in te houden.',ontdek:'Bij wie of waar voel jij je volledig veilig — geen masker, geen filter?'},
+  {id:'v055',f:'zorg',naam:'Stabiliteit',    cat:'veiligheid',desc:'Houvast en voorspelbaarheid als fundament voor alles daarna',ex:'Je kiest bewust voor continuïteit zodat je energie vrij is voor wat echt telt.',ontdek:'Wat geeft jou in je dagelijks leven het meeste houvast?'},
+  {id:'v057',f:'zorg',naam:'Rust',           cat:'veiligheid',desc:'Kalmte en stilte als noodzakelijke ruimte voor herstel',ex:'Je beschermt je stille tijd, ook als iedereen om je heen druk is.',ontdek:'Wanneer was de laatste keer dat jij werkelijk stil was — van binnen?'},
+  {id:'v058',f:'zorg',naam:'Vertrouwen',     cat:'veiligheid',desc:'Geloven in goede bedoelingen en je over kunnen geven',ex:'Je durft je volledig te geven aan iemand, wetende dat je je kwetsbaar maakt.',ontdek:'Hoe lang duurt het voor jij iemand echt vertrouwt?'},
+  {id:'v059',f:'zorg',naam:'Thuis',          cat:'veiligheid',desc:'Een plek of persoon waarbij je volledig tot rust kunt komen',ex:'Er is een plek of persoon waarbij je de spanning voelt weggaan.',ontdek:'Waar of bij wie voel jij je het meest thuis — en wat maakt dat zo?'},
+  {id:'v066',f:'zorg',naam:'Balans',         cat:'balans',    desc:'Zorg dragen voor een leven waarin werk, relaties en rust kloppen',ex:'Je zegt nee tegen een mooie kans omdat het ten koste gaat van iets wat je al hebt.',ontdek:'Op welk vlak voelt de balans nu het minst goed?'},
+  {id:'v067',f:'zorg',naam:'Gezondheid',     cat:'balans',    desc:'Bewust omgaan met je lichaam en geest als fundament',ex:'Je beschermt je slaap, beweging en voeding niet als verplichting maar als zelfrespect.',ontdek:'Wanneer luister jij echt naar je lichaam — en wanneer negeer je het?'},
+  {id:'v069',f:'zorg',naam:'Zelfzorg',       cat:'balans',    desc:'Goed voor jezelf zorgen zodat je ook voor anderen kunt zorgen',ex:'Je reserveert tijd voor herstel, ook als anderen een beroep op je doen.',ontdek:'Wanneer zorg jij echt goed voor jezelf — en wanneer stel je dat uit?'},
+
+  // 🔥 VUUR (14)
+  {id:'v022',f:'vuur',naam:'Groei',              cat:'groei',    desc:'Jezelf voortdurend ontwikkelen en beter worden',ex:'Je kiest bewust voor een situatie die je uitdaagt.',ontdek:'Wanneer kijk jij terug en denk je: "Ik ben echt anders geworden"?'},
+  {id:'v023',f:'vuur',naam:'Leren',              cat:'groei',    desc:'Kennis en wijsheid opdoen als een levenslange passie',ex:'Je leest een boek buiten je vakgebied puur uit nieuwsgierigheid.',ontdek:'Is er een onderwerp waarbij jij uren kwijt bent zonder het door te hebben?'},
+  {id:'v024',f:'vuur',naam:'Zelfinzicht',        cat:'groei',    desc:'Je eigen patronen en drijfveren eerlijk onder ogen zien',ex:'Je herkent in een conflict een patroon van jezelf en benoemt dat hardop.',ontdek:'Wat is een patroon in jezelf dat je al lang ziet maar nog niet volledig hebt veranderd?'},
+  {id:'v025',f:'vuur',naam:'Moed',               cat:'groei',    desc:'Handelen vanuit je waarden ook als het spannend of beangstigend is',ex:'Je zegt iets wat de sfeer kan bederven, omdat je weet dat het gezegd moet worden.',ontdek:'Wanneer was jij moedig terwijl niemand het zag?'},
+  {id:'v026',f:'vuur',naam:'Veerkracht',         cat:'groei',    desc:'Opstaan na tegenslagen en sterker worden door moeilijkheden',ex:'Na een mislukking analyseer je wat er misging en begin je opnieuw.',ontdek:'Wat is de moeilijkste periode die jij hebt doorgemaakt — en wat heb je over jezelf ontdekt?'},
+  {id:'v027',f:'vuur',naam:'Creativiteit',       cat:'groei',    desc:'Nieuwe ideeën bedenken die iets bijzonders toevoegen',ex:'Je lost een probleem op een manier op die niemand had verwacht.',ontdek:'Wanneer voel jij je het meest creatief?'},
+  {id:'v028',f:'vuur',naam:'Wijsheid',           cat:'groei',    desc:'Kennis omzetten naar goed oordelen in het echte leven',ex:'Je geeft een advies dat iemand niet wil horen maar later dankbaar voor is.',ontdek:'Welke les heeft het leven jou geleerd die je nooit uit een boek had kunnen halen?'},
+  {id:'v029',f:'vuur',naam:'Ambitie',            cat:'groei',    desc:'Streven naar doelen die groter zijn dan wat je nu hebt',ex:'Je blijft werken aan iets wat jaren duurt, omdat je weet waarvoor je het doet.',ontdek:'Wat is een droom die jij nog niet hardop hebt uitgesproken?'},
+  {id:'v030',f:'vuur',naam:'Excellentie',        cat:'prestatie',desc:'Het beste uit jezelf halen en kwaliteit leveren',ex:'Je werkt iets nog een keer over, niet omdat het moet maar omdat jij weet dat het beter kan.',ontdek:'Op welk gebied houd jij jezelf aan een hogere standaard dan anderen van je eisen?'},
+  {id:'v031',f:'vuur',naam:'Vakmanschap',        cat:'prestatie',desc:'Diep meesterschap ontwikkelen in iets wat je belangrijk vindt',ex:'Je besteedt jaren aan het verfijnen van één vaardigheid.',ontdek:'Is er iets wat jij doet waarbij je echt trots bent op hoe goed je het bent geworden?'},
+  {id:'v032',f:'vuur',naam:'Doorzettingsvermogen',cat:'prestatie',desc:'Volhouden als het moeilijk wordt',ex:'Je blijft doorgaan met een project terwijl iedereen al gestopt is.',ontdek:'Wat is iets wat jij hebt afgemaakt ondanks dat het veel meer kostte dan verwacht?'},
+  {id:'v033',f:'vuur',naam:'Invloed',            cat:'prestatie',desc:'Een positief verschil maken in de wereld om je heen',ex:'Je verandert iets in je omgeving dat anderen ten goede komt.',ontdek:'Wanneer merkte jij voor het eerst dat jij daadwerkelijk invloed had op mensen?'},
+  {id:'v035',f:'vuur',naam:'Leiderschap',        cat:'prestatie',desc:'Anderen inspireren richting een gemeenschappelijk doel',ex:'Je neemt het voortouw niet vanwege macht maar vanwege richting.',ontdek:'Wanneer voel jij de neiging om voorop te lopen — en wanneer stap jij bewust naar achteren?'},
+  {id:'v094',f:'vuur',naam:'Nieuw begin',        cat:'groei',    desc:'De mogelijkheid zien om je leven op elk moment anders te schrijven',ex:'Je neemt een ingrijpende beslissing omdat het nooit te laat is om anders te kiezen.',ontdek:'Is er iets in jouw leven waarvan je weet dat je er opnieuw over wilt nadenken?'},
+
+  // 🧭 KARAKTER (14)
+  {id:'v072',f:'karakter',naam:'Bescheidenheid',   cat:'karakter',desc:'Je sterke kanten kennen zonder er mee te pronken',ex:'Je brengt je bijdrage niet naar voren, ook als dat je meer waardering zou geven.',ontdek:'Wanneer heb jij iets goeds gedaan zonder dat iemand het wist?'},
+  {id:'v073',f:'karakter',naam:'Verantwoordelijkheid',cat:'karakter',desc:'Eigenaarschap nemen over je keuzes en hun gevolgen',ex:'Je zegt "ik heb het fout gedaan" zonder te verwijzen naar omstandigheden.',ontdek:'Wanneer was het moeilijkste moment dat jij volledig verantwoordelijkheid nam?'},
+  {id:'v074',f:'karakter',naam:'Discipline',       cat:'karakter',desc:'Doen wat nodig is, ook als je er geen zin in hebt',ex:'Je houdt je aan je voornemen ook als niemand het controleert.',ontdek:'Wat is iets in je leven waar jij meer discipline voor nodig hebt dan anderen weten?'},
+  {id:'v075',f:'karakter',naam:'Geduld',           cat:'karakter',desc:'Kunnen wachten en ruimte geven zonder dat ongeduld het overneemt',ex:'Je laat een proces zijn tijd nemen, ook als je liever vandaag het resultaat ziet.',ontdek:'Wanneer is geduld voor jou het moeilijkst — en wat helpt je dan?'},
+  {id:'v076',f:'karakter',naam:'Kwetsbaarheid',    cat:'karakter',desc:'Jezelf laten zien zoals je werkelijk bent, ook de imperfecte delen',ex:'Je deelt iets moeilijks, wetende dat je je niet kunt verstoppen.',ontdek:'Is er iets van jezelf dat je kwetsbaar voelt om te laten zien — maar dat je menselijker maakt?'},
+  {id:'v077',f:'karakter',naam:'Moed (karakter)',  cat:'karakter',desc:'Overeind blijven bij tegenslagen en bang durven zijn zonder te vluchten',ex:'Je loopt naar het moeilijke gesprek toe in plaats van het uit te stellen.',ontdek:'Wat is iets wat jij steeds voor je uitschuift uit angst?'},
+  {id:'v044',f:'karakter',naam:'Bijdragen',        cat:'gemeenschap',desc:'Iets achterlaten wat de wereld een klein beetje beter maakt',ex:'Je zet tijd in iets wat jij zelf niet meer zult meemaken maar anderen wel.',ontdek:'Als jij morgen zou stoppen te bestaan — wat zou jij willen dat mensen van jou meegenomen hebben?'},
+  {id:'v045',f:'karakter',naam:'Solidariteit',     cat:'gemeenschap',desc:'Naast mensen staan die het moeilijk hebben',ex:'Je spreekt je uit voor iemand die zichzelf niet kan verdedigen.',ontdek:'Wanneer heb jij voor iemand gekozen die het minder makkelijk had?'},
+  {id:'v078',f:'karakter',naam:'Duurzaamheid',     cat:'bijdrage', desc:'Keuzes maken die de aarde en toekomstige generaties respecteren',ex:'Je kiest de minder gemakkelijke optie omdat die minder schade aanricht.',ontdek:'Wanneer voel jij je verantwoordelijk voor iets buiten je eigen leven?'},
+  {id:'v079',f:'karakter',naam:'Vrijgevigheid',    cat:'bijdrage', desc:'Geven — van tijd, geld of aandacht — zonder bijbedoelingen',ex:'Je geeft iets weg waarvan je weet dat je er zelf ook van had kunnen genieten.',ontdek:'Wanneer gaf jij iets weg en voelde dat meer vreugde dan vasthouden?'},
+  {id:'v080',f:'karakter',naam:'Erfenis',          cat:'bijdrage', desc:'Iets achterlaten dat voortleeft — een verhaal, werk of herinnering',ex:'Je denkt bij grote beslissingen: "Wat wil ik dat mensen na mij hiervan zeggen?"',ontdek:'Wat wil jij dat mensen over jou zeggen als je er niet meer bent?'},
+  {id:'v081',f:'karakter',naam:'Onderwijs',        cat:'bijdrage', desc:'Kennis doorgeven als een van de mooiste dingen die je kunt doen',ex:'Je deelt wat je geleerd hebt, ook als je er concurrentie door creëert.',ontdek:'Wat is iets wat jij weet dat je van harte zou willen doorgeven?'},
+  {id:'v082',f:'karakter',naam:'Rechtvaardigheid', cat:'bijdrage', desc:'Opkomen voor mensen die geen stem hebben',ex:'Je spreekt je uit, ook als de persoon die het aangaat er niet bij is.',ontdek:'Wanneer was jij getuige van onrecht en deed je iets — of hield je je in?'},
+  {id:'v034',f:'karakter',naam:'Erkenning',        cat:'prestatie',desc:'Gezien en gewaardeerd worden voor wat je bijdraagt en wie je bent',ex:'Je voelt een warme voldoening als iemand jouw inspanning opmerkt.',ontdek:'Wanneer heb jij iets gedaan waarvoor je nooit de erkenning hebt gekregen die je verdiende?'},
+
+  // ✨ GENOT (12)
+  {id:'v048',f:'genot',naam:'Plezier',              cat:'plezier',     desc:'Genieten van het leven en ruimte maken voor luchtigheid',ex:'Je maakt ruimte voor nonsens en lachen, ook als er veel op de lijst staat.',ontdek:'Wanneer was de laatste keer dat jij echt hebt gelachen — niet beleefd?'},
+  {id:'v049',f:'genot',naam:'Humor',                cat:'plezier',     desc:'De lichtere kant van het leven zien en anderen aan het lachen maken',ex:'Je maakt een grap op een gespannen moment en ontspant de sfeer.',ontdek:'Wanneer kom jij de grappigste versie van jezelf het vaakst tegen?'},
+  {id:'v050',f:'genot',naam:'Genot',                cat:'plezier',     desc:'Bewust genieten van mooie momenten, smaken en aanrakingen',ex:'Je neemt de tijd voor een maaltijd of wandeling — bewust, zonder afleiding.',ontdek:'Wanneer ben jij echt aanwezig bij iets prettigs, zonder al aan het volgende te denken?'},
+  {id:'v051',f:'genot',naam:'Spelen',               cat:'plezier',     desc:'Ruimte houden voor spelenderwijs ontdekken, zonder doel',ex:'Je doet iets puur omdat je het leuk vindt — geen doel, geen publiek.',ontdek:'Wat deed jij als kind urenlang voor je plezier — doe je dat nu nog ergens in?'},
+  {id:'v052',f:'genot',naam:'Schoonheid',           cat:'plezier',     desc:'Oog hebben voor esthetiek en natuur als voeding voor de ziel',ex:'Je stopt even om een zonsondergang te bekijken, ook als je haast hebt.',ontdek:'Wat vindt jij werkelijk mooi — op een manier die je raakt?'},
+  {id:'v053',f:'genot',naam:'Passie',               cat:'plezier',     desc:'Iets doen met heel je hart en je er volledig in verliezen',ex:'Je vergeet de tijd als je met iets bezig bent dat je echt drijft.',ontdek:'Waar verlies jij jezelf volledig in — en hoe lang geleden was dat?'},
+  {id:'v093',f:'genot',naam:'Speelsheid',           cat:'plezier',     desc:'Het kind in jezelf levend houden, ook als volwassene',ex:'Je maakt onzin, danst in de keuken, of lacht om je eigen dommigheid.',ontdek:'Wanneer ben jij echt speels — vanuit een lichte plek in jezelf?'},
+  {id:'v083',f:'genot',naam:'Natuur',               cat:'verbondenheid',desc:'Je verbonden voelen met de wereld buiten de mens',ex:'Je zoekt bewust de buitenlucht op als je je hoofd leeg wil maken.',ontdek:'Welke plek in de natuur geeft jou het meeste rust of energie?'},
+  {id:'v084',f:'genot',naam:'Schoonheid in alledaagse',cat:'verbondenheid',desc:'De bijzonderheid zien in gewone dingen en momenten',ex:'Je merkt de lichtval op een muur op, de geur van regen.',ontdek:'Wat is iets heel gewoons wat jij oprecht mooi vindt maar zelden uitspreekt?'},
+  {id:'v085',f:'genot',naam:'Muziek',               cat:'verbondenheid',desc:'Geluid en ritme als een taal die dieper gaat dan woorden',ex:'Een liedje brengt je terug naar een gevoel dat je al jaren niet had.',ontdek:'Welk nummer raakt jou elke keer weer — en wat doet het met je?'},
+  {id:'v046',f:'genot',naam:'Samenwerking',         cat:'gemeenschap', desc:'Samen iets bereiken wat je alleen niet zou kunnen',ex:'Je deelt de eer, zelfs als jij het meeste werk hebt gedaan.',ontdek:'In welke samenwerking heb jij het meest geleerd van anderen?'},
+  {id:'v056',f:'genot',naam:'Zekerheid',            cat:'veiligheid',  desc:'Weten dat de basisbehoeften van jezelf en je dierbaren gedekt zijn',ex:'Je zorgt voor een buffer zodat je niet overgeleverd bent aan toeval.',ontdek:'Wat moet er in jouw leven "in orde" zijn voordat jij je vrij voelt?'},
+
+  // 🌌 ZIN (12)
+  {id:'v060',f:'zin',naam:'Zingeving',           cat:'spiritueel',desc:'Leven vanuit de diepe overtuiging dat wat je doet er echt toe doet',ex:'Je maakt keuzes niet op basis van wat loont maar wat betekenis heeft.',ontdek:'Als jij terugkijkt op de afgelopen vijf jaar — welke momenten voelden het meest zinvol?'},
+  {id:'v061',f:'zin',naam:'Dankbaarheid',        cat:'spiritueel',desc:'Het goede in je leven bewust opmerken en er warm van worden',ex:'Je neemt even de tijd om op te merken wat goed gaat, ook op een slechte dag.',ontdek:'Wat is iets kleins in je leven waar jij regelmatig dankbaar voor bent maar zelden uitspreekt?'},
+  {id:'v062',f:'zin',naam:'Hoop',               cat:'spiritueel',desc:'Geloven in een betere toekomst, ook als het nu moeilijk is',ex:'In een crisis kies jij bewust voor de mogelijkheid dat het beter wordt.',ontdek:'Wanneer was jij echt hoopvol over iets onzekers — en hoe hield je dat vol?'},
+  {id:'v063',f:'zin',naam:'Innerlijke vrede',   cat:'spiritueel',desc:'Een plek in jezelf vinden die rustig blijft als de wereld rumoerig is',ex:'Je raakt niet van slag door externe chaos, omdat je een stabiel centrum hebt.',ontdek:'Wanneer voel jij die rust van binnenuit — los van omstandigheden?'},
+  {id:'v064',f:'zin',naam:'Verwondering',       cat:'spiritueel',desc:'De wereld zien met de ogen van iemand die er voor het eerst naar kijkt',ex:'Je staat stil bij een alledaags wonder en voelt oprechte verrassing.',ontdek:'Wanneer heb jij voor het laatste iets gezien alsof je het voor de eerste keer ontdekte?'},
+  {id:'v065',f:'zin',naam:'Spiritualiteit',     cat:'spiritueel',desc:'Verbinding zoeken met iets groters dan jezelf',ex:'Je hebt een persoonlijk gevoel van verbondenheid — met de natuur, het universum of God.',ontdek:'Is er een moment geweest dat jij voelde deel uit te maken van iets veel groters?'},
+  {id:'v092',f:'zin',naam:'Innerlijke harmonie',cat:'spiritueel',desc:'Vrede hebben met de verschillende kanten van jezelf',ex:'Je hoeft niet meer te kiezen tussen wie je thuis bent en wie je buiten bent.',ontdek:'Zijn er versies van jezelf die met elkaar botsen? Wat zou het kosten ze te verzoenen?'},
+  {id:'v095',f:'zin',naam:'Verbondenheid met kosmos',cat:'spiritueel',desc:'Het gevoel dat je deel uitmaakt van iets oneindig groters',ex:'Onder een sterrenhemel voel je hoe klein en hoe verbonden je tegelijk bent.',ontdek:'Wanneer voelde jij je onderdeel van iets dat veel groter was dan jijzelf?'},
+  {id:'v086',f:'zin',naam:'Verhalen',           cat:'verbondenheid',desc:'Betekenis geven aan het leven door het te vertellen en te horen',ex:'Je luistert naar het levensverhaal van een ander en voelt je daarna rijker.',ontdek:'Welk verhaal — van jezelf of een ander — heeft jou het diepst geraakt?'},
+  {id:'v047',f:'zin',naam:'Diversiteit',        cat:'gemeenschap', desc:'Rijkdom zien in de verscheidenheid van mensen en culturen',ex:'Je zoekt bewust mensen op met andere achtergronden om je kijk te verbreden.',ontdek:'Wie in jouw leven heeft jouw manier van denken het meest veranderd?'},
+  {id:'v071',f:'zin',naam:'Matigheid',          cat:'balans',      desc:'Bewust kiezen voor genoeg in plaats van altijd meer willen',ex:'Je stopt met iets als je genoeg hebt, ook als meer mogelijk is.',ontdek:'Is er een terrein in je leven waar jij moeite hebt met "genoeg"?'},
+  {id:'v055',f:'zin',naam:'Stabiliteit',        cat:'veiligheid',  desc:'Houvast en voorspelbaarheid als fundament voor alles daarna',ex:'Je kiest bewust voor continuïteit zodat je energie vrij is voor wat telt.',ontdek:'Wat geeft jou het meeste houvast in je dagelijks leven?'},
 ];
 
 // ══════════════════════════════════════════════
-// GESPREKSSTARTERS (research-based: Gottman, NVC, Aron)
+// FAMILIE KLEUR
 // ══════════════════════════════════════════════
-const GESPREKSSTARTERS = [
-  // Over wat je de ander gaf
-  {type:'gegeven', v:'Wanneer zag jij deze waarde het duidelijkst in je partner terug?'},
-  {type:'gegeven', v:'Welke herinnering schoot je te binnen toen je deze kaart koos voor de ander?'},
-  {type:'gegeven', v:'Is dit iets wat je bewondert in je partner, of iets waarvan je hoopt dat hij/zij het meer gaat leven?'},
-  {type:'gegeven', v:'Wat zou er voor jou veranderen als je partner deze waarde minder zou leven?'},
-  {type:'gegeven', v:'Wat zie jij in je partner op dit vlak, dat hij/zij zelf misschien niet goed ziet?'},
-  {type:'gegeven', v:'Hoe heeft deze waarde van je partner jou persoonlijk geraakt of beïnvloed?'},
-  // Over wat je voor jezelf koos
-  {type:'zelf', v:'Is dit iets wat je nu al leeft, of iets waarnaar je verlangt?'},
-  {type:'zelf', v:'Wanneer voel je dat je dit het meest mist in je leven?'},
-  {type:'zelf', v:'Wat houdt je er soms van af om deze waarde volledig te leven?'},
-  {type:'zelf', v:'Heeft iemand uit je verleden deze waarde bij jou aangewakkerd of juist onderdrukt?'},
-  {type:'zelf', v:'Hoe zou ons leven er anders uitzien als jij dit meer zou leven?'},
-  {type:'zelf', v:'Wat zou je morgen anders doen als je volledig vanuit deze waarde leefde?'},
-  // Over de overlap en het verschil
-  {type:'samen', v:'Welke waarde verraste jou het meest in wat de ander koos?'},
-  {type:'samen', v:'Op welk punt denken jullie dat jullie waarden het sterkst botsen?'},
-  {type:'samen', v:'Waar vullen jullie waarden elkaar aan op een manier die jullie sterker maakt?'},
-  {type:'samen', v:'Is er een waarde van de ander die jij meer in je eigen leven wil?'},
-  {type:'samen', v:'Is er een waarde die jullie delen maar op een heel andere manier leven?'},
-  {type:'samen', v:'Wat zegt dit gesprek over wie jullie samen zijn, vergeleken met wie jullie afzonderlijk zijn?'},
-  {type:'samen', v:'Als je één waarde uit de keuze van de ander mee mocht nemen, welke zou dat zijn en waarom?'},
-  // Verdieping (Gottman / NVC)
-  {type:'verdieping', v:'Vertel een moment dat je echt leefde vanuit deze waarde. Hoe voelde dat?'},
-  {type:'verdieping', v:'Wanneer werd deze waarde voor jou "echt" — was er een gebeurtenis die hem formeerde?'},
-  {type:'verdieping', v:'Wat is de schaduwkant van deze waarde — wanneer werkt het je juist tegen?'},
-  {type:'verdieping', v:'Als je partner je meer in deze waarde zou willen steunen, hoe ziet dat er in de praktijk uit?'},
-  {type:'verdieping', v:'Welke behoefte zit er achter deze waarde? Wat probeert ze voor jou te beschermen?'},
-  {type:'verdieping', v:'Als je over tien jaar terugkijkt — heeft deze waarde je gebracht waar je wilde zijn?'},
-  {type:'verdieping', v:'Heb ik ooit, bewust of onbewust, iets gedaan dat het leven van deze waarde moeilijker maakte?'},
-  {type:'verdieping', v:'Wat hoop je dat ik begrijp over jou, nu ik weet dat deze waarde zo belangrijk is?'},
-  {type:'verdieping', v:'Sluit dit gesprek af met één zin: "Wat ik jou wil laten weten na dit gesprek is..."'},
-];
+function getFamilieConfig(fid) {
+  return FAMILIES.find(f => f.id === fid) || {kleur:'#888',rgb:'136,136,136'};
+}
+function getWaarde(id) { return WAARDEN.find(w => w.id === id); }
 
 // ══════════════════════════════════════════════
-// CATEGORIE CONFIG
+// FAMILIE SPANNINGEN (voor persoonlijke vragen)
 // ══════════════════════════════════════════════
-const CAT_CONFIG = {
-  autonomie:    {kleur:'#4a90e2', rgb:'74,144,226'},
-  relatie:      {kleur:'#e27a9e', rgb:'226,122,158'},
-  zorg:         {kleur:'#e2a47a', rgb:'226,164,122'},
-  groei:        {kleur:'#7ac47a', rgb:'122,196,122'},
-  prestatie:    {kleur:'#d4af37', rgb:'212,175,55'},
-  vrijheid:     {kleur:'#9e7ace', rgb:'158,122,206'},
-  gemeenschap:  {kleur:'#7acec4', rgb:'122,206,196'},
-  plezier:      {kleur:'#e2d47a', rgb:'226,212,122'},
-  veiligheid:   {kleur:'#7a9ec4', rgb:'122,158,196'},
-  spiritueel:   {kleur:'#c47ae2', rgb:'196,122,226'},
-  balans:       {kleur:'#7ae2c4', rgb:'122,226,196'},
-  karakter:     {kleur:'#c4a07a', rgb:'196,160,122'},
-  bijdrage:     {kleur:'#a0c47a', rgb:'160,196,122'},
-  verbondenheid:{kleur:'#c47a8a', rgb:'196,122,138'},
+const FAMILIE_SPANNINGEN = {
+  'vrijheid-verbinding': 'Jij koos waarden uit Vrijheid én je partner koos Verbinding — of andersom. Dit is de klassieke spanning: hoeveel ruimte en hoeveel nabijheid? Hoe leven jullie die twee naast elkaar?',
+  'vuur-zorg':   'Vuur (ambitie, groei) vs Zorg (rust, veiligheid) — wie geeft thuis de ruimte om te rijden, en wie zorgt dat de rest niet instort?',
+  'vrijheid-zorg':'Je kiest voor jezelf, de ander kiest voor de ander — of andersom. Hoe verdelen jullie die zorg, ook voor jezelf?',
+  'genot-karakter':'Genieten vs principes — wanneer geef jij je over aan het moment, en wanneer houdt je karakter je staande?',
+  'verbinding-karakter':'Erbij horen vs integer zijn — als de groep het fout heeft, kies jij dan voor verbinding of voor wat jij gelooft?',
+  'zin-genot':   'Zoek jij betekenis of vreugde — of zijn dat voor jou hetzelfde? Wanneer botst dat?',
+  'vuur-verbinding':'Groei door onafhankelijkheid vs groei door relatie — jullie drijven elkaar anders. Hoe werkt dat bij jullie?',
+  'zorg-vuur':   'Stabiliteit vs risico — wie van jullie remt soms en wie geeft gas? Is dat altijd dezelfde?',
+  'vrijheid-zin': 'Radicale openheid vs toewijding aan een richting — hoe vrij mag je zijn als je ook ergens voor staat?',
+  'karakter-verbinding':'Wie jij bent vs wie jullie samen zijn — als die twee botsen, wat wint dan?',
 };
+
+// SPECIFIEKE WAARDEN-PAAR VRAGEN
+const PAAR_VRAGEN = {
+  'v001-v054': 'Jij koos Vrijheid voor jezelf, maar Veiligheid speelt ook een rol. Hoe leven vrijheid en veiligheid naast elkaar in jou — versterken ze elkaar of concurreren ze?',
+  'v008-v002': 'Intimiteit vraagt om je openstellen, onafhankelijkheid om je terugtrekken. Hoe doe jij dat — ben je meer de opener of de terugtreder?',
+  'v025-v076': 'Moed en kwetsbaarheid liggen vlak bij elkaar. Is kwetsbaar zijn voor jou een daad van moed, of voelt dat anders?',
+  'v007-v006': 'Liefde en zelfbeschikking — hoe geef je liefde zonder jezelf te verliezen?',
+  'v009-v001': 'Trouw klinkt als vasthouden, vrijheid als loslaten. Hoe versoenigen die twee zich voor jou?',
+  'v060-v048': 'Zingeving en plezier — is plezier voor jou een deel van de zin, of staat het er los van?',
+  'v022-v057': 'Groeien vraagt energie, rust herstelt het. Hoe weet jij wanneer je gas moet geven en wanneer je moet stoppen?',
+  'v073-v012': 'Verantwoordelijkheid nemen en acceptatie — kun jij iemand volledig accepteren en hen toch aanspreken?',
+  'v029-v055': 'Ambitie en stabiliteit — hoe hou jij die twee in evenwicht zonder dat één van beiden verliest?',
+  'v003-v015': 'Authenticiteit en saamhorigheid — is er ooit een moment dat echt jezelf zijn botst met erbij horen?',
+};
+
+function getPaarVraag(ids1, ids2) {
+  for (const a of ids1) {
+    for (const b of ids2) {
+      if (PAAR_VRAGEN[`${a}-${b}`]) return PAAR_VRAGEN[`${a}-${b}`];
+      if (PAAR_VRAGEN[`${b}-${a}`]) return PAAR_VRAGEN[`${b}-${a}`];
+    }
+  }
+  return null;
+}
 
 // ══════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════
 const state = {
-  player: '1', code: null, solo: false,
-  fase: 1, // 1 = kies voor partner, 2 = kies voor jezelf
-  gekozenPartner: [],  // ids van waarden die je aan partner geeft
-  gekozenZelf: [],     // ids van waarden die je voor jezelf kiest
-  partnerData: null,   // ontvangen van partner via koppel
-  huidigFilter: '',
-  // Gesprek
-  gesprekLijst: [],
-  gesprekIdx: 0,
+  player:'1', code:null, solo:false,
+  fase:1,
+  gekozenPartner:[], gekozenZelf:[], bevestigdVanPartner:[],
+  partnerData:null,
+  // families
+  gekozenFamilies:[],
+  huidigeFamilie:null, swipeQueue:[], swipeIdx:0,
+  jaPile:[], // alle geswiped ja's
+  // gesprek
+  gesprekLijst:[], gesprekIdx:0,
+  _bevestigState:{},
 };
 
 // ══════════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════════
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const el = document.getElementById(id);
-  if (el) { el.classList.add('active'); el.scrollTop = 0; }
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById(id);
+  if(el){el.classList.add('active');el.scrollTop=0;}
 }
-
-function getWaarde(id) { return WAARDEN.find(w => w.id === id); }
-function getCat(cat) { return CAT_CONFIG[cat] || {kleur:'#888',rgb:'136,136,136'}; }
-
-function shuffle(arr) {
-  const a=[...arr];
-  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
-  return a;
-}
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 // ══════════════════════════════════════════════
 // KOPPELCODE
 // ══════════════════════════════════════════════
-function loadKoppelScript(cb) {
-  if (window.KoppelClient) { cb(); return; }
-  const s = document.createElement('script');
-  s.src = 'koppel.js';
-  s.onload = cb;
-  document.head.appendChild(s);
+function loadKoppelScript(cb){
+  if(window.KoppelClient){cb();return;}
+  const s=document.createElement('script');s.src='koppel.js';s.onload=cb;document.head.appendChild(s);
 }
 
-function startKoppel(mode) {
+function startKoppel(mode){
   showScreen('screen-koppel');
-  document.getElementById('koppel-maak-ui').style.display = 'none';
-  document.getElementById('koppel-join-ui').style.display = 'none';
-
-  loadKoppelScript(() => {
-    KoppelClient.on('session_created', ({code}) => {
-      state.code = code;
-      document.getElementById('display-code').textContent = code;
+  document.getElementById('koppel-maak').style.display='none';
+  document.getElementById('koppel-join').style.display='none';
+  loadKoppelScript(()=>{
+    KoppelClient.on('session_created',({code})=>{state.code=code;document.getElementById('display-code').textContent=code;});
+    KoppelClient.on('both_connected',()=>{
+      document.getElementById('wacht-p').style.display='none';
+      document.getElementById('beide-ok').style.display='flex';
+      document.getElementById('beide-ok').style.flexDirection='column';
     });
-    KoppelClient.on('both_connected', () => {
-      document.getElementById('wacht-partner').style.display = 'none';
-      document.getElementById('beide-verbonden').style.display = 'flex';
-      document.getElementById('beide-verbonden').style.flexDirection = 'column';
+    KoppelClient.on('session_joined',()=>{
+      document.getElementById('join-wacht').style.display='none';
+      document.getElementById('join-klaar').style.display='block';
     });
-    KoppelClient.on('session_joined', () => {
-      document.getElementById('join-wacht').style.display = 'none';
-      document.getElementById('join-klaar').style.display = 'block';
+    KoppelClient.on('session_error',({message})=>{
+      document.getElementById('koppel-err').textContent=message;
+      document.getElementById('koppel-err').style.display='block';
+      document.getElementById('join-wacht').style.display='none';
     });
-    KoppelClient.on('session_error', ({message}) => {
-      document.getElementById('koppel-error').textContent = message;
-      document.getElementById('koppel-error').style.display = 'block';
-      document.getElementById('join-wacht').style.display = 'none';
+    KoppelClient.on('session_complete',({state:s})=>{
+      const pk=state.player==='1'?'p2':'p1';
+      if(s[pk]){state.partnerData=s[pk];buildReveal();showScreen('screen-reveal');}
     });
-    KoppelClient.on('session_complete', ({state: s}) => {
-      // Beide klaar — verwerk partner data
-      const partnerKey = state.player === '1' ? 'p2' : 'p1';
-      if (s[partnerKey]) {
-        state.partnerData = s[partnerKey];
-        buildReveal();
-        showScreen('screen-reveal');
-      }
+    KoppelClient.on('session_update',({state:s})=>{
+      const pk=state.player==='1'?'p2':'p1';
+      if(s[pk]?.done){state.partnerData=s[pk];buildReveal();showScreen('screen-reveal');}
     });
-    KoppelClient.on('session_update', ({state: s}) => {
-      const partnerKey = state.player === '1' ? 'p2' : 'p1';
-      if (s[partnerKey]?.done) {
-        state.partnerData = s[partnerKey];
-        buildReveal();
-        showScreen('screen-reveal');
-      }
-    });
-
-    if (mode === 'create') {
-      document.getElementById('koppel-titel').textContent = 'Sessie aanmaken';
-      document.getElementById('koppel-maak-ui').style.display = 'block';
-      state.player = '1';
-      KoppelClient.create('waarden');
+    if(mode==='create'){
+      document.getElementById('koppel-titel').textContent='Sessie aanmaken';
+      document.getElementById('koppel-maak').style.display='block';
+      state.player='1';KoppelClient.create('waarden');
     } else {
-      document.getElementById('koppel-titel').textContent = 'Code invoeren';
-      document.getElementById('koppel-join-ui').style.display = 'block';
-      state.player = '2';
+      document.getElementById('koppel-titel').textContent='Code invoeren';
+      document.getElementById('koppel-join').style.display='block';
+      state.player='2';
     }
   });
 }
 
-function doJoin() {
-  const code = document.getElementById('join-input').value.trim().toUpperCase();
-  if (code.length < 4) return;
-  state.code = code;
-  document.getElementById('join-wacht').style.display = 'block';
-  document.getElementById('koppel-error').style.display = 'none';
-  KoppelClient.join(code, 'waarden');
+function doJoin(){
+  const code=document.getElementById('join-input').value.trim().toUpperCase();
+  if(code.length<4)return;
+  state.code=code;
+  document.getElementById('join-wacht').style.display='block';
+  document.getElementById('koppel-err').style.display='none';
+  KoppelClient.join(code,'waarden');
 }
 
-function startSolo() {
-  state.solo = true;
-  state.partnerData = null;
-  goIntro();
-}
+function startSolo(){state.solo=true;state.partnerData=null;goFamilies();}
 
 // ══════════════════════════════════════════════
-// INTRO → START
+// FAMILIES SCREEN
 // ══════════════════════════════════════════════
-function goIntro() { showScreen('screen-intro'); }
+function goFamilies(){
+  const f1=state.fase===1;
+  document.getElementById('families-fase-badge').textContent=state.solo?'Jouw waarden':`Fase ${state.fase} van 2`;
+  document.getElementById('families-titel').textContent=f1&&!state.solo?'Welke families spreken jou aan?':'Kies families om te verkennen';
+  document.getElementById('families-sub').textContent=f1&&!state.solo?'Je kiest straks 3 waarden om aan je partner te geven':'Je kiest straks 3 waarden voor jezelf';
 
-function startFase1() {
-  state.gekozenPartner = [];
-  state.gekozenZelf = [];
-  state.bevestigdVanPartner = [];
-
-  if (state.solo) {
-    // Solo: sla fase 1 over, ga direct naar zelf-selectie
-    startFase2Solo();
-  } else {
-    state.fase = 1;
-    document.getElementById('fase-badge').textContent = 'Fase 1 van 2';
-    document.getElementById('selecteer-titel').textContent = TEKST.fase1_titel;
-    document.getElementById('selecteer-sub').textContent = TEKST.fase1_sub;
-    renderKaartenGrid(WAARDEN, 'partner');
-    updateSelectBar('partner');
-    showScreen('screen-selecteer');
-  }
+  state.gekozenFamilies=[];
+  state.jaPile=[];
+  renderFamiliesGrid();
+  updateFamiliesSlots();
+  showScreen('screen-families');
 }
 
-function startFase2Solo() {
-  state.fase = 2;
-  document.getElementById('fase-badge').textContent = 'Jouw waarden';
-  document.getElementById('selecteer-titel').textContent = 'Wat leeft in mij';
-  document.getElementById('selecteer-sub').textContent = 'Kies 3 waarden die voor jou het meest resoneren op dit moment';
-  renderKaartenGrid(WAARDEN, 'zelf');
-  updateSelectBar('zelf');
-  showScreen('screen-selecteer');
-}
-
-function startFase2() {
-  state.fase = 2;
-  document.getElementById('fase-badge').textContent = 'Fase 2 van 2';
-  document.getElementById('selecteer-titel').textContent = TEKST.fase2_titel;
-  document.getElementById('selecteer-sub').textContent = TEKST.fase2_sub;
-  renderKaartenGrid(WAARDEN, 'zelf');
-  updateSelectBar('zelf');
-  showScreen('screen-selecteer');
-}
-
-// ══════════════════════════════════════════════
-// KAARTEN GRID
-// ══════════════════════════════════════════════
-function renderKaartenGrid(waarden, modus) {
-  const grid = document.getElementById('kaarten-grid');
-  grid.innerHTML = '';
-  const filter = state.huidigFilter;
-  const lijst = filter ? waarden.filter(w => w.cat === filter) : waarden;
-
-  lijst.forEach(w => {
-    const cfg = getCat(w.cat);
-    const isPartner = state.gekozenPartner.includes(w.id);
-    const isZelf = state.gekozenZelf.includes(w.id);
-    const klasse = isPartner ? 'geselecteerd-partner' : (isZelf ? 'geselecteerd-zelf' : '');
-    const check = isPartner ? '💌' : (isZelf ? '🌱' : '');
-
-    const el = document.createElement('div');
-    el.className = `waarde-kaart ${klasse}`;
-    el.style.cssText = `--cat-color:${cfg.kleur};--cat-rgb:${cfg.rgb};`;
-    el.dataset.id = w.id;
-    el.innerHTML = `
-      <div class="kaart-cat-label"><span class="kaart-cat-dot"></span>${w.cat}</div>
-      <div class="kaart-naam">${w.naam}</div>
-      <div class="kaart-desc">${w.desc}</div>
-      <div class="kaart-gewicht">${w.g}</div>
-      <div class="kaart-check">${check}</div>
-      <div class="kaart-info-btn" data-id="${w.id}" title="Meer info">ⓘ</div>
+function renderFamiliesGrid(){
+  const grid=document.getElementById('families-grid');
+  grid.innerHTML='';
+  FAMILIES.forEach(f=>{
+    const count=WAARDEN.filter(w=>w.f===f.id).length;
+    const el=document.createElement('div');
+    el.className='familie-kaart'+(state.gekozenFamilies.includes(f.id)?' geselecteerd':'');
+    el.style.cssText=`--fc:${f.kleur};--fr:${f.rgb};`;
+    el.innerHTML=`
+      <div class="familie-check">✓</div>
+      <div class="familie-emoji">${f.emoji}</div>
+      <div class="familie-naam">${f.naam}</div>
+      <div class="familie-desc">${f.desc}</div>
+      <div class="familie-count">${count} waarden</div>
     `;
-    el.addEventListener('click', (e) => {
-      if (e.target.classList.contains('kaart-info-btn')) {
-        e.stopPropagation();
-        openInfo(w.id, modus);
-      } else {
-        toggleKaart(w.id, modus);
-      }
-    });
+    el.addEventListener('click',()=>toggleFamilie(f.id));
     grid.appendChild(el);
   });
 }
 
-function filterCat(cat, el) {
-  state.huidigFilter = cat;
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  const modus = state.fase === 1 ? 'partner' : 'zelf';
-  renderKaartenGrid(WAARDEN, modus);
-}
-
-function toggleKaart(id, modus) {
-  const arr = modus === 'partner' ? state.gekozenPartner : state.gekozenZelf;
-  const idx = arr.indexOf(id);
-  if (idx > -1) {
-    arr.splice(idx, 1);
-  } else {
-    if (arr.length >= 3) {
-      // Vervang oudste
-      arr.shift();
-    }
-    arr.push(id);
+function toggleFamilie(id){
+  const idx=state.gekozenFamilies.indexOf(id);
+  if(idx>-1) state.gekozenFamilies.splice(idx,1);
+  else {
+    if(state.gekozenFamilies.length>=2) state.gekozenFamilies.shift();
+    state.gekozenFamilies.push(id);
   }
-  renderKaartenGrid(WAARDEN, modus);
-  updateSelectBar(modus);
+  renderFamiliesGrid();
+  updateFamiliesSlots();
 }
 
-function updateSelectBar(modus) {
-  const arr = modus === 'partner' ? state.gekozenPartner : state.gekozenZelf;
-  const label = modus === 'partner' ? 'voor je partner' : 'voor jezelf';
-  const icon = modus === 'partner' ? '💌' : '🌱';
-
-  for (let i = 0; i < 3; i++) {
-    const slot = document.getElementById(`slot-${i}`);
-    if (arr[i]) {
-      const w = getWaarde(arr[i]);
-      slot.textContent = w ? w.naam.substring(0,2) : '✓';
-      slot.classList.add('filled');
-    } else {
-      slot.textContent = i + 1;
-      slot.classList.remove('filled');
-    }
+function updateFamiliesSlots(){
+  const slots=document.getElementById('families-slots');
+  slots.innerHTML='';
+  for(let i=0;i<2;i++){
+    const fid=state.gekozenFamilies[i];
+    const div=document.createElement('div');
+    div.className='kies-slot'+(fid?' vol':'');
+    if(fid){const f=FAMILIES.find(x=>x.id===fid);div.textContent=f?f.emoji:'✓';}
+    else div.textContent=i+1;
+    slots.appendChild(div);
   }
-
-  const count = arr.length;
-  document.getElementById('selecteer-teller').textContent = `${count} / 3 geselecteerd`;
-  document.getElementById('select-label-main').textContent =
-    count === 3 ? `${icon} 3 kaarten ${label}` : `Kies ${3 - count} kaart${3-count!==1?'en':''}`;
-  document.getElementById('select-label-sub').textContent =
-    count === 3 ? 'Klaar? Tik op Klaar →' : `Tik een kaart om te selecteren`;
-
-  const btn = document.getElementById('select-confirm-btn');
-  if (count === 3) btn.classList.add('ready');
-  else btn.classList.remove('ready');
+  const btn=document.getElementById('families-btn');
+  if(state.gekozenFamilies.length>0){btn.style.opacity='1';btn.style.pointerEvents='auto';}
+  else{btn.style.opacity='0.4';btn.style.pointerEvents='none';}
 }
 
-function confirmFase() {
-  if (state.fase === 1) {
-    if (state.gekozenPartner.length < 3) return;
-    startFase2();
+// ══════════════════════════════════════════════
+// SWIPE
+// ══════════════════════════════════════════════
+function startSwipen(){
+  if(state.gekozenFamilies.length===0)return;
+  // Bouw queue van alle waarden in gekozen families (nog niet geswiped)
+  const swipedIds=state.jaPile.map(w=>w.id);
+  // Verwijder al-geswiped uit pile (ze blijven in jaPile maar queue reset)
+  const all=[];
+  state.gekozenFamilies.forEach(fid=>{
+    WAARDEN.filter(w=>w.f===fid).forEach(w=>{if(!swipedIds.includes(w.id))all.push(w);});
+  });
+  state.swipeQueue=shuffle(all);
+  state.swipeIdx=0;
+  renderSwipeCard();
+  showScreen('screen-swipe');
+}
+
+function renderSwipeCard(){
+  const q=state.swipeQueue;
+  if(state.swipeIdx>=q.length){
+    // Klaar met swipen
+    showPile();
+    return;
+  }
+  const w=q[state.swipeIdx];
+  const fc=getFamilieConfig(w.f);
+  const card=document.getElementById('swipe-card');
+  card.style.cssText=`--cc:${fc.kleur};`;
+  card.style.transform='';
+  card.style.opacity='1';
+  document.getElementById('sc-cat').textContent=`${fc.emoji||''} ${w.f} · ${w.cat}`;
+  document.getElementById('sc-naam').textContent=w.naam;
+  document.getElementById('sc-desc').textContent=w.desc;
+  document.getElementById('sc-vb').textContent=w.ex||'';
+  document.getElementById('sc-ontdek').textContent=`"${w.ontdek||''}"`;
+  document.getElementById('overlay-ja').style.opacity='0';
+  document.getElementById('overlay-nee').style.opacity='0';
+  document.getElementById('swipe-counter').textContent=`${state.swipeIdx+1} / ${q.length}`;
+  document.getElementById('swipe-ja-teller').textContent=`${state.jaPile.length} ❤️`;
+  renderSwipeDots();
+}
+
+function renderSwipeDots(){
+  const dots=document.getElementById('swipe-dots');
+  dots.innerHTML='';
+  const tot=state.swipeQueue.length;
+  const show=Math.min(tot,20);
+  for(let i=0;i<show;i++){
+    const d=document.createElement('div');
+    const inPile=i<state.swipeIdx;
+    const isJa=inPile&&state.swipeQueue[i]&&state.jaPile.some(x=>x.id===state.swipeQueue[i].id);
+    d.className='swipe-dot'+(i===state.swipeIdx?' current':inPile?(isJa?' done-ja':' done-nee'):'');
+    dots.appendChild(d);
+  }
+}
+
+function animateSwipe(dir,cb){
+  const card=document.getElementById('swipe-card');
+  card.classList.add('animating');
+  const x=dir==='ja'?400:-400;
+  card.style.transform=`translateX(${x}px) rotate(${dir==='ja'?15:-15}deg)`;
+  card.style.opacity='0';
+  setTimeout(()=>{card.classList.remove('animating');cb();},320);
+}
+
+function swipeJa(){
+  const w=state.swipeQueue[state.swipeIdx];
+  document.getElementById('overlay-ja').style.opacity='1';
+  animateSwipe('ja',()=>{
+    if(w&&!state.jaPile.some(x=>x.id===w.id))state.jaPile.push(w);
+    state.swipeIdx++;
+    renderSwipeCard();
+  });
+}
+
+function swipeNee(){
+  document.getElementById('overlay-nee').style.opacity='1';
+  animateSwipe('nee',()=>{
+    state.swipeIdx++;
+    renderSwipeCard();
+  });
+}
+
+// Touch swipe
+let _tx=0,_ty=0,_swiping=false;
+const arena=()=>document.getElementById('swipe-card');
+document.addEventListener('touchstart',e=>{
+  if(!document.getElementById('screen-swipe').classList.contains('active'))return;
+  _tx=e.touches[0].clientX;_ty=e.touches[0].clientY;_swiping=true;
+},{passive:true});
+document.addEventListener('touchmove',e=>{
+  if(!_swiping)return;
+  const dx=e.touches[0].clientX-_tx;
+  const dy=e.touches[0].clientY-_ty;
+  if(Math.abs(dy)>Math.abs(dx)*1.5)return;
+  const card=arena();
+  if(!card)return;
+  card.style.transform=`translateX(${dx}px) rotate(${dx*0.04}deg)`;
+  const pct=Math.min(Math.abs(dx)/100,1);
+  document.getElementById('overlay-ja').style.opacity=dx>0?pct:0;
+  document.getElementById('overlay-nee').style.opacity=dx<0?pct:0;
+},{passive:true});
+document.addEventListener('touchend',e=>{
+  if(!_swiping)return;_swiping=false;
+  const dx=e.changedTouches[0].clientX-_tx;
+  if(dx>70)swipeJa();
+  else if(dx<-70)swipeNee();
+  else{const c=arena();if(c){c.style.transform='';document.getElementById('overlay-ja').style.opacity=0;document.getElementById('overlay-nee').style.opacity=0;}}
+});
+
+function backToFamilies(){
+  goFamilies();
+}
+
+// ══════════════════════════════════════════════
+// PILE — kies top 3
+// ══════════════════════════════════════════════
+function showPile(){
+  const f1=state.fase===1;
+  document.getElementById('pile-badge').textContent=state.solo?'Jouw waarden':`Fase ${state.fase} van 2`;
+  document.getElementById('pile-titel').textContent=f1&&!state.solo?'Kies 3 voor je partner':'Kies 3 voor jezelf';
+  document.getElementById('pile-sub').textContent=f1&&!state.solo?
+    'Welke 3 waarden zie jij het meest in je partner — of wil je hem/haar geven?':
+    'Welke 3 waarden resoneren nu het meest met wie jij wil zijn?';
+
+  // Reset selectie voor deze fase
+  if(f1&&!state.solo) state.gekozenPartner=[];
+  else state.gekozenZelf=[];
+
+  const pile=document.getElementById('pile-grid');
+  pile.innerHTML='';
+
+  if(state.jaPile.length===0){
+    document.getElementById('pile-empty').style.display='block';
+    pile.style.display='none';
+    document.getElementById('pile-confirm-btn').style.opacity='0.4';
+    document.getElementById('pile-confirm-btn').style.pointerEvents='none';
   } else {
-    if (state.gekozenZelf.length < 3) return;
+    document.getElementById('pile-empty').style.display='none';
+    pile.style.display='grid';
+    state.jaPile.forEach(w=>{
+      const fc=getFamilieConfig(w.f);
+      const arr=f1&&!state.solo?state.gekozenPartner:state.gekozenZelf;
+      const isGek=arr.includes(w.id);
+      const nr=arr.indexOf(w.id)+1;
+      const el=document.createElement('div');
+      el.className='pile-kaart'+(isGek?' gekozen':'');
+      el.style.cssText=`--cc:${fc.kleur};--cr:${fc.rgb};`;
+      el.dataset.id=w.id;
+      el.innerHTML=`
+        <div class="pile-nr">${nr||''}</div>
+        <div class="pile-kaart-cat">${fc.emoji||''} ${w.f}</div>
+        <div class="pile-kaart-naam">${w.naam}</div>
+      `;
+      el.addEventListener('click',()=>togglePileKaart(w.id,f1&&!state.solo?'partner':'zelf'));
+      pile.appendChild(el);
+    });
+  }
+  updatePileSlots(f1&&!state.solo?'partner':'zelf');
+  showScreen('screen-pile');
+}
+
+function togglePileKaart(id,modus){
+  const arr=modus==='partner'?state.gekozenPartner:state.gekozenZelf;
+  const idx=arr.indexOf(id);
+  if(idx>-1) arr.splice(idx,1);
+  else {if(arr.length>=3)arr.shift();arr.push(id);}
+  // Re-render pile
+  document.querySelectorAll('.pile-kaart').forEach(el=>{
+    const wid=el.dataset.id;
+    const isGek=arr.includes(wid);
+    const nr=arr.indexOf(wid)+1;
+    el.classList.toggle('gekozen',isGek);
+    el.querySelector('.pile-nr').textContent=isGek?nr:'';
+  });
+  updatePileSlots(modus);
+}
+
+function updatePileSlots(modus){
+  const arr=modus==='partner'?state.gekozenPartner:state.gekozenZelf;
+  for(let i=0;i<3;i++){
+    const sl=document.getElementById(`ps-${i}`);
+    if(!sl)continue;
+    if(arr[i]){const w=getWaarde(arr[i]);sl.textContent=w?w.naam.substring(0,2):'✓';sl.classList.add('vol');}
+    else{sl.textContent=i+1;sl.classList.remove('vol');}
+  }
+  const btn=document.getElementById('pile-confirm-btn');
+  if(arr.length===3){btn.style.opacity='1';btn.style.pointerEvents='auto';}
+  else{btn.style.opacity='0.4';btn.style.pointerEvents='none';}
+}
+
+function confirmPile(){
+  if(state.fase===1&&!state.solo){
+    // Ga naar fase 2
+    state.fase=2;
+    state.jaPile=[];
+    state.gekozenFamilies=[];
+    goFamilies();
+  } else {
     submitKeuzes();
   }
 }
 
 // ══════════════════════════════════════════════
-// SUBMIT & SYNC
+// SUBMIT
 // ══════════════════════════════════════════════
-function submitKeuzes() {
-  if (state.solo) {
-    // Solo: geen partner, ga direct naar solo reveal + profiel opslaan
+function submitKeuzes(){
+  if(state.solo){
     buildRevealSolo();
     showScreen('screen-reveal');
     return;
   }
-
-  const myData = {
-    gegeven: state.gekozenPartner,
-    zelf: state.gekozenZelf,
-    player: state.player,
-  };
-
-  if (window.KoppelClient && state.code) {
-    KoppelClient.done(myData);
-    showScreen('screen-wacht');
-  }
+  const myData={gegeven:state.gekozenPartner,zelf:state.gekozenZelf,player:state.player};
+  if(window.KoppelClient&&state.code){KoppelClient.done(myData);showScreen('screen-wacht');}
 }
 
 // ══════════════════════════════════════════════
 // REVEAL
 // ══════════════════════════════════════════════
-function showRevealSectie(id, zichtbaar) {
-  const el = document.getElementById(id);
-  if (el) el.style.display = zichtbaar ? '' : 'none';
+function setVisible(id,v){const el=document.getElementById(id);if(el)el.style.display=v?'':'none';}
+
+function buildReveal(){
+  const pd=state.partnerData;
+  setVisible('sectie-partner-gaf',true);setVisible('sectie-jij-gaf',true);
+  setVisible('sectie-partner-zelf',true);setVisible('d1',true);setVisible('d2',true);setVisible('d3',true);
+  document.getElementById('reveal-sub').textContent='Kijk wat jullie voor elkaar kozen';
+  document.getElementById('label-zelf').textContent='🌱 Jij voor jezelf';
+  document.getElementById('reveal-verder-btn').textContent='Bevestigen & verder ›';
+
+  renderRevealSet('reveal-partner-gaf',pd?pd.gegeven:[]);
+  renderRevealSet('reveal-jij-gaf',state.gekozenPartner);
+  const overlap=state.gekozenPartner.filter(id=>pd&&pd.gegeven.includes(id));
+  if(overlap.length>0){setVisible('overlap-sectie',true);renderRevealSet('reveal-overlap',overlap);}
+  else setVisible('overlap-sectie',false);
+  renderRevealSet('reveal-jij-zelf',state.gekozenZelf);
+  renderRevealSet('reveal-partner-zelf',pd?pd.zelf:[]);
 }
 
-function buildReveal() {
-  const pd = state.partnerData;
-
-  // Samen modus — toon alles
-  showRevealSectie('sectie-partner-gaf', true);
-  showRevealSectie('sectie-jij-gaf', true);
-  showRevealSectie('sectie-partner-zelf', true);
-  showRevealSectie('divider-1', true);
-  showRevealSectie('divider-2', true);
-  showRevealSectie('divider-3', true);
-  document.getElementById('reveal-sub').textContent = 'Kijk wat jullie voor elkaar kozen';
-  document.getElementById('label-jij-zelf').innerHTML = '🌱 Dit verlang jij voor jezelf';
-  document.getElementById('reveal-btn-verder').textContent = 'Bevestigen & verder ›';
-
-  renderRevealSet('reveal-partner-gaf', pd ? pd.gegeven : []);
-  renderRevealSet('reveal-jij-gaf', state.gekozenPartner);
-
-  // Overlap
-  const overlap = state.gekozenPartner.filter(id => pd && pd.gegeven.includes(id));
-  if (overlap.length > 0) {
-    document.getElementById('overlap-sectie').style.display = 'block';
-    renderRevealSet('reveal-overlap', overlap);
-  } else {
-    document.getElementById('overlap-sectie').style.display = 'none';
-  }
-
-  renderRevealSet('reveal-jij-zelf', state.gekozenZelf);
-  renderRevealSet('reveal-partner-zelf', pd ? pd.zelf : []);
-}
-
-function buildRevealSolo() {
-  // Solo — verberg partner-secties
-  showRevealSectie('sectie-partner-gaf', false);
-  showRevealSectie('sectie-jij-gaf', false);
-  showRevealSectie('sectie-partner-zelf', false);
-  showRevealSectie('overlap-sectie', false);
-  showRevealSectie('divider-1', false);
-  showRevealSectie('divider-2', false);
-  showRevealSectie('divider-3', false);
-
-  document.getElementById('reveal-sub').textContent = 'Jouw waarden — een spiegel van wat nu leeft in jou';
-  document.getElementById('label-jij-zelf').innerHTML = '🌱 Jij koos deze waarden voor jezelf';
-  document.getElementById('reveal-btn-verder').textContent = 'Verder naar gespreksvragen ›';
-
-  renderRevealSet('reveal-jij-zelf', state.gekozenZelf);
-
-  // Direct opslaan bij solo
-  state.bevestigdVanPartner = [];
+function buildRevealSolo(){
+  setVisible('sectie-partner-gaf',false);setVisible('sectie-jij-gaf',false);
+  setVisible('sectie-partner-zelf',false);setVisible('overlap-sectie',false);
+  setVisible('d1',false);setVisible('d2',false);
+  document.getElementById('reveal-sub').textContent='Jouw waarden — een spiegel van wat nu leeft in jou';
+  document.getElementById('label-zelf').textContent='🌱 Jij koos deze waarden voor jezelf';
+  document.getElementById('reveal-verder-btn').textContent='Verder naar gespreksvragen ›';
+  renderRevealSet('reveal-jij-zelf',state.gekozenZelf);
+  state.bevestigdVanPartner=[];
   saveWaardenProfiel('solo');
 }
 
-function renderRevealSet(containerId, ids) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = '';
-  ids.forEach(id => {
-    const w = getWaarde(id);
-    if (!w) return;
-    const cfg = getCat(w.cat);
-    const el = document.createElement('div');
-    el.className = 'reveal-kaart pop-in';
-    el.innerHTML = `
-      <div class="reveal-kaart-kleur" style="background:${cfg.kleur};"></div>
-      <div class="reveal-kaart-tekst">
-        <div class="reveal-kaart-naam">${w.naam}</div>
-        <div class="reveal-kaart-desc">${w.desc}</div>
-      </div>
-    `;
-    container.appendChild(el);
+function renderRevealSet(cid,ids){
+  const c=document.getElementById(cid);c.innerHTML='';
+  (ids||[]).forEach(id=>{
+    const w=getWaarde(id);if(!w)return;
+    const fc=getFamilieConfig(w.f);
+    const el=document.createElement('div');
+    el.className='reveal-kaart pop-in';
+    el.innerHTML=`<div class="reveal-kleur" style="background:${fc.kleur};"></div>
+      <div><div class="reveal-naam">${w.naam}</div><div class="reveal-desc">${w.desc}</div></div>`;
+    c.appendChild(el);
   });
 }
 
 // ══════════════════════════════════════════════
-// GESPREK
+// BEVESTIG
 // ══════════════════════════════════════════════
-function goGesprek() {
-  // Bouw een gepersonaliseerde vragenlijst op basis van gekozen waarden
-  const vragen = buildGesprekVragen();
-  state.gesprekLijst = vragen;
-  state.gesprekIdx = 0;
-  renderGesprek();
-  showScreen('screen-gesprek');
-}
-
-function buildGesprekVragen() {
-  const vragen = [];
-
-  // Starters over wat je de ander gaf
-  const gegevenStarters = GESPREKSSTARTERS.filter(g => g.type === 'gegeven');
-  vragen.push(...shuffle(gegevenStarters).slice(0, 3));
-
-  // Starters over wat je voor jezelf koos
-  const zelfStarters = GESPREKSSTARTERS.filter(g => g.type === 'zelf');
-  vragen.push(...shuffle(zelfStarters).slice(0, 3));
-
-  // Samen reflecteren
-  const samenStarters = GESPREKSSTARTERS.filter(g => g.type === 'samen');
-  vragen.push(...shuffle(samenStarters).slice(0, 3));
-
-  // Verdiepingsvragen
-  const verdieping = GESPREKSSTARTERS.filter(g => g.type === 'verdieping');
-  vragen.push(...shuffle(verdieping).slice(0, 3));
-
-  return shuffle(vragen);
-}
-
-function renderGesprek() {
-  const v = state.gesprekLijst[state.gesprekIdx];
-  if (!v) return;
-
-  const typeConfig = {
-    gegeven:    {icon:'💌', label:'Over wat jij de ander gaf'},
-    zelf:       {icon:'🌱', label:'Over wat jij voor jezelf koos'},
-    samen:      {icon:'✨', label:'Over jullie samen'},
-    verdieping: {icon:'🔮', label:'Verdieping'},
-  };
-  const tc = typeConfig[v.type] || typeConfig.samen;
-
-  document.getElementById('gesprek-voor-icon').textContent = tc.icon;
-  document.getElementById('gesprek-voor-tekst').textContent = tc.label;
-  document.getElementById('gesprek-vraag').textContent = v.v;
-  document.getElementById('gesprek-teller').textContent =
-    `${state.gesprekIdx + 1} / ${state.gesprekLijst.length}`;
-
-  // Dots
-  const dots = document.getElementById('gesprek-dots');
-  dots.innerHTML = '';
-  const max = Math.min(state.gesprekLijst.length, 12);
-  for (let i = 0; i < max; i++) {
-    const d = document.createElement('div');
-    d.className = 'gesprek-dot' + (i === state.gesprekIdx ? ' active' : '');
-    dots.appendChild(d);
+function goBevestig(){
+  const pd=state.partnerData;
+  if(state.solo||!pd||!pd.gegeven||pd.gegeven.length===0){
+    saveWaardenProfiel(state.solo?'solo':'samen');
+    goGesprek();return;
   }
-
-  // Context: toon relevante waarden
-  const ctx = document.getElementById('gesprek-context');
-  ctx.innerHTML = '';
-  const alleIds = [...state.gekozenPartner, ...state.gekozenZelf];
-  if (v.type !== 'samen' && alleIds.length > 0) {
-    const w = getWaarde(alleIds[state.gesprekIdx % alleIds.length]);
-    if (w) {
-      const cfg = getCat(w.cat);
-      ctx.innerHTML = `<div class="reveal-kaart" style="opacity:0.6;">
-        <div class="reveal-kaart-kleur" style="background:${cfg.kleur};"></div>
-        <div class="reveal-kaart-tekst">
-          <div class="reveal-kaart-naam" style="font-size:0.85rem;">${w.naam}</div>
-          <div class="reveal-kaart-desc">${w.desc}</div>
-        </div>
-      </div>`;
-    }
-  }
-
-  document.getElementById('prev-btn').style.opacity = state.gesprekIdx === 0 ? '0.3' : '1';
-  document.getElementById('next-btn').textContent =
-    state.gesprekIdx === state.gesprekLijst.length - 1 ? '✓' : '›';
-}
-
-function nextGesprek() {
-  if (state.gesprekIdx < state.gesprekLijst.length - 1) {
-    state.gesprekIdx++;
-    renderGesprek();
-  } else {
-    showScreen('screen-menu-end');
-  }
-}
-
-function prevGesprek() {
-  if (state.gesprekIdx > 0) {
-    state.gesprekIdx--;
-    renderGesprek();
-  }
-}
-
-// ══════════════════════════════════════════════
-// SOLO REVEAL
-// ══════════════════════════════════════════════
-function buildRevealSolo() {
-  // Solo: toon alleen eigen gekozen waarden + reflectie
-  const container = document.getElementById('reveal-jij-zelf');
-  renderRevealSet('reveal-jij-zelf', state.gekozenZelf);
-
-  // Verberg partner-secties
-  ['reveal-partner-gaf','reveal-jij-gaf','overlap-sectie','reveal-partner-zelf'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.closest('div[style]') && (el.closest('div') ? el.parentElement.style.display='none' : null);
-  });
-  document.querySelectorAll('.screen#screen-reveal [style*="letter-spacing"]').forEach(el => {
-    if (el.textContent.includes('Partner')) el.parentElement.style.display = 'none';
-  });
-
-  // Pas reveal-sectie aan voor solo
-  document.getElementById('reveal-jij-zelf').parentElement.querySelector('p') &&
-    (document.querySelector('#screen-reveal p.sub') || document.createElement('p'));
-
-  // Sla direct op (geen bevestiging nodig bij solo)
-  state.bevestigdVanPartner = [];
-  saveWaardenProfiel('solo');
-}
-
-// ══════════════════════════════════════════════
-// BEVESTIGEN — partner-keuzes valideren
-// ══════════════════════════════════════════════
-function goBevestig() {
-  const pd = state.partnerData;
-
-  // Solo of geen partner-data: sla bevestiging over
-  if (state.solo || !pd || !pd.gegeven || pd.gegeven.length === 0) {
-    saveWaardenProfiel(state.solo ? 'solo' : 'samen');
-    goGesprek();
-    return;
-  }
-
-  // Bouw bevestigingskaarten
-  const container = document.getElementById('bevestig-kaarten');
-  container.innerHTML = '';
-  state._bevestigState = {};
-
-  pd.gegeven.forEach(id => {
-    const w = getWaarde(id);
-    if (!w) return;
-    const cfg = getCat(w.cat);
-    state._bevestigState[id] = false; // default: niet bevestigd
-
-    const el = document.createElement('div');
-    el.className = 'bevestig-kaart';
-    el.style.cssText = `--cat-color:${cfg.kleur};--cat-rgb:${cfg.rgb};`;
-    el.dataset.id = id;
-    el.innerHTML = `
-      <div class="bevestig-kaart-toggle">—</div>
-      <div class="bevestig-kaart-tekst">
-        <div class="bevestig-kaart-naam">${w.naam}</div>
-        <div class="bevestig-kaart-desc">${w.desc}</div>
-      </div>
-    `;
-    el.addEventListener('click', () => {
-      state._bevestigState[id] = !state._bevestigState[id];
-      el.classList.toggle('ja', state._bevestigState[id]);
-      el.querySelector('.bevestig-kaart-toggle').textContent =
-        state._bevestigState[id] ? '✓' : '—';
+  state._bevestigState={};
+  const c=document.getElementById('bevestig-kaarten');c.innerHTML='';
+  pd.gegeven.forEach(id=>{
+    const w=getWaarde(id);if(!w)return;
+    const fc=getFamilieConfig(w.f);
+    state._bevestigState[id]=false;
+    const el=document.createElement('div');
+    el.className='bevestig-kaart';
+    el.style.cssText=`--cc:${fc.kleur};--cr:${fc.rgb};`;
+    el.dataset.id=id;
+    el.innerHTML=`<div class="bevestig-toggle">—</div>
+      <div><div class="bevestig-naam">${w.naam}</div><div class="bevestig-desc">${w.desc}</div></div>`;
+    el.addEventListener('click',()=>{
+      state._bevestigState[id]=!state._bevestigState[id];
+      el.classList.toggle('ja',state._bevestigState[id]);
+      el.querySelector('.bevestig-toggle').textContent=state._bevestigState[id]?'✓':'—';
     });
-    container.appendChild(el);
+    c.appendChild(el);
   });
-
   showScreen('screen-bevestig');
 }
 
-function confirmBevestig() {
-  // Verzamel bevestigde waarden
-  state.bevestigdVanPartner = Object.entries(state._bevestigState || {})
-    .filter(([, v]) => v)
-    .map(([id]) => {
-      const w = getWaarde(id);
-      return w ? { id: w.id, naam: w.naam, cat: w.cat } : null;
-    })
-    .filter(Boolean);
-
+function confirmBevestig(){
+  state.bevestigdVanPartner=Object.entries(state._bevestigState||{})
+    .filter(([,v])=>v).map(([id])=>{const w=getWaarde(id);return w?{id:w.id,naam:w.naam,cat:w.cat,f:w.f}:null;}).filter(Boolean);
   saveWaardenProfiel('samen');
   goGesprek();
 }
@@ -1488,114 +1059,132 @@ function confirmBevestig() {
 // ══════════════════════════════════════════════
 // PROFIEL OPSLAAN
 // ══════════════════════════════════════════════
-function saveWaardenProfiel(modus) {
-  if (!window.ProfielClient) return;
-
-  const gekozenZelf = state.gekozenZelf.map(id => {
-    const w = getWaarde(id);
-    return w ? { id: w.id, naam: w.naam, cat: w.cat } : null;
-  }).filter(Boolean);
-
-  const bevestigdVanPartner = state.bevestigdVanPartner || [];
-
-  ProfielClient.saveWaarden({ gekozenZelf, bevestigdVanPartner, modus });
+function saveWaardenProfiel(modus){
+  if(!window.ProfielClient)return;
+  const gZ=state.gekozenZelf.map(id=>{const w=getWaarde(id);return w?{id:w.id,naam:w.naam,cat:w.cat,f:w.f}:null;}).filter(Boolean);
+  ProfielClient.saveWaarden({gekozenZelf:gZ,bevestigdVanPartner:state.bevestigdVanPartner||[],modus});
 }
 
 // ══════════════════════════════════════════════
-// INFO BOTTOM SHEET
+// GEPERSONALISEERDE GESPREKSVRAGEN
 // ══════════════════════════════════════════════
-let _infoModus = 'partner';
-let _infoId = null;
+function buildGesprekVragen(){
+  const zelf=state.gekozenZelf.map(getWaarde).filter(Boolean);
+  const partnerGaf=(state.bevestigdVanPartner||[]).map(w=>getWaarde(w.id)).filter(Boolean);
+  const ikGaf=state.gekozenPartner.map(getWaarde).filter(Boolean);
+  const vragen=[];
 
-function openInfo(id, modus) {
-  const w = getWaarde(id);
-  if (!w) return;
-  const cfg = getCat(w.cat);
-  _infoId = id;
-  _infoModus = modus || (state.fase === 1 ? 'partner' : 'zelf');
+  // 1. Specifieke waarden-paar vragen
+  const paarV=getPaarVraag(zelf.map(w=>w.id),(state.partnerData?.gegeven||[]));
+  if(paarV)vragen.push({type:'spanning',icon:'⚡',label:'Interessante spanning',v:paarV});
 
-  document.getElementById('info-stripe').style.background = cfg.kleur;
-  document.getElementById('info-sheet').style.setProperty('--info-color', cfg.kleur);
-  document.getElementById('info-naam').textContent = w.naam;
-  document.getElementById('info-desc').textContent = w.desc;
-  document.getElementById('info-voorbeeld').textContent = w.ex || '—';
-  document.getElementById('info-vraag').textContent = w.ontdek || '—';
+  const paarV2=getPaarVraag(zelf.map(w=>w.id),ikGaf.map(w=>w.id));
+  if(paarV2&&paarV2!==paarV)vragen.push({type:'spanning',icon:'⚡',label:'Interessante spanning',v:paarV2});
 
-  // Select knop tekst aanpassen aan selectiestatus
-  const arr = _infoModus === 'partner' ? state.gekozenPartner : state.gekozenZelf;
-  const btn = document.getElementById('info-select-btn');
-  if (arr.includes(id)) {
-    btn.textContent = '✓ Geselecteerd';
-    btn.style.background = cfg.kleur;
-  } else {
-    btn.textContent = 'Deze kiezen ✦';
-    btn.style.background = '';
-  }
+  // 2. Familie-spanningen
+  const zelfFams=[...new Set(zelf.map(w=>w.f))];
+  const partnerFams=[...new Set((state.partnerData?.gegeven||[]).map(id=>{const w=getWaarde(id);return w?w.f:null;}).filter(Boolean))];
+  zelfFams.forEach(zf=>{
+    partnerFams.forEach(pf=>{
+      if(zf===pf)return;
+      const key=[zf,pf].sort().join('-');
+      if(FAMILIE_SPANNINGEN[key])vragen.push({type:'spanning',icon:'🔥',label:'Over jullie verschil',v:FAMILIE_SPANNINGEN[key]});
+    });
+  });
 
+  // 3. Overlap — jullie kozen allebei hetzelfde
+  const zelfIds=zelf.map(w=>w.id);
+  const partnerIds=(state.partnerData?.gegeven||[]);
+  zelfIds.filter(id=>partnerIds.includes(id)).forEach(id=>{
+    const w=getWaarde(id);if(!w)return;
+    vragen.push({type:'overlap',icon:'✨',label:'Gedeelde waarde',
+      v:`Jullie kozen allebei ${w.naam}. Leeft die waarde bij jullie op dezelfde manier, of juist heel anders?`});
+  });
+
+  // 4. Over wat je de ander gaf
+  ikGaf.forEach(w=>{
+    vragen.push({type:'gegeven',icon:'💌',label:`Over ${w.naam}`,
+      v:`Je koos ${w.naam} voor je partner. Wanneer zag jij deze waarde het duidelijkst in hem/haar terug?`});
+  });
+
+  // 5. Over bevestigde ontvangen waarden
+  partnerGaf.forEach(w=>{
+    vragen.push({type:'ontvangen',icon:'🌱',label:`Over ${w.naam}`,
+      v:`Je partner zag ${w.naam} in jou — en jij herkende dat. Is dit iets wat je al leeft, of iets wat je wil versterken?`});
+  });
+
+  // 6. Over eigen keuzes
+  zelf.forEach(w=>{
+    vragen.push({type:'zelf',icon:'🔮',label:`Jouw ${w.naam}`,
+      v:w.ontdek||`Waarom koos jij ${w.naam}? Wat betekent die waarde voor jou in het dagelijks leven?`});
+  });
+
+  // 7. Afsluitende vragen
+  vragen.push({type:'samen',icon:'❤️',label:'Afsluiting',
+    v:'Wat wil je de ander laten weten na dit gesprek — iets wat je nog niet hebt gezegd?'});
+  vragen.push({type:'samen',icon:'🌙',label:'Afsluiting',
+    v:'Als je jullie relatie een waarde zou moeten kiezen die hem het meest typeert, welke zou dat zijn?'});
+
+  return shuffle(vragen).slice(0,12);
+}
+
+function goGesprek(){
+  state.gesprekLijst=buildGesprekVragen();
+  state.gesprekIdx=0;
+  renderGesprek();
+  showScreen('screen-gesprek');
+}
+
+function renderGesprek(){
+  const v=state.gesprekLijst[state.gesprekIdx];if(!v)return;
+  document.getElementById('g-type').innerHTML=`<span>${v.icon}</span><span>${v.label}</span>`;
+  document.getElementById('g-vraag').textContent=v.v;
+  document.getElementById('g-teller').textContent=`${state.gesprekIdx+1}/${state.gesprekLijst.length}`;
+  // Dots
+  const dots=document.getElementById('g-dots');dots.innerHTML='';
+  const max=Math.min(state.gesprekLijst.length,12);
+  for(let i=0;i<max;i++){const d=document.createElement('div');d.className='gdot'+(i===state.gesprekIdx?' active':'');dots.appendChild(d);}
+  // Context
+  const ctx=document.getElementById('g-context');
+  if(v.type==='zelf'||v.type==='gegeven'||v.type==='ontvangen'){
+    ctx.style.display='block';
+    const waardeName=v.label.replace('Jouw ','').replace('Over ','');
+    const w=WAARDEN.find(x=>x.naam===waardeName);
+    ctx.innerHTML=w?`<strong>${w.naam}</strong> — ${w.desc}`:``;
+    if(!w)ctx.style.display='none';
+  } else ctx.style.display='none';
+  document.getElementById('g-next-btn').textContent=state.gesprekIdx===state.gesprekLijst.length-1?'✓':'›';
+  document.getElementById('prev-btn-gesprek') && (document.getElementById('prev-btn-gesprek').style.opacity=state.gesprekIdx===0?'0.3':'1');
+}
+
+function nextG(){if(state.gesprekIdx<state.gesprekLijst.length-1){state.gesprekIdx++;renderGesprek();}else showScreen('screen-eind');}
+function prevG(){if(state.gesprekIdx>0){state.gesprekIdx--;renderGesprek();}}
+
+// ══════════════════════════════════════════════
+// INFO SHEET
+// ══════════════════════════════════════════════
+function openInfo(id){
+  const w=getWaarde(id);if(!w)return;
+  const fc=getFamilieConfig(w.f);
+  document.getElementById('info-stripe').style.background=fc.kleur;
+  document.getElementById('info-sheet').style.setProperty('--ic',fc.kleur);
+  document.getElementById('info-naam').textContent=w.naam;
+  document.getElementById('info-desc').textContent=w.desc;
+  document.getElementById('info-vb').textContent=w.ex||'—';
+  document.getElementById('info-ontdek').textContent=w.ontdek||'—';
   document.getElementById('info-overlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
 }
-
-function sluitInfo(e) {
-  if (e && e.target !== document.getElementById('info-overlay')) return;
+function sluitInfo(e){
+  if(e&&e.target!==document.getElementById('info-overlay'))return;
   document.getElementById('info-overlay').classList.remove('open');
-  document.body.style.overflow = '';
-  _infoId = null;
-}
-
-function selectVanuitInfo() {
-  if (!_infoId) return;
-  toggleKaart(_infoId, _infoModus);
-  // Update knop
-  const arr = _infoModus === 'partner' ? state.gekozenPartner : state.gekozenZelf;
-  const btn = document.getElementById('info-select-btn');
-  const w = getWaarde(_infoId);
-  if (arr.includes(_infoId)) {
-    btn.textContent = '✓ Geselecteerd';
-    if (w) btn.style.background = getCat(w.cat).kleur;
-  } else {
-    btn.textContent = 'Deze kiezen ✦';
-    btn.style.background = '';
-  }
 }
 
 // ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
-window.addEventListener('load', () => {
-  if (window.ProfielClient) ProfielClient.init();
-});
+window.addEventListener('load',()=>{if(window.ProfielClient)ProfielClient.init();});
 </script>
-
-<!-- ══════════════════════════════════════
-     INFO BOTTOM SHEET (gedeeld)
-══════════════════════════════════════ -->
-<div class="info-overlay" id="info-overlay" onclick="sluitInfo(event)">
-  <div class="info-sheet" id="info-sheet">
-    <div class="info-handle"></div>
-    <div class="info-cat-stripe" id="info-stripe"></div>
-    <div class="info-naam" id="info-naam"></div>
-    <div class="info-desc" id="info-desc"></div>
-    <div class="info-sectie">
-      <div class="info-sectie-label">✦ Voorbeeld</div>
-      <div class="info-voorbeeld" id="info-voorbeeld"></div>
-    </div>
-    <div class="info-sectie">
-      <div class="info-sectie-label">🔍 Is dit jouw waarde?</div>
-      <div class="info-vraag" id="info-vraag"></div>
-    </div>
-    <div class="info-acties">
-      <button class="btn btn-ghost btn-sm" onclick="sluitInfo()">Sluiten</button>
-      <button class="btn btn-gold btn-sm" id="info-select-btn" onclick="selectVanuitInfo()">
-        Deze kiezen ✦
-      </button>
-    </div>
-  </div>
-</div>
-
-<script>
-window.KOPPEL_BACKEND_URL = 'https://snakesandladdders-production.up.railway.app';
-</script>
+<script>window.KOPPEL_BACKEND_URL='https://snakesandladdders-production.up.railway.app';</script>
 <script src="profiel.js" onerror="window.ProfielClient=null"></script>
 </body>
 </html>
