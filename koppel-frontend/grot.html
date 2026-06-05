@@ -497,10 +497,24 @@ html, body {
     <h1>Jouw spiegel</h1>
   </div>
 
-  <div class="reveal-sectie spiegel">
-    <h4>Wat dit zegt</h4>
-    <p id="reveal-spiegel"></p>
+  <!-- Wat jij koos (brug tussen antwoord en reveal) -->
+  <div id="reveal-keuzes" style="margin-bottom:14px;">
+    <!-- Gevuld via JS: toont de gekozen antwoord-labels -->
   </div>
+
+  <!-- Kern: mirror + bescherming + behoefte samen -->
+  <div class="reveal-sectie spiegel" style="margin-bottom:10px;">
+    <h4>Wat dit kan zeggen</h4>
+    <p id="reveal-spiegel" style="margin-bottom:10px;"></p>
+    <!-- Bescherming en behoefte: alleen tonen als ze niet-generiek zijn -->
+    <div id="reveal-bescherming-behoefte" style="display:none;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;margin-top:4px;">
+      <p id="reveal-bescherming" style="font-size:0.82rem;color:var(--grot-muted);margin-bottom:6px;"></p>
+      <p id="reveal-behoefte"    style="font-size:0.82rem;color:var(--grot-muted);"></p>
+    </div>
+  </div>
+
+  <!-- Zachte afsluitzin -->
+  <p id="reveal-gentle" style="font-size:0.85rem;font-style:italic;color:var(--grot-muted);margin-bottom:14px;padding:0 4px;display:none;"></p>
 
   <div class="reveal-sectie kans">
     <h4>✓ Jouw kans</h4>
@@ -520,7 +534,7 @@ html, body {
   <!-- Safety nawoord: verschijnt bij diepe/crisis cases -->
   <div id="reveal-safety-nawoord" style="display:none;"></div>
 
-  <div style="margin-top:16px;" id="reveal-tags-sectie">
+  <div style="margin-top:14px;" id="reveal-tags-sectie">
     <div class="sectie-label">Toegevoegd aan jouw profiel</div>
     <div id="reveal-tags-chips" class="chip-rij"></div>
   </div>
@@ -635,6 +649,45 @@ const TEKST = {
     deep:     'diepte',
   },
 };
+
+// ── Tag labels (NL) — spiegelt profiles.js TAG_LABELS ───
+const TAG_LABELS = {
+  'needs.attention':'Aandacht','needs.closeness':'Nabijheid','needs.reassurance':'Geruststelling',
+  'needs.recognition':'Erkenning','needs.respect':'Respect','needs.safety':'Veiligheid',
+  'needs.freedom':'Vrijheid','needs.autonomy':'Autonomie','needs.appreciation':'Waardering',
+  'needs.connection':'Verbinding','needs.understanding':'Begrepen worden','needs.trust':'Vertrouwen',
+  'protections.withdraw':'Terugtrekken','protections.protest':'Protest','protections.perform':'Presteren',
+  'protections.control':'Controle','protections.avoid':'Vermijden','protections.silence':'Stilte',
+  'protections.pleasing':'Pleasen','protections.resignation':'Loslaten','protections.distraction':'Afleiding',
+  'sensitive_points.not_seen':'Niet gezien','sensitive_points.not_important':'Niet belangrijk',
+  'sensitive_points.rejection':'Afwijzing','sensitive_points.not_chosen':'Niet gekozen',
+  'sensitive_points.too_much':'Te veel zijn','sensitive_points.alone':'Alleen staan',
+  'patterns.pursue_withdraw':'Najagen ↔ Terugtrekken','patterns.P1':'Najagen ↔ Terugtrekken',
+  'skills.asking_directly':'Direct vragen','skills.generous_interpretation':'Welwillend kijken',
+  'skills.vulnerability':'Kwetsbaarheid','skills.listening':'Echt luisteren',
+  'centers.heart':'Hart','centers.head':'Hoofd','centers.body':'Buik',
+};
+
+// ── Step labels (NL, leesbaar) ──────────────────────────
+// Vertaalt technische step-names naar menselijke vragen
+const STAP_LABELS = {
+  reaction:        'Wat gebeurt er in jou?',
+  interpretation:  'Wat maak je ervan?',
+  emotion:         'Wat voel je?',
+  protection:      'Hoe bescherm je jezelf?',
+  need:            'Welke behoefte?',
+  sensitive_point: 'Wat raakt je?',
+};
+
+// ── Generieke mirror-patronen detecteren ─────────────────
+// Als de mirror-tekst van de case generiek boilerplate is,
+// bouwen we een persoonlijkere spiegel op basis van de gekozen antwoorden
+function isGeneriekeOutput(tekst) {
+  if (!tekst) return true;
+  return tekst.includes('Deze situatie raakt aan de vraag van')
+      || tekst.includes('Je reactie probeert iets waardevols te beschermen: verbinding, veiligheid')
+      || tekst.includes('Onder je reactie zit waarschijnlijk een behoefte die serieus genomen');
+}
 
 // ── Domein definities (emoji + kleur) ───────────────────
 const DOMEIN_META = {
@@ -963,7 +1016,9 @@ function toonVraag(index) {
   STATE.vraagIndex = index;
   const vraag = vragen[index];
 
-  document.getElementById('vraag-stap-label').textContent = vraag.step || 'Vraag';
+  // Leesbaar label (NL), niet de raw step-naam
+  const stapLabel = STAP_LABELS[vraag.step] || (index === 0 ? 'Eerste reactie' : 'Verdieping');
+  document.getElementById('vraag-stap-label').textContent = stapLabel;
   document.getElementById('vraag-nr-badge').textContent = `${index+1}/${vragen.length}`;
   document.getElementById('vraag-prompt').textContent = vraag.prompt || '';
   document.getElementById('vraag-helper').textContent = vraag.helper_text || '';
@@ -1088,29 +1143,109 @@ function toonSoloReveal() {
   const c = STATE.huidigeCase;
   const output = c?.outputs?.solo || {};
   const safetyInfo = STATE.huidigeRondeSafety || { klasse: 'normaal', teksten: null };
-
-  // Tekst veilig maken (verboden woorden eruit) als toon-helper beschikbaar
   const safe = window.TOON ? TOON.veilig.bind(TOON) : (t) => t;
+  const vragen = c?.questions || [];
 
-  document.getElementById('reveal-spiegel').textContent    = safe(output.mirror || output.protection_reflection || '');
-  document.getElementById('reveal-kans').textContent       = safe(output.chance || '');
-  document.getElementById('reveal-uitdaging').textContent  = safe(output.challenge || '');
-  document.getElementById('reveal-experiment').textContent = safe(output.experiment || '');
+  // ── 1. Brug: toon wat de gebruiker koos ─────────────────
+  const keuzeEl = document.getElementById('reveal-keuzes');
+  const gekozenLabels = Object.entries(STATE.geselecteerd).map(([qId, oId]) => {
+    const v = vragen.find(q => q.question_id === qId);
+    const o = v ? (v.options || []).find(op => op.option_id === oId) : null;
+    return o ? o.label : null;
+  }).filter(Boolean);
 
-  // Safety nawoord
+  if (gekozenLabels.length > 0) {
+    keuzeEl.innerHTML = `
+      <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px 14px;border-left:3px solid var(--grot-gold);">
+        <div style="font-size:0.65rem;color:var(--grot-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Jij koos</div>
+        ${gekozenLabels.map(l => `<div style="font-size:0.88rem;margin-bottom:4px;">» ${l}</div>`).join('')}
+      </div>`;
+  } else {
+    keuzeEl.innerHTML = '';
+  }
+
+  // ── 2. Spiegel (mirror) ──────────────────────────────────
+  // Als case-mirror generiek is: bouw persoonlijker alternatief
+  let spiegelTekst = output.mirror || '';
+  if (isGeneriekeOutput(spiegelTekst)) {
+    // Gebruik top tag + domein voor persoonlijkere spiegel
+    const topTag = Object.entries(STATE.verzameldeTagsHuidigeRonde)
+      .sort((a, b) => b[1] - a[1])[0];
+    const domeinVraag = c?.domain?.central_question || '';
+    if (topTag && window.TOON) {
+      const cat = topTag[0].split('.')[0];
+      const typeMap = { needs: 'behoefte', protections: 'bescherming', sensitive_points: 'gevoelig', patterns: 'patroon' };
+      spiegelTekst = TOON.spiegel(TOON.t.spiegel[typeMap[cat] ? typeMap[cat] : 'behoefte']
+        ? (typeMap[cat] && TOON.t.spiegel[typeMap[cat]])
+          ? topTag[0].split('.')[1] || topTag[0]
+          : topTag[0].split('.')[1] || topTag[0]
+        : topTag[0].split('.')[1] || topTag[0],
+        typeMap[cat] || 'behoefte');
+    }
+    if (!spiegelTekst && domeinVraag) {
+      spiegelTekst = `Onder deze situatie kan de vraag schuilen: ${domeinVraag.toLowerCase()}`;
+    }
+  }
+  document.getElementById('reveal-spiegel').textContent = safe(spiegelTekst);
+
+  // ── 3. Bescherming + behoefte (als niet-generiek) ────────
+  const beschTekst = output.protection_reflection || '';
+  const behTekst   = output.need_reflection       || '';
+  const beschBehEl = document.getElementById('reveal-bescherming-behoefte');
+
+  if (!isGeneriekeOutput(beschTekst) || !isGeneriekeOutput(behTekst)) {
+    beschBehEl.style.display = 'block';
+    document.getElementById('reveal-bescherming').textContent = isGeneriekeOutput(beschTekst) ? '' : safe(beschTekst);
+    document.getElementById('reveal-behoefte').textContent    = isGeneriekeOutput(behTekst)   ? '' : safe(behTekst);
+    // Verberg loze regels
+    document.getElementById('reveal-bescherming').style.display = isGeneriekeOutput(beschTekst) ? 'none' : 'block';
+    document.getElementById('reveal-behoefte').style.display    = isGeneriekeOutput(behTekst)   ? 'none' : 'block';
+  } else {
+    beschBehEl.style.display = 'none';
+  }
+
+  // ── 4. Gentle phrase (zachte afsluitzin) ─────────────────
+  const gentleEl = document.getElementById('reveal-gentle');
+  const gentleTekst = output.gentle_phrase || '';
+  if (gentleTekst) {
+    gentleEl.textContent = safe(gentleTekst);
+    gentleEl.style.display = 'block';
+  } else {
+    gentleEl.style.display = 'none';
+  }
+
+  // ── 5. Kans, uitdaging, experiment ───────────────────────
+  document.getElementById('reveal-kans').textContent       = safe(output.chance      || '');
+  document.getElementById('reveal-uitdaging').textContent  = safe(output.challenge   || '');
+  document.getElementById('reveal-experiment').textContent = safe(output.experiment  || '');
+
+  // ── 6. Tags chips ─────────────────────────────────────────
+  const chipsEl = document.getElementById('reveal-tags-chips');
+  chipsEl.innerHTML = '';
+  const topTags = Object.entries(STATE.verzameldeTagsHuidigeRonde)
+    .sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  topTags.forEach(([key]) => {
+    const cat      = key.split('.')[0];
+    const leesbaar = TAG_LABELS[key] || key.split('.')[1]?.replace(/_/g,' ') || key;
+    let cls = 'chip-beh';
+    if (cat === 'protections')     cls = 'chip-besch';
+    if (cat === 'skills')          cls = 'chip-skill';
+    if (cat === 'sensitive_points') cls = 'chip-besch';
+    chipsEl.innerHTML += `<span class="chip ${cls}">${leesbaar}</span>`;
+  });
+
+  // ── 7. Safety nawoord ─────────────────────────────────────
   const nawoordEl = document.getElementById('reveal-safety-nawoord');
   nawoordEl.style.display = 'none';
   nawoordEl.innerHTML = '';
-
   if (window.TOON && safetyInfo.klasse !== 'normaal' && safetyInfo.teksten) {
     nawoordEl.style.display = 'block';
     let html = '';
     if (safetyInfo.teksten.reveal) {
       html += `<div style="font-size:0.84rem;color:var(--grot-muted);font-style:italic;margin-bottom:8px;">${safetyInfo.teksten.reveal}</div>`;
     }
-    if (safetyInfo.klasse === 'crisis') {
-      html += TOON.crisisHtml('dark');
-    }
+    if (safetyInfo.klasse === 'crisis') html += TOON.crisisHtml('dark');
     nawoordEl.innerHTML = html;
   }
 
