@@ -1,0 +1,1539 @@
+﻿<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+  <title>Slangen & Ladders ✦ Voor Jou & Mij</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{colors:{night:'#0d0d14',velvet:'#1a0a2e',rose:'#8b1a4a',blush:'#c45a8a',gold:'#d4af37'},fontFamily:{display:['"Playfair Display"','serif']}}}}</script>
+  <style>
+    *{box-sizing:border-box}
+    html,body,#root{height:100%;margin:0;padding:0;background:#0d0d14;color:#f5e6d3;font-family:'Inter',sans-serif;overflow-x:hidden}
+    ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#8b1a4a;border-radius:2px}
+    .glass{background:rgba(255,255,255,.05);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08)}
+    .tgg{background:linear-gradient(135deg,#d4af37,#f0d060,#d4af37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes diceSpin{0%{transform:rotateY(0) rotateX(0) scale(1)}50%{transform:rotateY(180deg) rotateX(180deg) scale(1.3)}100%{transform:rotateY(360deg) rotateX(360deg) scale(1)}}
+    @keyframes bounceToken{0%{transform:scale(1) translateY(0)}40%{transform:scale(1.5) translateY(-8px)}100%{transform:scale(1) translateY(0)}}
+    @keyframes pulseGlow{0%,100%{box-shadow:0 0 6px #d4af37}50%{box-shadow:0 0 20px #d4af37,0 0 40px #d4af3766}}
+    @keyframes fadeNum{from{opacity:0;transform:scale(2)}to{opacity:1;transform:scale(1)}}
+    @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+    @keyframes flashIn{0%{opacity:0;transform:scale(.8)}60%{opacity:1;transform:scale(1.05)}100%{transform:scale(1)}}
+    .su{animation:slideUp .4s ease-out}
+    .ds{animation:diceSpin .7s ease-out}
+    .bt{animation:bounceToken .5s ease-out}
+    .pg{animation:pulseGlow 2s ease-in-out infinite}
+    .fn{animation:fadeNum .5s ease-out}
+    .fi{animation:flashIn .4s ease-out}
+  </style>
+</head>
+<a href="world.html" style="position:fixed;top:10px;left:10px;z-index:9999;background:rgba(0,0,0,0.45);color:#d4af37;border:1px solid #d4af3755;border-radius:20px;padding:5px 12px;font-size:0.75rem;text-decoration:none;font-family:serif;letter-spacing:0.05em;backdrop-filter:blur(6px);">← Kaart</a>
+<body>
+<div id="root"></div>
+<script>window.BACKEND_URL='http://localhost:3001';</script>
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback} = React;
+
+// ─── BOARD DATA ───────────────────────────────────────────────────────────────
+const SQUARES = {
+  1:{type:'blue',text:'Spreek in: wat trok jou als eerste naar mij toe? Niet uiterlijk — iets wat je voelde.'},
+  2:{type:'blue',text:'Noem 3 dingen die je aan mij bewondert — niks uiterlijk. Spreek in. Eerlijk en specifiek.'},
+  3:{type:'versus',text:'Uitdaging: wie maakt de meest gekke of verleidelijke selfie in 60 seconden? Allebei sturen tegelijk. De ander beoordeelt. Verliezer doet een extra kledingstuk uit.',timerSeconds:60},
+  4:{type:'green',text:'Trek je schoenen en sokken uit.'},
+  5:{type:'blue',text:'Spreek in: beschrijf hoe het voelt als we eindelijk weer samen zijn. Gebruik je lichaam om het te beschrijven.'},
+  6:{type:'mystery',text:'Trek een Mystery Kaart'},
+  7:{type:'blue',text:'Wat is de eigenschap van mij die jou het meest gerustgeeft? De reden dat jij bij mij bent. Spreek in.'},
+  8:{type:'orange',text:'Ladder naar 19 — kledingstuk uit!',destination:19},
+  9:{type:'blue',text:'Welke plek op mijn lichaam zou jij als eerste willen aanraken als ik nu voor je stond? Wees specifiek.'},
+  10:{type:'red',text:'Foto van je handen. Ik stuur terug wat ik wil dat je ermee doet.',powerSwitch:true},
+  11:{type:'green',text:'Trek je bovenkleding uit.'},
+  12:{type:'blue',text:'Spreek in: fluister iets wat je altijd al aan mij wilde vertellen maar nooit durfde.'},
+  13:{type:'blue',text:'Wat is iets waar jij bang voor bent in onze relatie? Eerlijk — geen sugarcoating. Spreek in of schrijf.'},
+  14:{type:'blue',text:'Wat vind je het spannendst aan de afstand tussen ons? Wat doet het met je verlangen?',
+      choiceA:'Beschrijf hoe je me wilt zoenen — begin tot einde',choiceB:'Doe het voor de camera, 10 seconden'},
+  15:{type:'red',text:'Foto van je nek en sleutelbeen. Vertel erbij wat je voelt als ik daar mijn lippen zou zetten.'},
+  16:{type:'blue',text:'Spreek in: beschrijf een perfecte avond met mij. Van binnenkomst tot slapengaan.'},
+  17:{type:'mystery',text:'Trek een Mystery Kaart'},
+  18:{type:'red',text:'Close-up foto van je mond of lippen.'},
+  19:{type:'blue',text:'Waar denk jij aan als je midden in de nacht wakker ligt en niet naast me kan liggen?'},
+  20:{type:'blue',text:'Fantasy start: schrijf de eerste zin in het notitieboek. Ik schrijf de tweede.',powerSwitch:true},
+  21:{type:'green',text:'Trek je broek of rok uit.'},
+  22:{type:'red',text:'Foto van je benen tot aan je heup — van achteren of opzij.'},
+  23:{type:'orange',text:'Ladder naar 37 — kledingstuk uit!',destination:37},
+  24:{type:'blue',text:'Wat wil je van mij dat je nog nooit hebt durven vragen? Zeg het nu.'},
+  25:{type:'red',text:'Foto van je schouders omhoog — niks meer.'},
+  26:{type:'mystery',text:'Trek een Mystery Kaart'},
+  27:{type:'blue',text:'Wat heb jij van mij nodig wat je nooit hardop vraagt? Nu wel. Neem de tijd.'},
+  28:{type:'green',text:'Trek nog een kledingstuk uit — jouw keuze.'},
+  29:{type:'snake',text:'Slang naar 12 — kledingstuk aan!',destination:12},
+  30:{type:'purple',text:'Edging ronde 1 — raak jezelf 30 seconden aan. Stop dan. Spreek in hoe dat voelde.',timerSeconds:30,witness:true},
+  31:{type:'blue',text:'Spreek in: hoe voelt jouw lichaam aan als je opgewonden bent? Fysiek, in detail.'},
+  32:{type:'red',text:'Foto van iets op jouw lichaam dat ik nog niet goed heb gezien.'},
+  33:{type:'green',text:'Alles uit — behalve je ondergoed.'},
+  34:{type:'red',text:'Maak een video van 10 seconden — laat me zien hoe jij naar me kijkt als je me mist.',witness:true},
+  35:{type:'orange',text:'Ladder naar 52 — kledingstuk uit!',destination:52},
+  36:{type:'mystery',text:'Trek een Mystery Kaart'},
+  37:{type:'red',text:'Spreek in: adem in mijn oor en zeg mijn naam. Precies zoals je naast me zou liggen.'},
+  38:{type:'red',text:'Trek langzaam een kledingstuk uit voor de camera. Video, doe het traag.',witness:true},
+  39:{type:'red',text:'Roleplay: ik kom onverwacht bij jou thuis aan na een lang weekend apart. Jij doet de deur open. Speel het via chat — minimaal 5 berichten elk. Jullie kennen elkaar al lang. Begin jij.'},
+  40:{type:'red',text:'Fantasy vervolg in het notitieboek: voeg toe wat jij met mijn lichaam zou doen. Heel specifiek.',powerSwitch:true},
+  41:{type:'snake',text:'Slang naar 24 — kledingstuk aan!',destination:24},
+  42:{type:'green',text:'Trek alles uit — behalve je onderbroek of string.'},
+  43:{type:'purple',text:'Edging ronde 2 — 45 seconden op de plek die jij het fijnst vindt.',timerSeconds:45,witness:true},
+  44:{type:'blue',text:'Wat wil je in bed maar durfde je nooit te vragen?',
+      choiceA:'Vertel het via voice note — eerlijk en langzaam',choiceB:'Laat het zien — doe het zelf voor de camera'},
+  45:{type:'red',text:'Spreek in: beschrijf precies wat je zou doen als je mijn lichaam nu voor je had. Begin bij het begin.'},
+  46:{type:'purple',text:'Edging ronde 3 — 60 seconden. Spreek in instructies voor mij terwijl jij het doet.',timerSeconds:60,witness:true},
+  47:{type:'orange',text:'Ladder naar 66 — kledingstuk uit!',destination:66},
+  48:{type:'blue',text:'Wat wil je dat ik fluister terwijl ik je aanraak? Zeg het precies zoals je het wil horen.'},
+  49:{type:'red',text:'Korte video (10-15 sec) — laat me zien wat dit spel met je doet.',witness:true},
+  50:{type:'red',text:'Ik stuur drie instructies. Jij voert ze uit terwijl we bellen.',powerSwitch:true},
+  51:{type:'mystery',text:'Trek een Mystery Kaart'},
+  52:{type:'green',text:'Volledig naakt — voor de rest van het spel.'},
+  53:{type:'purple',text:'Edging ronde 4 — 60 seconden op mijn instructies. Doe precies wat ik zeg.',timerSeconds:60,witness:true},
+  54:{type:'orange',text:'Ladder naar 72!',destination:72},
+  55:{type:'blue',text:'Beloof mij één concreet ding voor de volgende keer dat we samen zijn. Voice note. Geen vage antwoorden — een echte belofte.'},
+  56:{type:'red',text:'Zeg mijn naam op de manier die jij het lekkerst vindt. Stuur als audio.'},
+  57:{type:'red',text:'Fantasy vervolg in het notitieboek: jij schrijft hoe het voelt, ik schrijf wat ik doe.'},
+  58:{type:'snake',text:'Slang naar 39 — kledingstuk aan!',destination:39},
+  59:{type:'mystery',text:'Trek een Mystery Kaart'},
+  60:{type:'purple',text:'Edging 90 seconden — ga zo ver als je durft. Ik geef live instructies.',timerSeconds:90,powerSwitch:true,witness:true},
+  61:{type:'red',text:'Striptease — 40 seconden. Langzaam. Stuur als video.',timerSeconds:40,witness:true},
+  62:{type:'blue',text:'Wat vind je op dit moment het aantrekkelijkst aan mij?',
+      choiceA:'Vertel het via voice note — specifiek en langzaam',choiceB:'Doe een verleidelijke pose en stuur als foto'},
+  63:{type:'red',text:'Ik kies een plek op jouw lichaam — raak die 1 minuut aan terwijl we bellen.',timerSeconds:60,witness:true},
+  64:{type:'mystery',text:'Trek een Mystery Kaart'},
+  65:{type:'blue',text:'Wat hoop je dat er vanavond na dit spel nog gebeurt tussen ons?'},
+  66:{type:'red',text:'Video (15-20 sec) — laat zien hoe opgewonden je bent. Ik kijk.',witness:true},
+  67:{type:'purple',text:'Edging — ga zo dichtbij als mogelijk zonder het over te gaan. Stop precies op het punt. Spreek in hoe dat voelde.',witness:true},
+  68:{type:'blue',text:'Jouw grootste seksuele onzekerheid.',
+      choiceA:'Vertel het eerlijk via voice note',choiceB:'Laat me zien wat je het meest mooi vindt aan jezelf'},
+  69:{type:'snake',text:'Slang naar 45 — kledingstuk aan!',destination:45},
+  70:{type:'red',text:'2 minuten — ik stuur instructies, jij doet alles wat ik zeg. Alles.',timerSeconds:120,witness:true},
+  71:{type:'versus',text:'Uitdaging: wie durft de meest publieke foto te sturen met wat je nu aanhebt? 90 seconden. Allebei sturen tegelijk. De ander beoordeelt wie het verst ging — verliezer doet een kledingstuk extra uit.',timerSeconds:90},
+  72:{type:'purple',text:'Laatste edging — 2 minuten op eigen tempo. Ga zo ver als je kunt. Stop voor het einde.',timerSeconds:120,witness:true},
+  73:{type:'red',text:'Meest verleidelijke pose: foto en korte video. Kijk recht in de camera.',witness:true},
+  74:{type:'mystery',text:'Trek een Mystery Kaart'},
+  75:{type:'red',text:'Kreun mijn naam op de manier die jij het lekkerst vindt. Audio sturen.'},
+  76:{type:'red',text:'60 seconden — doe alles wat ik je opdraag. Geen vragen.',timerSeconds:60,witness:true},
+  77:{type:'snake',text:'Slang naar 61 — kledingstuk aan!',destination:61},
+  78:{type:'red',text:'Laat me via video zien hoe je het randje nadert. Ik kijk mee. Stop als ik zeg: stop.',witness:true},
+  79:{type:'versus',text:'Uitdaging: snelheidsronde — wie stuurt als eerste een verleidelijk voice note van 20 seconden? Allebei op 3 beginnen. De winnaar geeft de ander één kleine opdracht naar keuze.'},
+  80:{type:'gold',text:'FINISH — Je wint. De winnaar krijgt één wens van de ander. Kies hem zorgvuldig.'},
+};
+
+const SC = {
+  blue:   {bg:'#0a1628',border:'#1e4d8c',text:'#60a5fa',label:'Waarheid'},
+  red:    {bg:'#1f0a0a',border:'#8b1a1a',text:'#f87171',label:'Durven'},
+  purple: {bg:'#150a2a',border:'#6b21a8',text:'#c084fc',label:'Edging'},
+  green:  {bg:'#0a1f0a',border:'#166534',text:'#4ade80',label:'Kleding'},
+  orange: {bg:'#1f1205',border:'#92400e',text:'#fb923c',label:'Ladder'},
+  snake:  {bg:'#1f0505',border:'#7f1d1d',text:'#f87171',label:'Slang'},
+  gold:   {bg:'#1f1a05',border:'#d4af37',text:'#fbbf24',label:'FINISH'},
+  mystery:{bg:'#0d1520',border:'#475569',text:'#cbd5e1',label:'Mystery'},
+  versus: {bg:'#1a1100',border:'#d97706',text:'#fbbf24',label:'Uitdaging'},
+};
+
+const LADDERS = {3:19,18:37,35:54,45:66,53:72};
+const SNAKES  = {32:12,41:23,58:38,69:48,77:63};
+const PWR     = new Set([10,20,30,40,50,60,70]);
+
+// ─── MYSTERY CARDS — twee stapels: ZACHT (pos<40) en HEET (pos>=40) ────────────
+const CARDS_SOFT = [
+  {title:'Teken',        emoji:'🎨',desc:'Teken mijn silhouet of een intiem lichaamsdeel op papier zoals jij het ziet. Maak een foto en stuur.'},
+  {title:'Gedicht',      emoji:'✍️',desc:'Schrijf 4 regels over wat jij nu voelt. Eerlijk en ongepolijst. Stuur de tekst.'},
+  {title:'Brief',        emoji:'📝',desc:'Schrijf een alinea alsof je nu naast me in bed ligt. Beschrijf elke beweging die je zou maken.'},
+  {title:'Nachtgedachte',emoji:'🌙',desc:'Spreek in: de gedachte aan mij die jou het meest wakker hield. Eerlijk, zonder te censureren.'},
+  {title:'Adem',         emoji:'🌬️',desc:'Maak een audio opname: adem langzaam in en uit, 30 seconden. Niks anders. Stuur het.'},
+  {title:'Fantasy Wissel',emoji:'💫',desc:'Open het notitieboek. Schrijf één zin van een gezamenlijke fantasy. De ander vervolgt. Minimaal 8 zinnen elk.'},
+  {title:'Stilte',       emoji:'👀',desc:'Bel elkaar. 2 minuten alleen naar de camera kijken. Niks zeggen. Niks doen. Gewoon kijken.'},
+  {title:'Herinnering',  emoji:'💜',desc:'Spreek in: een herinnering aan mij die jou onverwacht bezighoudt. Begin zodra je de opname start.'},
+  {title:'De Vraag',     emoji:'🎯',desc:'Stel mij via de chat één vraag die je altijd wilde stellen maar nooit durfde. Ik moet eerlijk antwoorden.'},
+  {title:'Verboden',     emoji:'📱',desc:'Vertel iets over jezelf dat je normaal nooit zou sturen. Eén zin. Nu wel. Geen terugkrabben.'},
+  {title:'Aanwezig',     emoji:'✨',desc:'Spreek in: wat ben ik voor jou op dit moment? Eerlijk en specifiek. Geen clichés.'},
+  {title:'Aanraking',    emoji:'🔍',desc:'Stuur een foto van iets in jouw ruimte dat je nu aan mij doet denken. Leg uit waarom in één zin.'},
+  {title:'Dichtbij',     emoji:'💌',desc:'Schrijf 3 zinnen die je normaal pas zou sturen als we echt samen zijn. Nu stuur je ze.'},
+  {title:'GIF Blik',     emoji:'🎞️',desc:'Stuur het GIF dat het best beschrijft hoe jij naar mij kijkt als ik niet kijk.'},
+  {title:'GIF Vuur',     emoji:'🌶️',desc:'Stuur het meest verleidelijke GIF dat je nu kunt vinden. Leg uit waarom precies dit hem is.'},
+  {title:'Daggedachte',  emoji:'💭',desc:'Wat is de gedachte aan mij die je het meest bezighoudt op een gewone dag? Spreek in.'},
+  {title:'Missen',       emoji:'🌛',desc:'Op welk moment mis je me het meest — en wat zou je doen als ik er dan was? Spreek in.'},
+  {title:'Gevoel Vandaag',emoji:'🌟',desc:'Spreek in: het mooiste wat je vandaag hebt gevoeld. Voor mij. Langzaam, zonder haast.'},
+];
+
+const CARDS_HOT = [
+  {title:'Regie',          emoji:'🎬',desc:'Beschrijf stap voor stap wat wij zouden doen als jij nu binnenkomt. Begin bij de deur. Zo gedetailleerd mogelijk.'},
+  {title:'Woordschilderij',emoji:'🖼️',desc:'Beschrijf mijn lichaam in 5 langzame, sensuele zinnen. Alsof je een schilder bent die elk detail vastlegt.'},
+  {title:'De Scène',       emoji:'💭',desc:'Beschrijf de meest opwindende scène tussen ons die je je kunt voorstellen. Begin bij het begin. Detail voor detail.'},
+  {title:'Scenario',       emoji:'🗺️',desc:'Kies een plek — hotel, trein, strand, auto. Beschrijf precies wat er zou gebeuren als we daar nu samen waren.'},
+  {title:'Synchron',       emoji:'🔄',desc:'Spreek samen een lichaamsdeel af via de chat. Raak het tegelijkertijd aan — 30 seconden. Geen woorden.'},
+  {title:'Blind',          emoji:'🙈',desc:'Sluit je ogen. De ander geeft 3 instructies via audio die jij uitvoert puur op gevoel. Vertrouwen.'},
+  {title:'IJskoud',        emoji:'🧊',desc:'Houd een ijsblokje tegen je geslachtsdeel of tepels — 10 seconden. Foto vlak vóór. Foto vlak ná. Stuur beiden.'},
+  {title:'Ritme',          emoji:'🎵',desc:'Kies een nummer. Raak jezelf aan op het ritme van de muziek. Stuur de naam van het nummer daarna.'},
+  {title:'GIF Zoen',       emoji:'💋',desc:'Stuur een GIF die laat zien hoe jij me wilt zoenen — de eerste keer na lang apart. Dan stem beschrijving in.'},
+  {title:'Onaangekondigd', emoji:'🚪',desc:'Wat zou je doen als ik nu onaangekondigd naast je in bed zou liggen? Beschrijf elk detail — begin bij het eerste moment van contact.'},
+  {title:'Lichaam Nu',     emoji:'🫀',desc:'Spreek in: beschrijf hoe jouw lichaam op dit moment aanvoelt. Langzaam. Elk detail. Wat voel je, waar, hoe intens.'},
+  {title:'Vreemden',       emoji:'🎭',desc:'Schrijf samen een mini-verhaal: twee geliefden die elkaar na lange tijd weerzien in een hotel. Jij start met 3 zinnen, ik vervolg. Minimaal 4 rondes elk.'},
+];
+
+// Speciale vaste kaart — kernkwadranten tool
+const KERNKWADRANT_CARD = {
+  title: 'Kernkwadranten',
+  emoji: '🧭',
+  desc: 'Doe samen de kernkwadrant check. Ontdek je kernkwaliteit, valkuil, uitdaging en allergie — en bespreek wat je herkent in de ander.',
+  kernkwadrant: true,
+};
+
+// Trek n unieke kaarten uit de juiste stapel op basis van positie
+// forceKern=true → kernkwadrant altijd als eerste kaart erbij
+function pickCards(n, pos, forceKern) {
+  const deck = pos >= 40 ? CARDS_HOT : CARDS_SOFT;
+  const shuffled = [...deck].sort(() => Math.random() - 0.5);
+  const cards = shuffled.slice(0, Math.min(n, deck.length));
+  if(forceKern) { cards[0] = KERNKWADRANT_CARD; }
+  return cards;
+}
+function randomCard(pos) {
+  return pickCards(1, pos||0)[0];
+}
+
+const EMOJIS = [
+  // Flirty & expressief
+  '💋','😍','🔥','💜','💙','❤️','😘','🥰','😏','👅','💦','🫦','😈','🙈','💃','🫶','💕','🤤','😮‍💨','💫',
+  '✨','🌙','🫠','👀','🤭','😚','🥺','🫣','😋','🤫','💝','🌹','🍒','🌸','😇','🤩','😻','💐','🎭','🪞',
+  '🎬','🎙️','📸','🌊','⚡','🏆',
+  // Spicy (nieuw)
+  '🍑','🌶️','🥵','😳','🫢','🤯','😵‍💫','🥴','💓','🩷',
+  '🛏️','🕯️','🔐','🍓','🍫','👑','🪄','💢','🫀','🧨',
+];
+
+// ─── SPARE QUESTION POOLS (bij herhaalde vakjes) ──────────────────────────────
+const BLUE_EXTRA = [
+  'Wat is het eerste dat je doet als je wakker wordt en aan mij denkt?',
+  'Welk geluid van mij vind je het fijnst om te horen?',
+  'Wat zou je mij fluisteren als je nu naast me lag?',
+  'Wat is de meest intieme gedachte die je vandaag over mij had?',
+  'Hoe zou je de afstand tussen ons beschrijven aan iemand die het niet begrijpt?',
+  'Wat vertel je jezelf als je me mist op het hardste moment?',
+  'Wat is een gewoonte van mij die je onverwacht mooi vindt?',
+  'Wanneer voel jij je het dichtst bij mij, ook als we ver weg zijn?',
+  'Wat is iets aan mij dat je nog nooit hardop hebt bewonderd?',
+  'Welk moment met mij speelt het vaakst opnieuw in je hoofd?',
+  'Wat is de eerste zin die je zou zeggen als ik nu voor je deur stond?',
+  'Hoe ziet jouw perfecte ochtend met mij eruit — beschrijf elk detail?',
+  'Wat wil je dat ik weet over hoe jij van me houdt?',
+  'Welke eigenschap van jou denk je dat ik het meest aantrekkelijk vind?',
+  'Wat is iets aan onze verbinding dat je nergens anders hebt gevonden?',
+  'Als je één avond kon kiezen die we opnieuw beleven, welke zou dat zijn?',
+  'Wat doet afstand met jouw verlangen naar mij — maakt het het groter?',
+  'Vertel me iets over jezelf dat je denkt dat ik nog niet weet.',
+  'Wat is het moeilijkste aan ons op afstand voor jou persoonlijk?',
+  'Hoe wil jij dat ik aan je denk als ik je niet zie?',
+  'Wat betekent intimiteit voor jou buiten seks om?',
+  'Wat zie jij in mij dat ik zelf misschien niet zie?',
+  'Welke kleur of sfeer geeft onze verbinding jou in je hoofd?',
+  'Wat is iets wat je altijd wilt onthouden over dit moment met mij?',
+  'Vertel me over een dag waarop je me heel erg nodig had maar er niet om vroeg.',
+];
+
+const RED_EXTRA = [
+  'Maak een foto van je buik of heupen — stuur zonder uitleg.',
+  'Stuur een video van 8 seconden: kijk recht in de camera en zeg niets.',
+  'Beschrijf in detail hoe je wilt dat ik je aanraak als ik naast je lig.',
+  'Maak een foto van de plek op jouw lichaam die jij het mooiste vindt aan jezelf.',
+  'Spreek in: beschrijf wat jij zou voelen als mijn handen langzaam over je rug gaan.',
+  'Stuur een close-up van je oog of lippen — niks meer.',
+  'Doe iets verleidelijks voor de camera voor exact 10 seconden.',
+  'Spreek in: zeg mijn naam drie keer — elke keer een andere toon.',
+  'Maak een foto van je handen op een plek op jouw lichaam.',
+  'Beschrijf een moment waarop je je het meest seksueel bewust was van jezelf.',
+  'Stuur een audio: zeg me precies wat jij wilt dat ik vanavond met je doe.',
+  'Schrijf me één zin die je alleen in het donker zou durven sturen.',
+  'Laat me in een video zien hoe jij je haar of kleding aanraakt — langzaam.',
+  'Maak een foto van jezelf precies zoals je er nu bij zit of ligt.',
+  'Spreek in: beschrijf de geur of het gevoel van mijn huid zoals jij het kent.',
+  'Stuur een foto die laat zien hoe jij jezelf comfortabel voelt in je lichaam.',
+  'Doe een pose voor de camera die jij verleidelijk vindt — 10 seconden.',
+  'Schrijf me de eerste gedachte die door je hoofd gaat als je seksueel opgewonden bent.',
+  'Stuur een video van je gezicht terwijl je aan mij denkt — geen woorden nodig.',
+  'Beschrijf in één minuut precies hoe jij mij zou aanraken als je nu de kans had.',
+];
+
+// Kies een spare question op basis van visit count
+function getSquareText(squareNum, visitCount) {
+  const sq = SQUARES[squareNum];
+  if (!sq || visitCount <= 1) return sq ? sq.text : '';
+  // Edging, ladder, snake, mystery, gold: altijd zelfde tekst
+  if (['purple','orange','snake','mystery','gold','green'].includes(sq.type)) return sq.text;
+  const pool = sq.type === 'blue' ? BLUE_EXTRA : sq.type === 'red' ? RED_EXTRA : null;
+  if (!pool) return sq.text;
+  return pool[(visitCount - 2) % pool.length];
+}
+
+// ─── GRID ─────────────────────────────────────────────────────────────────────
+function buildGrid(){
+  const g=[];
+  for(let r=7;r>=0;r--){const row=[];for(let c=0;c<10;c++)row.push(r%2===0?r*10+c+1:r*10+(9-c)+1);g.push(row);}
+  return g;
+}
+const GRID=buildGrid();
+function getPos(n){for(let r=0;r<8;r++)for(let c=0;c<10;c++)if(GRID[r][c]===n)return{x:(c+.5)*10,y:(r+.5)*12.5};return null;}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function loadIO(url){
+  return new Promise((res,rej)=>{
+    if(window.io){res(window.io);return;}
+    const s=document.createElement('script');
+    s.src=`${url}/socket.io/socket.io.js`;
+    s.onload=()=>res(window.io); s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+function playBeep(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.frequency.value=880;
+    g.gain.setValueAtTime(0.4,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.8);
+    o.start(ctx.currentTime);o.stop(ctx.currentTime+0.8);
+  }catch(e){}
+}
+
+function heatColor(pct){
+  // 0 = cool blue, 0.5 = rose, 1 = gold
+  if(pct<0.5){
+    const t=pct*2;
+    return `linear-gradient(90deg,hsl(${220-t*40},70%,40%),hsl(${220-t*40},70%,55%))`;
+  } else {
+    const t=(pct-0.5)*2;
+    return `linear-gradient(90deg,hsl(${180-t*145},${70+t*20}%,${40+t*10}%),hsl(${210-t*175},${80+t*10}%,${50+t*15}%))`;
+  }
+}
+
+// ─── CONFETTI ─────────────────────────────────────────────────────────────────
+function Confetti(){
+  const pieces=Array.from({length:70},(_,i)=>({
+    id:i, x:Math.random()*100, delay:Math.random()*3,
+    dur:2+Math.random()*3, rot:Math.random()*360,
+    color:['#d4af37','#c45a8a','#c084fc','#60a5fa','#4ade80','#f87171'][Math.floor(Math.random()*6)],
+    size:4+Math.random()*8, circle:Math.random()>.5,
+  }));
+  return(
+    <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:45,overflow:'hidden'}}>
+      {pieces.map(p=>(
+        <div key={p.id} style={{
+          position:'absolute',left:`${p.x}%`,top:'-20px',
+          width:p.size,height:p.size,background:p.color,
+          borderRadius:p.circle?'50%':'2px',
+          animation:`fall ${p.dur}s ${p.delay}s linear forwards`,
+        }}/>
+      ))}
+    </div>
+  );
+}
+
+// ─── COUNTDOWN TIMER (synced) ─────────────────────────────────────────────────
+function CountdownTimer({seconds,socket,autoStart}){
+  const [left,setLeft]=useState(seconds);
+  const [running,setRunning]=useState(!!autoStart);
+  const ref=useRef(null);
+  const circ=2*Math.PI*28;
+
+  useEffect(()=>{
+    if(socket){
+      socket.on('timer_sync',({action,secs})=>{
+        if(action==='start'){setLeft(secs||seconds);setRunning(true);}
+        if(action==='stop'){setRunning(false);}
+      });
+      return()=>socket.off('timer_sync');
+    }
+  },[socket]);
+
+  useEffect(()=>{
+    if(!running)return;
+    if(left<=0){playBeep();setRunning(false);return;}
+    ref.current=setTimeout(()=>setLeft(l=>l-1),1000);
+    return()=>clearTimeout(ref.current);
+  },[running,left]);
+
+  function start(){
+    setLeft(seconds);setRunning(true);
+    if(socket) socket.emit('timer_sync',{action:'start',secs:seconds});
+  }
+  function stop(){
+    setRunning(false);
+    if(socket) socket.emit('timer_sync',{action:'stop'});
+  }
+
+  const pct=left/seconds;
+  const color=left>seconds*.5?'#c084fc':left>seconds*.2?'#f87171':'#ef4444';
+
+  return(
+    <div className="flex flex-col items-center gap-2 py-2">
+      <div style={{position:'relative',width:64,height:64}}>
+        <svg viewBox="0 0 70 70" style={{width:'100%',height:'100%'}}>
+          <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(255,255,255,.1)" strokeWidth="4"/>
+          <circle cx="35" cy="35" r="28" fill="none" stroke={color} strokeWidth="4"
+            strokeDasharray={circ} strokeDashoffset={circ*(1-pct)} strokeLinecap="round"
+            style={{transform:'rotate(-90deg)',transformOrigin:'50% 50%',transition:'stroke-dashoffset 1s linear,stroke .5s'}}/>
+        </svg>
+        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <span style={{fontSize:20,fontWeight:'bold',color:'white',fontVariantNumeric:'tabular-nums'}}>{left}</span>
+        </div>
+      </div>
+      {!running
+        ?<button onClick={start} style={{background:'linear-gradient(135deg,#6b21a8,#9333ea)',color:'white',border:'none',padding:'6px 18px',borderRadius:10,fontSize:12,fontWeight:600,cursor:'pointer'}}>▶ Start</button>
+        :left>0
+          ?<button onClick={stop} style={{background:'rgba(255,255,255,.07)',color:'#9ca3af',border:'1px solid rgba(255,255,255,.1)',padding:'5px 14px',borderRadius:10,fontSize:11,cursor:'pointer'}}>⏸ Pauzeer</button>
+          :<div style={{color:'#4ade80',fontSize:12,fontWeight:600}}>⏰ Tijd is om — stop nu!</div>
+      }
+    </div>
+  );
+}
+
+// ─── MYSTERY CARD OVERLAY ─────────────────────────────────────────────────────
+function MysteryOverlay({card,title,onDone,onSave,saved,isMe,onOpenKern}){
+  if(!card)return null;
+  return(
+    <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',padding:16,background:'rgba(0,0,0,.88)',backdropFilter:'blur(8px)'}}>
+      <div className="su" style={{width:'100%',maxWidth:340,borderRadius:20,overflow:'hidden',background:'linear-gradient(135deg,#150a2a,#2d0a1f)',border:'1px solid #6b21a8',boxShadow:'0 0 40px rgba(107,33,168,.5)'}}>
+        <div style={{padding:'12px 16px',borderBottom:'1px solid rgba(107,33,168,.3)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{color:'#c084fc',fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:2}}>{title||'Mystery Kaart'} 🃏</span>
+          {!saved&&onSave&&<button onClick={onSave} style={{background:'rgba(212,175,55,.15)',color:'#d4af37',border:'1px solid rgba(212,175,55,.3)',padding:'3px 10px',borderRadius:8,fontSize:10,cursor:'pointer'}}>🔖 Bewaar</button>}
+          {saved&&<span style={{color:'#d4af37',fontSize:10}}>🔖 Bewaard</span>}
+        </div>
+        <div style={{padding:20}}>
+          <div style={{fontSize:52,textAlign:'center',marginBottom:12}}>{card.emoji}</div>
+          <h2 style={{fontFamily:'"Playfair Display",serif',fontSize:22,fontWeight:700,color:'white',textAlign:'center',marginBottom:12}}>{card.title}</h2>
+          <p style={{color:'#d1d5db',lineHeight:1.7,fontSize:13,textAlign:'center'}}>{card.desc}</p>
+          {card.kernkwadrant&&isMe&&onOpenKern&&(
+            <button onClick={onOpenKern} style={{width:'100%',marginTop:10,padding:'10px',borderRadius:10,background:'linear-gradient(135deg,#c17f4a,#e09a60)',color:'white',fontWeight:700,fontSize:13,border:'none',cursor:'pointer'}}>
+              🧭 Open de tool
+            </button>
+          )}
+          {!isMe&&<p style={{color:'#9ca3af',fontSize:12,textAlign:'center',marginTop:10,fontStyle:'italic'}}>Wacht terwijl de ander dit uitvoert...</p>}
+        </div>
+        {isMe&&(
+          <div style={{padding:'0 16px 16px'}}>
+            <button onClick={onDone} style={{width:'100%',padding:'12px',borderRadius:12,background:'linear-gradient(135deg,#6b21a8,#9333ea)',color:'white',fontWeight:600,fontSize:14,border:'none',cursor:'pointer'}}>
+              ✓ Gedaan
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── FANTASY NOTEBOOK ─────────────────────────────────────────────────────────
+const PLAYER_COLORS = ['#c45a8a','#9333ea']; // speler 0 = roze, speler 1 = paars
+
+function FantasyNotebook({entries,myNum,onAppend,onClose,socket}){
+  const [text,setText]=useState('');
+  const [partnerTyping,setPartnerTyping]=useState(false);
+  const endRef=useRef(null);
+  const typingTimerRef=useRef(null);
+  const isTypingRef=useRef(false);
+
+  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:'smooth'}); },[entries.length]);
+
+  useEffect(()=>{
+    if(!socket)return;
+    socket.on('notebook_typing',()=>{
+      setPartnerTyping(true);
+      clearTimeout(typingTimerRef.current);
+      typingTimerRef.current=setTimeout(()=>setPartnerTyping(false),2000);
+    });
+    return()=>{ socket.off('notebook_typing'); clearTimeout(typingTimerRef.current); };
+  },[socket]);
+
+  function handleChange(e){
+    setText(e.target.value);
+    if(socket&&!isTypingRef.current){
+      isTypingRef.current=true;
+      socket.emit('notebook_typing');
+      setTimeout(()=>{ isTypingRef.current=false; },1500);
+    }
+  }
+
+  function submit(e){
+    e.preventDefault();
+    if(text.trim()){ onAppend(text.trim()); setText(''); }
+  }
+
+  return(
+    <div style={{position:'fixed',inset:0,zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',padding:16,background:'rgba(0,0,0,.87)',backdropFilter:'blur(8px)'}}>
+      <div className="su" style={{width:'100%',maxWidth:460,maxHeight:'85vh',borderRadius:20,overflow:'hidden',background:'#1a0a2e',border:'1px solid rgba(212,175,55,.4)',boxShadow:'0 0 30px rgba(212,175,55,.2)',display:'flex',flexDirection:'column'}}>
+        <div style={{padding:'12px 16px',borderBottom:'1px solid rgba(212,175,55,.2)',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+          <span style={{fontFamily:'"Playfair Display",serif',color:'#d4af37',fontWeight:700,fontSize:16}}>📓 Gedeeld Notitieboek</span>
+          <button onClick={onClose} style={{color:'#6b7280',fontSize:20,background:'none',border:'none',cursor:'pointer'}}>✕</button>
+        </div>
+        <div style={{flex:1,overflowY:'auto',padding:16,minHeight:0}}>
+          {entries.length===0?(
+            <div style={{textAlign:'center',color:'#374151',fontSize:13,marginTop:24,fontStyle:'italic',fontFamily:'"Playfair Display",serif'}}>
+              Schrijf de eerste zin van jullie gezamenlijke fantasy...
+            </div>
+          ):(
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {entries.map(e=>(
+                <div key={e.id} style={{display:'flex',flexDirection:'column',alignItems:e.playerNum===myNum?'flex-end':'flex-start'}}>
+                  <span style={{fontSize:10,fontWeight:600,color:PLAYER_COLORS[e.playerNum],marginBottom:3}}>{e.playerName}</span>
+                  <div style={{maxWidth:'85%',padding:'8px 12px',borderRadius:14,background:e.playerNum===myNum?'rgba(196,90,138,.15)':'rgba(147,51,234,.15)',border:`1px solid ${PLAYER_COLORS[e.playerNum]}40`}}>
+                    <span style={{fontSize:13,color:'white',fontFamily:'"Playfair Display",serif',fontStyle:'italic',lineHeight:1.7}}>{e.text}</span>
+                  </div>
+                </div>
+              ))}
+              <div ref={endRef}/>
+            </div>
+          )}
+        </div>
+        {partnerTyping&&(
+          <div style={{padding:'4px 16px',fontSize:11,color:'#d4af37',fontStyle:'italic',flexShrink:0}}>
+            ✍️ schrijft...
+          </div>
+        )}
+        <form onSubmit={submit} style={{display:'flex',gap:8,padding:12,borderTop:'1px solid rgba(212,175,55,.2)',flexShrink:0}}>
+          <input value={text} onChange={handleChange}
+            placeholder="Schrijf een zin en druk Enter..."
+            style={{flex:1,padding:'10px 14px',borderRadius:12,background:'rgba(255,255,255,.06)',border:'1px solid rgba(212,175,55,.3)',color:'white',fontSize:13,outline:'none'}}/>
+          <button type="submit" style={{padding:'10px 16px',borderRadius:12,background:'linear-gradient(135deg,#8b1a4a,#c45a8a)',color:'white',fontWeight:600,fontSize:13,border:'none',cursor:'pointer'}}>↑</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── PRE-GAME SETUP ───────────────────────────────────────────────────────────
+function PreGameSetup({myName,myNumber,setupData,onSubmit}){
+  const [intensity,setIntensity]=useState('heet');
+  const [word,setWord]=useState('');
+  const mySetup=setupData[myNumber];
+  const partnerSetup=setupData[myNumber===0?1:0];
+  const INTS=[['zacht','🌸'],['heet','🔥'],['alles','🌋']];
+  return(
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24,background:'#0d0d14'}}>
+      <div style={{width:'100%',maxWidth:360,display:'flex',flexDirection:'column',gap:20}}>
+        <div style={{textAlign:'center'}}>
+          <div style={{fontSize:48,marginBottom:8}}>✨</div>
+          <h2 style={{fontFamily:'"Playfair Display",serif',fontSize:26,color:'#d4af37',fontWeight:700,marginBottom:4}}>Even afstemmen</h2>
+          <p style={{color:'#6b7280',fontSize:13}}>Voordat het spel begint</p>
+        </div>
+        {!mySetup?(
+          <div className="glass" style={{borderRadius:20,padding:20,display:'flex',flexDirection:'column',gap:16}}>
+            <div>
+              <label style={{color:'#d1d5db',fontSize:13,display:'block',marginBottom:8}}>Hoe intens vandaag?</label>
+              <div style={{display:'flex',gap:8}}>
+                {INTS.map(([v,e])=>(
+                  <button key={v} onClick={()=>setIntensity(v)} style={{flex:1,padding:'8px 0',borderRadius:10,fontSize:12,fontWeight:600,cursor:'pointer',background:intensity===v?'linear-gradient(135deg,#8b1a4a,#c45a8a)':'rgba(255,255,255,.06)',color:intensity===v?'white':'#9ca3af',border:intensity===v?'none':'1px solid rgba(255,255,255,.08)'}}>
+                    {e} {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={{color:'#d1d5db',fontSize:13,display:'block',marginBottom:8}}>Eén woord voor hoe je mij nu ziet</label>
+              <input value={word} onChange={e=>setWord(e.target.value)} maxLength={20}
+                placeholder="bijv. verleidelijk, dichtbij, gewenst..."
+                style={{width:'100%',padding:'10px 14px',borderRadius:12,background:'rgba(255,255,255,.06)',border:'1px solid rgba(139,26,74,.4)',color:'white',fontSize:13,outline:'none'}}/>
+            </div>
+            <button onClick={()=>onSubmit(intensity,word)} disabled={!word.trim()}
+              style={{padding:'12px',borderRadius:12,background:'linear-gradient(135deg,#8b1a4a,#c45a8a)',color:'white',fontWeight:600,fontSize:14,border:'none',cursor:'pointer',opacity:word.trim()?1:.4}}>
+              Klaar ✓
+            </button>
+          </div>
+        ):(
+          <div className="glass" style={{borderRadius:20,padding:20,textAlign:'center',display:'flex',flexDirection:'column',gap:12}}>
+            <div style={{color:'#4ade80',fontWeight:600}}>Jij bent klaar ✓</div>
+            {partnerSetup?(
+              <>
+                <div style={{color:'#d1d5db',fontSize:13}}>
+                  Je partner ziet jou als: <span style={{color:'#c45a8a',fontWeight:600}}>"{partnerSetup.word}"</span>
+                </div>
+                <div style={{color:'#9ca3af',fontSize:12}}>
+                  {INTS.find(([v])=>v===partnerSetup.intensity)?.[0]} intensiteit: {INTS.find(([v])=>v===partnerSetup.intensity)?.[1]} {partnerSetup.intensity}
+                </div>
+              </>
+            ):(
+              <div style={{color:'#fbbf24',fontSize:13}} className="pg">Wacht op je partner...</div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── BOARD ────────────────────────────────────────────────────────────────────
+// Grid offsets: tune these if tokens appear slightly off-center on squares
+const GO={top:3.8,left:3.8,right:3.8,bottom:10.5};
+function tp(n){
+  for(let r=0;r<8;r++)for(let c=0;c<10;c++)if(GRID[r][c]===n){
+    const uw=100-GO.left-GO.right,uh=100-GO.top-GO.bottom;
+    const cw=uw/10,ch=uh/8;
+    return{x:GO.left+c*cw+cw/2,y:GO.top+r*ch+ch/2,cw,ch};
+  }return null;
+}
+
+function Board({positions,highlight}){
+  const sq=highlight?SQUARES[highlight]:null;
+  const sc=sq?SC[sq.type]:SC.blue;
+  const hp=highlight?tp(highlight):null;
+  const uw=100-GO.left-GO.right;
+  const cw=uw/10;
+  return(
+    <div style={{position:'relative',width:'100%',userSelect:'none'}}>
+      <img src="/src/assets/board.png" alt="Slangen & Ladders bord" style={{width:'100%',borderRadius:8,display:'block'}} draggable={false}/>
+      {hp&&(
+        <div style={{position:'absolute',left:`${hp.x-hp.cw/2}%`,top:`${hp.y-hp.ch/2}%`,width:`${hp.cw}%`,height:`${hp.ch}%`,border:`2px solid ${sc.text}`,borderRadius:4,boxShadow:`0 0 12px ${sc.text}80,inset 0 0 8px ${sc.text}30`,background:`${sc.text}15`,pointerEvents:'none'}} className="pg"/>
+      )}
+      <svg style={{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none',overflow:'visible'}} viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <filter id="ts" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy=".5" stdDeviation=".8" floodColor="#000" floodOpacity=".8"/>
+          </filter>
+          <radialGradient id="tg1" cx="35%" cy="35%"><stop offset="0%" stopColor="#f472b6"/><stop offset="100%" stopColor="#9d1755"/></radialGradient>
+          <radialGradient id="tg2" cx="35%" cy="35%"><stop offset="0%" stopColor="#a78bfa"/><stop offset="100%" stopColor="#5b21b6"/></radialGradient>
+        </defs>
+        {positions.map((pos,i)=>{
+          if(!pos)return null;
+          const p=tp(pos);if(!p)return null;
+          const off=i===0?-cw*.18:cw*.18;
+          return(
+            <g key={i} filter="url(#ts)">
+              <circle cx={p.x+off} cy={p.y} r="2.3" fill="#d4af37"/>
+              <circle cx={p.x+off} cy={p.y} r="1.8" fill={`url(#tg${i+1})`}/>
+              <text x={p.x+off} y={p.y+.65} textAnchor="middle" fontSize="2" fontWeight="bold" fill="white">{i+1}</text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+// ─── CLOTHING TRACKER ─────────────────────────────────────────────────────────
+function ClothingTracker({count,prev,name,isMe}){
+  const items=['👔','👗','🩱','🩲','🧦'];
+  const changed=prev!==undefined&&prev!==count;
+  const diff=prev!==undefined?count-prev:0;
+  return(
+    <div style={{borderRadius:12,padding:'6px 8px',textAlign:'center',position:'relative',background:'rgba(255,255,255,.04)',border:isMe?'1px solid rgba(196,90,138,.3)':'1px solid rgba(255,255,255,.05)'}}>
+      <p style={{fontSize:10,color:'#9ca3af',marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{name}</p>
+      <div style={{display:'flex',justifyContent:'center',gap:2,flexWrap:'wrap'}}>
+        {items.map((it,i)=><span key={i} style={{fontSize:14,opacity:i<count?1:.12,filter:i<count?'none':'grayscale(100%)',transition:'all .4s'}}>{it}</span>)}
+      </div>
+      {changed&&diff!==0&&(
+        <div className="fn" style={{position:'absolute',top:-6,right:-6,fontSize:10,fontWeight:'bold',padding:'2px 6px',borderRadius:10,background:diff<0?'#166534':'#7f1d1d',color:diff<0?'#4ade80':'#f87171'}}>
+          {diff<0?`–${Math.abs(diff)}`:`+${diff}`}
+        </div>
+      )}
+      <p style={{fontSize:10,marginTop:2,color:count===0?'#c084fc':count===1?'#f87171':'#6b7280'}}>
+        {count===0?'✨ Naakt':count===1?'🔥 Bijna':`${count} items`}
+      </p>
+    </div>
+  );
+}
+
+// ─── MEDIA VIEWER ─────────────────────────────────────────────────────────────
+function MediaViewer({msg,isMe,onClose,onReaction,onReplay}){
+  const [phase,setPhase]=useState('viewing');
+  const [timeLeft,setTimeLeft]=useState(msg.mediaType==='photo'?3:null);
+  const [reacted,setReacted]=useState(false);
+  const vRef=useRef(null);
+
+  useEffect(()=>{
+    if(msg.mediaType!=='photo'||phase!=='viewing')return;
+    if(timeLeft<=0){setPhase('blurred');return;}
+    const t=setTimeout(()=>setTimeLeft(n=>n-1),1000);
+    return()=>clearTimeout(t);
+  },[timeLeft,phase]);
+
+  function doReact(){
+    setReacted(true);
+    onReaction&&onReaction('❤️‍🔥');
+  }
+
+  function replay(){
+    const card=randomCard();
+    onReplay&&onReplay(card);
+    if(msg.mediaType==='photo'){setPhase('viewing');setTimeLeft(3);}
+    else if(vRef.current){vRef.current.currentTime=0;vRef.current.play();}
+    setPhase('viewing');
+  }
+
+  const blurred=phase==='blurred';
+
+  return(
+    <div style={{position:'fixed',inset:0,zIndex:55,display:'flex',alignItems:'center',justifyContent:'center',background:'#000'}}>
+      <button onClick={onClose} style={{position:'absolute',top:16,right:16,zIndex:10,color:'white',fontSize:28,background:'none',border:'none',cursor:'pointer',textShadow:'0 0 8px #000'}}>✕</button>
+      <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
+        {msg.mediaType==='photo'&&<img src={msg.data} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',filter:blurred?'blur(24px) brightness(.5)':'none',transition:'filter .8s ease',userSelect:'none'}} draggable={false}/>}
+        {msg.mediaType==='video'&&<video ref={vRef} src={msg.data} autoPlay playsInline onEnded={()=>setPhase('blurred')} style={{maxWidth:'100%',maxHeight:'100%',filter:blurred?'blur(24px) brightness(.5)':'none',transition:'filter .8s ease'}}/>}
+        {msg.mediaType==='audio'&&<div style={{textAlign:'center'}}><div style={{fontSize:80,marginBottom:20}}>🎙️</div><audio src={msg.data} controls autoPlay style={{width:280}}/></div>}
+
+        {phase==='viewing'&&msg.mediaType==='photo'&&timeLeft>0&&(
+          <div style={{position:'absolute',top:16,left:16,width:44,height:44,borderRadius:'50%',background:'rgba(0,0,0,.6)',border:'2px solid rgba(255,255,255,.4)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:'bold',color:'white'}}>
+            {timeLeft}
+          </div>
+        )}
+
+        {/* Reaction button (non-sender, still viewing) */}
+        {!isMe&&!blurred&&!reacted&&(
+          <button onClick={doReact} style={{position:'absolute',bottom:24,right:24,fontSize:32,background:'rgba(0,0,0,.5)',border:'none',cursor:'pointer',borderRadius:'50%',width:60,height:60}}>❤️‍🔥</button>
+        )}
+        {reacted&&<div style={{position:'absolute',bottom:24,right:24,fontSize:32}} className="fn">❤️‍🔥</div>}
+
+        {/* Blurred state */}
+        {blurred&&(
+          <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:16}}>
+            <div style={{color:'rgba(255,255,255,.3)',fontSize:14}}>verdwenen</div>
+            {!isMe&&(
+              <button onClick={replay} style={{padding:'12px 28px',borderRadius:20,background:'linear-gradient(135deg,#8b1a4a,#c45a8a)',color:'white',fontSize:15,fontWeight:600,border:'none',cursor:'pointer',boxShadow:'0 0 20px rgba(139,26,74,.5)'}}>
+                🔁 Nog een keer — mystery kaart
+              </button>
+            )}
+            <button onClick={onClose} style={{color:'rgba(255,255,255,.3)',fontSize:13,background:'none',border:'none',cursor:'pointer'}}>Sluiten</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── CHAT MESSAGE ─────────────────────────────────────────────────────────────
+function ChatMessage({msg,isMe,onReaction,onReplay}){
+  const [open,setOpen]=useState(false);
+  const [reaction,setReaction]=useState(null);
+  const isMedia=msg.mediaType==='photo'||msg.mediaType==='video'||msg.mediaType==='audio';
+  const icons={photo:'📸',video:'🎬',audio:'🎙️'};
+  const labels={photo:'Foto — tik om te zien',video:'Video — tik om te zien',audio:'Voice note — tik om te luisteren'};
+
+  // Incoming reaction
+  useEffect(()=>{
+    if(msg.reaction) setReaction(msg.reaction);
+  },[msg.reaction]);
+
+  return(
+    <>
+      <div style={{display:'flex',justifyContent:isMe?'flex-end':'flex-start',marginBottom:6}}>
+        <div style={{maxWidth:'90%'}}>
+          {!isMe&&<div style={{fontSize:10,color:'#c45a8a',marginBottom:2,marginLeft:4}}>{msg.sender}</div>}
+          {msg.mediaType==='text'&&(
+            <div style={{padding:'8px 12px',borderRadius:14,fontSize:13,color:'white',lineHeight:1.6,background:isMe?'linear-gradient(135deg,#8b1a4a,#c45a8a)':'rgba(255,255,255,.09)'}}>
+              {msg.text}
+            </div>
+          )}
+          {isMedia&&(
+            <button onClick={()=>setOpen(true)} style={{display:'flex',alignItems:'center',gap:6,padding:'7px 10px',borderRadius:14,fontSize:11,fontWeight:500,color:'white',cursor:'pointer',background:isMe?'linear-gradient(135deg,#8b1a4a,#c45a8a)':'rgba(255,255,255,.1)',border:'none'}}>
+              <span>{icons[msg.mediaType]}</span><span>{labels[msg.mediaType]}</span>
+            </button>
+          )}
+          {reaction&&<div style={{textAlign:isMe?'right':'left',fontSize:16,marginTop:2}}>{reaction}</div>}
+        </div>
+      </div>
+      {open&&isMedia&&(
+        <MediaViewer msg={msg} isMe={isMe} onClose={()=>setOpen(false)}
+          onReaction={r=>{ setReaction(r); onReaction&&onReaction(r); }}
+          onReplay={card=>{ setOpen(false); onReplay&&onReplay(card,msg); }}/>
+      )}
+    </>
+  );
+}
+
+// ─── CHAT COLUMN ──────────────────────────────────────────────────────────────
+function ChatColumn({messages,myName,onSend,onReaction,onReplay,socket}){
+  const [text,setText]=useState('');
+  const [showEmoji,setShowEmoji]=useState(false);
+  const [partnerTyping,setPartnerTyping]=useState(false);
+  const typingTimerRef=useRef(null);
+  const isTypingRef=useRef(false);
+
+  useEffect(()=>{
+    if(!socket)return;
+    socket.on('typing_indicator',()=>{
+      setPartnerTyping(true);
+      clearTimeout(typingTimerRef.current);
+      typingTimerRef.current=setTimeout(()=>setPartnerTyping(false),2000);
+    });
+    return()=>socket.off('typing_indicator');
+  },[socket]);
+
+  function handleTextChange(e){
+    setText(e.target.value);
+    if(socket&&!isTypingRef.current){
+      isTypingRef.current=true;
+      socket.emit('typing_indicator');
+      setTimeout(()=>{isTypingRef.current=false;},1500);
+    }
+  }
+  const [stream,setStream]=useState(null);
+  const [camOn,setCamOn]=useState(false);
+  const [recording,setRecording]=useState(false);
+  const [recType,setRecType]=useState(null);
+  const [recSecs,setRecSecs]=useState(0);
+  const vRef=useRef(null);
+  const mrRef=useRef(null);
+  const chunksRef=useRef([]);
+  const timerRef=useRef(null);
+  const endRef=useRef(null);
+
+  useEffect(()=>{ endRef.current?.scrollIntoView({behavior:'smooth'}); },[messages.length]);
+  useEffect(()=>()=>{ if(stream) stream.getTracks().forEach(t=>t.stop()); clearInterval(timerRef.current); },[]);
+
+  async function toggleCam(){
+    if(camOn){
+      if(stream) stream.getTracks().forEach(t=>t.stop());
+      setStream(null);setCamOn(false);
+    } else {
+      try{
+        const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:true});
+        setStream(s);setCamOn(true);
+        requestAnimationFrame(()=>{if(vRef.current){vRef.current.srcObject=s;vRef.current.play().catch(()=>{});}});
+      }catch(e){console.warn('cam:',e.message);}
+    }
+  }
+
+  function takePhoto(){
+    const v=vRef.current;if(!v||!camOn)return;
+    const c=document.createElement('canvas');
+    const scale=Math.min(1,600/Math.max(v.videoWidth||320,v.videoHeight||240));
+    c.width=(v.videoWidth||320)*scale;c.height=(v.videoHeight||240)*scale;
+    c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+    onSend({mediaType:'photo',data:c.toDataURL('image/jpeg',.75)});
+  }
+
+  function startRec(type){
+    if(!stream)return;
+    chunksRef.current=[];
+    const tracks=type==='audio'?stream.getAudioTracks():stream.getTracks();
+    const rs=new MediaStream(tracks);
+    const mime=type==='audio'?'audio/webm':'video/webm';
+    const mr=new MediaRecorder(rs,{mimeType:MediaRecorder.isTypeSupported(mime)?mime:''});
+    mr.ondataavailable=e=>{if(e.data.size>0)chunksRef.current.push(e.data);};
+    mr.onstop=()=>{
+      const blob=new Blob(chunksRef.current,{type:mime});
+      const reader=new FileReader();
+      reader.onload=()=>onSend({mediaType:type,data:reader.result});
+      reader.readAsDataURL(blob);
+    };
+    mrRef.current=mr;mr.start(100);
+    setRecording(true);setRecType(type);setRecSecs(0);
+    timerRef.current=setInterval(()=>setRecSecs(s=>s+1),1000);
+  }
+
+  function stopRec(){
+    clearInterval(timerRef.current);
+    if(mrRef.current&&mrRef.current.state!=='inactive') mrRef.current.stop();
+    setRecording(false);setRecType(null);setRecSecs(0);
+  }
+
+  function sendText(e){
+    e.preventDefault();
+    if(text.trim()){onSend({mediaType:'text',text:text.trim()});setText('');setShowEmoji(false);}
+  }
+
+  return(
+    <div style={{display:'flex',flexDirection:'column',flex:1,height:'100%',background:'#0a0a11',borderRight:'1px solid rgba(139,26,74,.2)'}}>
+      {camOn&&(
+        <div style={{position:'relative',flexShrink:0,background:'#000'}}>
+          <video ref={vRef} muted playsInline autoPlay style={{width:'100%',aspectRatio:'4/3',objectFit:'cover',display:'block',transform:'scaleX(-1)'}}/>
+          {recording&&<div style={{position:'absolute',top:4,left:4,display:'flex',alignItems:'center',gap:4,padding:'2px 8px',borderRadius:20,background:'rgba(220,38,38,.85)',fontSize:10,fontWeight:'bold',color:'white'}}>
+            <span style={{width:5,height:5,borderRadius:'50%',background:'white',display:'inline-block'}}/>
+            {recSecs}s {recType==='audio'?'🎙️':'🎬'}
+          </div>}
+        </div>
+      )}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-around',padding:'6px 4px',borderBottom:'1px solid rgba(139,26,74,.15)',flexShrink:0}}>
+        <button onClick={toggleCam} style={{fontSize:16,padding:4,borderRadius:8,background:camOn?'rgba(139,26,74,.5)':'rgba(255,255,255,.05)',border:'none',cursor:'pointer',color:camOn?'#c45a8a':'#6b7280'}}>🎥</button>
+        {camOn&&<>
+          <button onClick={takePhoto} style={{fontSize:14,padding:4,borderRadius:8,background:'rgba(255,255,255,.05)',border:'none',cursor:'pointer',color:'#f5e6d3'}}>📸</button>
+          {!recording
+            ?<>
+              <button onClick={()=>startRec('audio')} style={{fontSize:14,padding:4,borderRadius:8,background:'rgba(255,255,255,.05)',border:'none',cursor:'pointer',color:'#f5e6d3'}}>🎙️</button>
+              <button onClick={()=>startRec('video')} style={{fontSize:14,padding:4,borderRadius:8,background:'rgba(255,255,255,.05)',border:'none',cursor:'pointer',color:'#f5e6d3'}}>🎬</button>
+            </>
+            :<button onClick={stopRec} style={{fontSize:11,padding:'3px 8px',borderRadius:8,background:'rgba(220,38,38,.6)',border:'none',cursor:'pointer',color:'white',fontWeight:'bold'}}>⏹ Stop</button>
+          }
+        </>}
+        <button onClick={()=>setShowEmoji(s=>!s)} style={{fontSize:16,padding:4,border:'none',background:'none',cursor:'pointer',color:showEmoji?'#c45a8a':'#6b7280'}}>😍</button>
+      </div>
+      {showEmoji&&(
+        <div style={{padding:'4px 4px',borderBottom:'1px solid rgba(139,26,74,.15)',flexShrink:0,maxHeight:68,overflowY:'auto'}}>
+          <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
+            {EMOJIS.map(em=><button key={em} onClick={()=>{onSend({mediaType:'text',text:em});setShowEmoji(false);}} style={{fontSize:16,background:'none',border:'none',cursor:'pointer',padding:1}}>{em}</button>)}
+          </div>
+        </div>
+      )}
+      <div style={{flex:1,overflowY:'auto',padding:'6px 6px',minHeight:0}}>
+        {messages.length===0&&<div style={{textAlign:'center',color:'#374151',fontSize:12,marginTop:32}}><div style={{fontSize:28,marginBottom:6}}>💬</div>Chat</div>}
+        {messages.map((m,i)=><ChatMessage key={i} msg={m} isMe={m.sender===myName} onReaction={r=>onReaction&&onReaction(r,m)} onReplay={(card,origMsg)=>onReplay&&onReplay(card,origMsg)}/>)}
+        {partnerTyping&&<div style={{fontSize:11,color:'#c45a8a',padding:'3px 8px',fontStyle:'italic'}}>... typt 💭</div>}
+        <div ref={endRef}/>
+      </div>
+      <form onSubmit={sendText} style={{display:'flex',gap:4,padding:6,borderTop:'1px solid rgba(139,26,74,.2)',flexShrink:0}}>
+        <input value={text} onChange={handleTextChange} placeholder="Typ..." style={{flex:1,padding:'9px 12px',borderRadius:12,background:'rgba(255,255,255,.06)',border:'1px solid rgba(139,26,74,.3)',color:'white',fontSize:13,outline:'none',minWidth:0}}/>
+        <button type="submit" style={{padding:'9px 12px',borderRadius:12,background:'#8b1a4a',color:'white',fontSize:13,border:'none',cursor:'pointer'}}>↑</button>
+      </form>
+    </div>
+  );
+}
+
+// ─── WINNER SCREEN ────────────────────────────────────────────────────────────
+function WinnerScreen({winnerName,isWinner,fantasyEntries,onPlayAgain}){
+  return(
+    <div style={{position:'fixed',inset:0,zIndex:55,display:'flex',alignItems:'center',justifyContent:'center',padding:20,background:'rgba(0,0,0,.97)'}}>
+      <Confetti/>
+      <div className="su" style={{width:'100%',maxWidth:360,display:'flex',flexDirection:'column',gap:20,alignItems:'center',textAlign:'center',position:'relative',zIndex:1}}>
+        <div style={{fontSize:80}}>🏆</div>
+        <div>
+          <h1 style={{fontFamily:'"Playfair Display",serif',fontSize:36,fontWeight:700,background:'linear-gradient(135deg,#d4af37,#f0d060)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',marginBottom:8}}>
+            {isWinner?'Jij wint!':winnerName+' wint!'}
+          </h1>
+          <p style={{color:'#9ca3af',fontSize:15}}>Vak 80 bereikt 🎉</p>
+        </div>
+        {fantasyEntries&&fantasyEntries.length>0&&(
+          <div style={{width:'100%',borderRadius:16,padding:16,background:'rgba(212,175,55,.08)',border:'1px solid rgba(212,175,55,.3)',maxHeight:160,overflowY:'auto'}}>
+            <div style={{fontSize:14,color:'#d4af37',fontWeight:600,marginBottom:8}}>📓 Jullie gezamenlijke fantasy</div>
+            {fantasyEntries.map(e=>(
+              <div key={e.id} style={{fontSize:12,color:PLAYER_COLORS[e.playerNum],lineHeight:1.7,fontFamily:'"Playfair Display",serif',fontStyle:'italic',textAlign:'left',marginBottom:4}}>
+                <span style={{fontWeight:600,fontSize:10}}>{e.playerName}: </span>{e.text}
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{width:'100%',borderRadius:16,padding:20,background:'linear-gradient(135deg,#1f1a05,#2d1a05)',border:'1px solid #d4af37',boxShadow:'0 0 30px rgba(212,175,55,.3)'}}>
+          <div style={{fontSize:28,marginBottom:8}}>✨</div>
+          <p style={{fontFamily:'"Playfair Display",serif',fontSize:18,color:'#d4af37',fontWeight:700,marginBottom:8}}>Eén Wens</p>
+          <p style={{color:'#d1d5db',fontSize:13,lineHeight:1.6}}>
+            {isWinner?'Jij mag nu één wens vragen aan je partner. Eén. Wat dan ook — binnen jullie grenzen.':'De winnaar mag één wens van jou vragen. Eén. Wat dan ook.'}
+          </p>
+        </div>
+        <button onClick={onPlayAgain} style={{width:'100%',padding:14,borderRadius:14,background:'linear-gradient(135deg,#8b1a4a,#c45a8a)',color:'white',fontWeight:600,fontSize:15,border:'none',cursor:'pointer'}}>
+          Opnieuw Spelen 🔄
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── GAME ─────────────────────────────────────────────────────────────────────
+function Game({game:initialGame,myNum,myName,socket,onPlayAgain}){
+  const [G,setG]=useState(initialGame);
+  const [rolling,setRolling]=useState(false);
+  const [lastMove,setLastMove]=useState(null);
+  const [prevClothing,setPrevClothing]=useState([...initialGame.clothing]);
+  const [eventCard,setEventCard]=useState(null);
+  const [savedCard,setSavedCard]=useState(null);
+  const [bonusCard,setBonusCard]=useState(null);
+  const [msgs,setMsgs]=useState([]);
+  const [notebookEntries,setNotebookEntries]=useState([]);
+  const [showNotebook,setShowNotebook]=useState(false);
+  const [reactionNotif,setReactionNotif]=useState(null);
+  const [chosenOption,setChosenOption]=useState(null); // 'A'|'B'
+  const [milestone,setMilestone]=useState(null);
+  const milestonesHit=useRef(new Set());
+  // Mystery partner-pick systeem
+  const [partnerCards,setPartnerCards]=useState(null);  // 3 kaarten die IK zie om voor partner te kiezen
+  const [waitingForPick,setWaitingForPick]=useState(false); // ik wacht tot partner kiest
+  const [vetoUsed,setVetoUsed]=useState(false); // veto al gebruikt deze beurt
+  // Kernkwadranten
+  const [showKernkwadrant,setShowKernkwadrant]=useState(false);
+  const kernShownRef=useRef(false); // bijhouden of kernkwadrant al gespeeld (survives socket closure)
+
+  // Mystery cards worden aangeboden via offer_mystery_cards / pick_mystery_card
+
+  useEffect(()=>{
+    socket.on('move_result',d=>{
+      setRolling(false);setPrevClothing(c=>[...c]);
+      setLastMove(d.result||{});setChosenOption(null);
+      setVetoUsed(false);
+      // Mystery vakje: actieve speler biedt 3 kaarten aan partner
+      if(d.phase==='mystery' && d.playerNumber===myNum){
+        const pos=d.positions[myNum];
+        const forceKern=pos<40 && !kernShownRef.current;
+        const cards=pickCards(3, pos, forceKern);
+        setWaitingForPick(true);
+        socket.emit('offer_mystery_cards',{cards});
+      }
+      const pos=d.positions?.[myNum]||0;
+      [25,50,75].forEach(m=>{
+        if(pos>=m&&!milestonesHit.current.has(m)){
+          milestonesHit.current.add(m);
+          const msgs25={25:'Kwart van het spel 🌸 — lekker bezig!',50:'Halverwege 🔥 — het wordt heter...',75:'Bijna 🌋 — nog even!'};
+          setMilestone(msgs25[m]);
+          setTimeout(()=>setMilestone(null),3500);
+        }
+      });
+      // GEEN auto-draw meer — mystery kaart loopt via partner-kiest flow
+      setG(s=>({...s,positions:d.positions,clothing:d.clothing,phase:d.phase,winner:d.winner,diceValue:d.diceValue,powerSwitch:d.powerSwitch,currentTurn:d.currentTurn,visitCount:d.visitCount||1}));
+      if(d.result?.isDouble&&d.phase!=='finished'){
+        setTimeout(()=>setBonusCard(randomCard(d.positions?.[myNum]||0)),400);
+      }
+    });
+    socket.on('turn_advanced',d=>{
+      setG(s=>({...s,phase:d.phase,currentTurn:d.currentTurn,powerSwitch:d.powerSwitch,clothing:d.clothing,diceValue:null}));
+      setLastMove(null);setChosenOption(null);
+      setPartnerCards(null);setWaitingForPick(false);setVetoUsed(false);setEventCard(null);
+      const nowActive=d.powerSwitch?d.powerSwitch.activePlayer:d.currentTurn;
+      if(nowActive===myNum){ playBeep(); if(navigator.vibrate) navigator.vibrate([100,50,100]); }
+    });
+    // Mystery: partner kiest kaart voor actieve speler
+    socket.on('offer_mystery_cards',({cards})=>setPartnerCards(cards));
+    socket.on('pick_mystery_card',({card})=>{
+      setWaitingForPick(false);
+      setEventCard(card);
+      if(card.kernkwadrant) kernShownRef.current=true;
+    });
+    socket.on('position_update',d=>setG(s=>({...s,positions:d.positions,clothing:d.clothing})));
+    socket.on('chat_message',m=>setMsgs(p=>[...p,m]));
+    socket.on('fantasy_entries',({entries})=>setNotebookEntries(entries||[]));
+    socket.on('media_reaction',({reaction,from})=>{
+      setReactionNotif(`${from} reageerde ${reaction}`);
+      setTimeout(()=>setReactionNotif(null),4000);
+    });
+    socket.on('partner_reconnected',({name})=>{
+      setReactionNotif(`${name} is terug 🔄`);
+      setTimeout(()=>setReactionNotif(null),4000);
+    });
+    return()=>['move_result','turn_advanced','position_update','chat_message','fantasy_entries','media_reaction','offer_mystery_cards','pick_mystery_card','partner_reconnected'].forEach(e=>socket.off(e));
+  },[]);
+
+  const {positions,clothing,currentTurn,phase,winner,powerSwitch,playerNames,diceValue,visitCount=1}=G;
+  const opNum=myNum===0?1:0;
+  const opName=playerNames[opNum]||'Partner';
+  const active=powerSwitch?powerSwitch.activePlayer:currentTurn;
+  const isMyTurn=active===myNum;
+  const activeName=playerNames[active]||'?';
+  const pendingSq=phase==='action'||phase==='mystery'?positions[active]:null;
+  const sq=pendingSq?SQUARES[pendingSq]:null;
+  const sqC=sq?SC[sq.type]:null;
+  const myPos=positions[myNum]||0;
+  const opPos=positions[opNum]||0;
+  const progress=myPos/80;
+  const progressColor=heatColor(progress);
+
+  function rollDice(){if(rolling)return;setRolling(true);socket.emit('roll_dice');}
+  function actionDone(){setPrevClothing([...clothing]);socket.emit('action_done');}
+  function skipAction(){socket.emit('skip_action');}
+  function sendChat(obj){socket.emit('chat_message',obj);setMsgs(p=>[...p,{...obj,sender:myName}]);}
+  function handleNotebookAppend(text){socket.emit('fantasy_append',{text});}
+  function vetoSquare(){
+    setVetoUsed(true);
+    const pos=positions[myNum];
+    const forceKern=pos<40 && !kernShownRef.current;
+    const cards=pickCards(3, pos, forceKern);
+    setWaitingForPick(true);
+    socket.emit('offer_mystery_cards',{cards});
+  }
+  function pickForPartner(card){
+    setPartnerCards(null);
+    socket.emit('pick_mystery_card',{card});
+  }
+  function handleReaction(r,msg){socket.emit('media_reaction',{reaction:r});}
+  function handleReplay(card,origMsg){
+    setMsgs(p=>[...p,{mediaType:'text',text:`🃏 Replay betaling: "${card.title}" — ${card.desc}`,sender:myName}]);
+    socket.emit('chat_message',{mediaType:'text',text:`🃏 Mystery kaart betaald: "${card.title}"`});
+    // Show the card as what the viewer must do
+    setEventCard(card);
+  }
+
+  const ICONS={blue:'💙',red:'🔥',purple:'💜',green:'💚',orange:'🟠',snake:'🐍',gold:'🏆',mystery:'🃏',versus:'⚔️'};
+  const dots={1:[[50,50]],2:[[25,25],[75,75]],3:[[25,25],[50,50],[75,75]],4:[[25,25],[75,25],[25,75],[75,75]],5:[[25,25],[75,25],[50,50],[25,75],[75,75]],6:[[25,25],[75,25],[25,50],[75,50],[25,75],[75,75]]};
+  const dv=diceValue||1;
+  const dDots=dots[dv]||dots[1];
+
+  if(winner!==null) return<WinnerScreen winnerName={playerNames[winner]} isWinner={winner===myNum} fantasyEntries={notebookEntries} onPlayAgain={onPlayAgain}/>;
+
+  // Which text to show for choice squares
+  const baseText = pendingSq ? getSquareText(pendingSq, visitCount) : null;
+  const squareText = sq?(
+    chosenOption==='A'&&sq.choiceA ? sq.choiceA :
+    chosenOption==='B'&&sq.choiceB ? sq.choiceB :
+    baseText || sq.text
+  ):null;
+
+  return(
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',background:'#0d0d14',maxWidth:900,margin:'0 auto',overflow:'hidden'}}>
+
+      {/* HEADER */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 12px',background:'rgba(26,10,46,.8)',borderBottom:'1px solid rgba(139,26,74,.2)',flexShrink:0,backdropFilter:'blur(12px)'}}>
+        <span style={{fontFamily:'"Playfair Display",serif',color:'#d4af37',fontWeight:700,fontSize:13}}>🐍 Slangen & Ladders</span>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          {milestone&&<span className="fi" style={{fontSize:11,color:'#d4af37',background:'rgba(212,175,55,.15)',padding:'2px 10px',borderRadius:10,border:'1px solid rgba(212,175,55,.3)'}}>{milestone}</span>}
+          {!milestone&&reactionNotif&&<span className="fi" style={{fontSize:11,color:'#c45a8a',background:'rgba(139,26,74,.2)',padding:'2px 8px',borderRadius:10}}>{reactionNotif}</span>}
+          {powerSwitch&&<span style={{fontSize:10,padding:'2px 8px',borderRadius:10,background:'rgba(212,175,55,.15)',color:'#d4af37'}}>⚡ {powerSwitch.turnsLeft}x</span>}
+          <button onClick={()=>setShowNotebook(true)} style={{fontSize:16,background:'rgba(212,175,55,.1)',border:'1px solid rgba(212,175,55,.3)',borderRadius:8,padding:'3px 8px',cursor:'pointer',color:'#d4af37'}} title="Gedeeld notitieboek">📓</button>
+          {isMyTurn
+            ?<span className="pg" style={{fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:20,background:'rgba(139,26,74,.3)',color:'#c45a8a',border:'1px solid rgba(196,90,138,.4)'}}>✨ Jij!</span>
+            :<span style={{fontSize:11,color:'#6b7280'}}>{activeName}...</span>
+          }
+        </div>
+      </div>
+
+      {/* CLOTHING + HEAT */}
+      <div style={{padding:'6px 8px',flexShrink:0}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:4}}>
+          <ClothingTracker count={clothing[myNum]} prev={prevClothing[myNum]} name={`${myName} (jij)`} isMe/>
+          <ClothingTracker count={clothing[opNum]} prev={prevClothing[opNum]} name={opName} isMe={false}/>
+        </div>
+        {/* Heat meter */}
+        <div style={{display:'flex',alignItems:'center',gap:6}}>
+          <span style={{fontSize:11}}>🧊</span>
+          <div style={{flex:1,height:8,borderRadius:4,background:'rgba(255,255,255,.07)',overflow:'hidden',position:'relative'}}>
+            <div style={{height:'100%',borderRadius:4,minWidth:progress>0?'8px':'0',width:`${Math.max(progress*100,progress>0?3:0)}%`,background:progressColor,transition:'all .8s ease'}}/>
+          </div>
+          <span style={{fontSize:11}}>🔥</span>
+          <span style={{fontSize:9,color:'#6b7280',minWidth:24,textAlign:'right'}}>{Math.round(progress*100)}%</span>
+        </div>
+      </div>
+
+      {/* 3 COLUMNS */}
+      <div style={{display:'flex',flex:1,minHeight:0,gap:2,padding:'0 4px 4px'}}>
+
+        {/* LEFT: Chat — volledige hoogte */}
+        <div style={{width:220,flexShrink:0,display:'flex',flexDirection:'column',alignSelf:'stretch'}}>
+          <ChatColumn messages={msgs} myName={myName} onSend={sendChat} onReaction={handleReaction} onReplay={handleReplay} socket={socket}/>
+        </div>
+
+        {/* CENTER: Board */}
+        <div style={{flex:'1 1 0',minWidth:0,display:'flex',flexDirection:'column',gap:4,overflow:'hidden'}}>
+          <Board positions={positions} highlight={pendingSq}/>
+          {lastMove&&(lastMove.ladder||lastMove.snake)&&(
+            <div className="su" style={{padding:'6px 10px',borderRadius:10,fontSize:11,textAlign:'center',fontWeight:500,flexShrink:0,background:lastMove.ladder?'rgba(146,64,14,.25)':'rgba(127,29,29,.25)',border:lastMove.ladder?'1px solid rgba(251,146,60,.4)':'1px solid rgba(248,113,113,.4)',color:lastMove.ladder?'#fb923c':'#f87171'}}>
+              {lastMove.ladder&&`🪜 ${lastMove.ladder.from}→${lastMove.ladder.to} kleding uit!`}
+              {lastMove.snake&&`🐍 ${lastMove.snake.from}→${lastMove.snake.to} kleding aan!`}
+            </div>
+          )}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,flexShrink:0}}>
+            {[[myNum,myName,'#c45a8a'],[opNum,opName,'#9333ea']].map(([n,name,col])=>(
+              <div key={n} style={{borderRadius:10,padding:'5px 8px',textAlign:'center',background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.06)'}}>
+                <div style={{fontSize:10,fontWeight:600,color:col,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{name}</div>
+                <div style={{fontSize:18,fontWeight:'bold',color:'white',lineHeight:1.2}}>Vak {positions[n]||'–'}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT: Controls */}
+        <div style={{width:148,flexShrink:0,display:'flex',flexDirection:'column',gap:4,overflowY:'auto'}}>
+
+          {/* Dice */}
+          <div style={{borderRadius:12,padding:10,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.07)',display:'flex',flexDirection:'column',alignItems:'center',gap:6,flexShrink:0}}>
+            <div style={{textAlign:'center'}}>
+              {diceValue
+                ?<div className="fn" style={{fontSize:40,fontWeight:'bold',color:'#d4af37',textShadow:'0 0 15px rgba(212,175,55,.5)',lineHeight:1}}>{diceValue}</div>
+                :<div style={{fontSize:24,fontWeight:'bold',color:'#374151'}}>–</div>}
+              <div style={{fontSize:10,color:'#6b7280'}}>gegooid</div>
+            </div>
+            <div className={rolling?'ds':''} style={{position:'relative',width:40,height:40,borderRadius:8,background:'linear-gradient(135deg,#1a0a2e,#2d0a1f)',border:'2px solid #8b1a4a'}}>
+              {dDots.map(([x,y],i)=><div key={i} style={{position:'absolute',width:7,height:7,borderRadius:'50%',left:`${x}%`,top:`${y}%`,transform:'translate(-50%,-50%)',background:'linear-gradient(135deg,#d4af37,#f0d060)'}}/>)}
+            </div>
+            {phase==='playing'&&(
+              isMyTurn
+                ?<button onClick={rollDice} disabled={rolling} style={{width:'100%',padding:'7px 0',borderRadius:8,background:'linear-gradient(135deg,#8b1a4a,#c45a8a)',color:'white',fontWeight:600,fontSize:12,border:'none',cursor:'pointer',opacity:rolling?.5:1}}>
+                  {rolling?'...':'🎲 Gooi!'}
+                </button>
+                :<div style={{fontSize:10,color:'#6b7280',textAlign:'center'}}>wacht...</div>
+            )}
+          </div>
+
+          {/* Action card */}
+          {phase==='action'&&pendingSq&&sq&&(
+            <div className="su" style={{borderRadius:12,padding:10,display:'flex',flexDirection:'column',gap:6,flexShrink:0,background:sqC.bg,border:`1px solid ${sqC.border}`,boxShadow:`0 0 12px ${sqC.border}40`}}>
+              <div style={{display:'flex',alignItems:'center',gap:4}}>
+                <span style={{fontSize:14}}>{ICONS[sq.type]}</span>
+                <span style={{fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:1,color:sqC.text}}>{sqC.label}</span>
+                {sq.witness&&<span style={{fontSize:9,marginLeft:'auto',color:'#9ca3af'}} title="Kijk mee via videobel">📹</span>}
+              </div>
+
+              {/* Choice mechanic */}
+              {sq.choiceA&&!chosenOption&&isMyTurn&&(
+                <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                  <div style={{fontSize:10,color:'#9ca3af',marginBottom:2}}>Kies jouw opdracht:</div>
+                  <button onClick={()=>setChosenOption('A')} style={{padding:'6px 8px',borderRadius:8,fontSize:10,textAlign:'left',background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',color:'white',cursor:'pointer'}}>
+                    A: {sq.choiceA}
+                  </button>
+                  <button onClick={()=>setChosenOption('B')} style={{padding:'6px 8px',borderRadius:8,fontSize:10,textAlign:'left',background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',color:'white',cursor:'pointer'}}>
+                    B: {sq.choiceB}
+                  </button>
+                </div>
+              )}
+
+              {(!sq.choiceA||chosenOption)&&(
+                <>
+                  <div style={{fontSize:11,color:'white',lineHeight:1.6,fontFamily:'"Playfair Display",serif'}}>{squareText}</div>
+                  {sq.type==='green'&&<div style={{fontSize:10,borderRadius:8,padding:'4px 6px',background:'rgba(22,101,52,.2)',color:'#4ade80'}}>👗 Trek uit & laat het zien</div>}
+                  {sq.powerSwitch&&<div style={{fontSize:10,borderRadius:8,padding:'4px 6px',background:'rgba(212,175,55,.1)',color:'#d4af37'}}>⚡ 3 beurten de baas</div>}
+                  {sq.timerSeconds&&<CountdownTimer seconds={sq.timerSeconds} socket={socket}/>}
+                  {/* Slang/ladder: actieve speler klikt zelf door */}
+                  {(sq.type==='orange'||sq.type==='snake')&&isMyTurn&&(
+                    <button onClick={actionDone} style={{padding:'8px',borderRadius:8,fontSize:11,fontWeight:600,color:'white',background:`linear-gradient(135deg,${sqC.border},${sqC.text}50)`,border:'none',cursor:'pointer'}}>
+                      Doorgaan →
+                    </button>
+                  )}
+                  {/* Opdracht: de ANDER beslist wanneer klaar */}
+                  {sq.type!=='orange'&&sq.type!=='snake'&&(
+                    isMyTurn
+                      ?<div style={{display:'flex',flexDirection:'column',gap:4}}>
+                        {!waitingForPick
+                          ?<>
+                            <div style={{padding:'6px 8px',borderRadius:8,fontSize:10,textAlign:'center',background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.06)',color:'#9ca3af',lineHeight:1.5}}>
+                              Gebruik chat, camera of notitieboek 💬<br/>
+                              <span style={{color:'#6b7280',fontSize:9}}>Je partner geeft je vrij als je klaar bent</span>
+                            </div>
+                            {!vetoUsed&&sq.type!=='versus'&&(
+                              <button onClick={vetoSquare} style={{padding:'6px',borderRadius:8,fontSize:9,background:'rgba(107,33,168,.15)',border:'1px solid rgba(107,33,168,.3)',color:'#c084fc',cursor:'pointer'}}>
+                                🃏 Ik pas — liever mystery
+                              </button>
+                            )}
+                            {clothing[active]<5&&(
+                              <button onClick={skipAction} style={{padding:'5px',borderRadius:8,fontSize:9,background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.08)',color:'#6b7280',cursor:'pointer'}}>
+                                ↩ Skip (–1 kleding)
+                              </button>
+                            )}
+                          </>
+                          :<div style={{padding:'8px',borderRadius:8,fontSize:10,textAlign:'center',background:'rgba(107,33,168,.1)',border:'1px solid rgba(107,33,168,.3)',color:'#c084fc'}}>
+                            🃏 Je partner kiest jouw kaart...
+                          </div>
+                        }
+                      </div>
+                      :<div style={{display:'flex',flexDirection:'column',gap:4}}>
+                        {partnerCards
+                          ?<>
+                            <div style={{fontSize:9,color:'#c084fc',fontWeight:600,textAlign:'center',marginBottom:2}}>Kies een kaart voor {activeName}:</div>
+                            {partnerCards.map((card,i)=>(
+                              <button key={i} onClick={()=>pickForPartner(card)} style={{padding:'6px 8px',borderRadius:8,fontSize:10,textAlign:'left',background:'rgba(107,33,168,.15)',border:'1px solid rgba(107,33,168,.3)',color:'white',cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
+                                <span style={{fontSize:16}}>{card.emoji}</span>
+                                <div><div style={{fontWeight:600,fontSize:10}}>{card.title}</div><div style={{fontSize:9,color:'#9ca3af',lineHeight:1.3}}>{card.desc.slice(0,60)}...</div></div>
+                              </button>
+                            ))}
+                          </>
+                          :<>
+                            <button onClick={actionDone} style={{padding:'8px',borderRadius:8,fontSize:11,fontWeight:600,color:'white',background:'linear-gradient(135deg,#166534,#4ade8050)',border:'1px solid #4ade8040',cursor:'pointer'}}>
+                              ✓ {activeName} is klaar
+                            </button>
+                          </>
+                        }
+                      </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Mystery vakje: wacht-staat (actieve speler wacht op partner) */}
+          {phase==='mystery'&&!eventCard&&isMyTurn&&(
+            <div className="su" style={{borderRadius:12,padding:12,background:'linear-gradient(135deg,#150a2a,#1a0a2e)',border:'1px solid #6b21a8',textAlign:'center',flexShrink:0}}>
+              <div style={{fontSize:28,marginBottom:6}}>🃏</div>
+              <div style={{color:'#c084fc',fontSize:11,fontWeight:600}}>Je partner kiest jouw kaart...</div>
+              <div style={{color:'#6b7280',fontSize:9,marginTop:4}}>Wacht even — zij kiest uit 3 opties</div>
+            </div>
+          )}
+          {/* Mystery vakje: partner kiest (observer ziet 3 kaarten) */}
+          {phase==='mystery'&&!eventCard&&!isMyTurn&&partnerCards&&(
+            <div className="su" style={{borderRadius:12,overflow:'hidden',background:'linear-gradient(135deg,#150a2a,#1a0a2e)',border:'1px solid #6b21a8',flexShrink:0}}>
+              <div style={{padding:'8px 10px',borderBottom:'1px solid rgba(107,33,168,.3)'}}>
+                <span style={{color:'#c084fc',fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:1.5}}>Kies voor {activeName} 🃏</span>
+              </div>
+              <div style={{padding:8,display:'flex',flexDirection:'column',gap:6}}>
+                {partnerCards.map((card,i)=>(
+                  <button key={i} onClick={()=>pickForPartner(card)} style={{padding:'8px 10px',borderRadius:8,fontSize:10,textAlign:'left',background:'rgba(107,33,168,.15)',border:'1px solid rgba(107,33,168,.35)',color:'white',cursor:'pointer',display:'flex',alignItems:'flex-start',gap:8}}>
+                    <span style={{fontSize:20,flexShrink:0}}>{card.emoji}</span>
+                    <div><div style={{fontWeight:700,fontSize:11,marginBottom:2}}>{card.title}</div><div style={{fontSize:9,color:'#9ca3af',lineHeight:1.4}}>{card.desc.slice(0,80)}...</div></div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Mystery vakje: kaart gekozen, speler voert uit */}
+          {phase==='mystery'&&eventCard&&(
+            <div className="su" style={{borderRadius:12,overflow:'hidden',background:'linear-gradient(135deg,#150a2a,#1a0a2e)',border:'1px solid #6b21a8',boxShadow:'0 0 16px rgba(107,33,168,.4)',flexShrink:0}}>
+              <div style={{padding:'8px 10px',borderBottom:'1px solid rgba(107,33,168,.3)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <span style={{color:'#c084fc',fontSize:9,fontWeight:600,textTransform:'uppercase',letterSpacing:1.5}}>Mystery Kaart 🃏</span>
+                {!savedCard&&<button onClick={()=>setSavedCard(eventCard)} style={{background:'rgba(212,175,55,.15)',color:'#d4af37',border:'1px solid rgba(212,175,55,.3)',padding:'2px 7px',borderRadius:6,fontSize:9,cursor:'pointer'}}>🔖</button>}
+              </div>
+              <div style={{padding:10}}>
+                <div style={{fontSize:32,textAlign:'center',marginBottom:6}}>{eventCard.emoji}</div>
+                <div style={{fontFamily:'"Playfair Display",serif',fontSize:13,fontWeight:700,color:'white',textAlign:'center',marginBottom:6}}>{eventCard.title}</div>
+                <div style={{fontSize:10,color:'#d1d5db',lineHeight:1.6,textAlign:'center'}}>{eventCard.desc}</div>
+                {eventCard.kernkwadrant&&(
+                  <button onClick={()=>setShowKernkwadrant(true)} style={{width:'100%',marginTop:8,padding:'9px',borderRadius:8,background:'linear-gradient(135deg,#c17f4a,#e09a60)',color:'white',fontWeight:700,fontSize:12,border:'none',cursor:'pointer'}}>
+                    🧭 Open de tool
+                  </button>
+                )}
+              </div>
+              {isMyTurn
+                ?<p style={{fontSize:9,color:'#9ca3af',textAlign:'center',padding:'0 10px 10px',fontStyle:'italic'}}>
+                  {eventCard.kernkwadrant?'Doe de oefening samen — bespreek wat je herkent 🧭':'Gebruik chat of camera 💬'}<br/>
+                  <span style={{color:'#6b7280'}}>Je partner geeft je vrij als je klaar bent</span>
+                </p>
+                :<div style={{padding:'0 10px 10px'}}>
+                  <button onClick={()=>{setEventCard(null);actionDone();}} style={{width:'100%',padding:'8px',borderRadius:8,background:'linear-gradient(135deg,#166534,#4ade8050)',color:'white',fontWeight:600,fontSize:11,border:'1px solid #4ade8040',cursor:'pointer'}}>
+                    ✓ {activeName} is klaar
+                  </button>
+                </div>
+              }
+            </div>
+          )}
+
+          {/* Saved card */}
+          {savedCard&&phase!=='mystery'&&(
+            <button onClick={()=>{setEventCard(savedCard);setSavedCard(null);}} style={{padding:'6px 8px',borderRadius:10,fontSize:11,fontWeight:500,background:'rgba(212,175,55,.1)',border:'1px solid rgba(212,175,55,.3)',color:'#d4af37',cursor:'pointer',flexShrink:0}}>
+              🔖 {savedCard.emoji} {savedCard.title}
+            </button>
+          )}
+
+          {/* Mystery info — geen losse knop meer, kaarten lopen via vakjes en veto */}
+          <div style={{padding:'4px 6px',borderRadius:8,fontSize:9,color:'#475569',textAlign:'center',border:'1px solid rgba(71,85,105,.2)'}}>
+            {positions[myNum]>=40?'🔥 Hete stapel actief':'🌸 Zachte stapel actief'}
+          </div>
+        </div>
+      </div>
+
+      {/* Overlays */}
+      {eventCard&&phase!=='mystery'&&(
+        <MysteryOverlay card={eventCard} isMe={true} onDone={()=>setEventCard(null)}
+          onSave={()=>{setSavedCard(eventCard);setEventCard(null);}} saved={!!savedCard}
+          onOpenKern={()=>setShowKernkwadrant(true)}/>
+      )}
+      {bonusCard&&(
+        <MysteryOverlay card={bonusCard} title="🎲🎲 Dubbel! Bonus Kaart" isMe={true} onDone={()=>setBonusCard(null)}/>
+      )}
+      {showNotebook&&<FantasyNotebook entries={notebookEntries} myNum={myNum} onAppend={handleNotebookAppend} onClose={()=>setShowNotebook(false)} socket={socket}/>}
+
+      {/* Kernkwadranten iframe overlay */}
+      {showKernkwadrant&&(
+        <div style={{position:'fixed',inset:0,zIndex:70,display:'flex',flexDirection:'column',background:'#f5f0eb'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px',background:'#1a1a2e',flexShrink:0}}>
+            <span style={{color:'#c17f4a',fontWeight:700,fontSize:14}}>🧭 Kernkwadranten</span>
+            <button onClick={()=>setShowKernkwadrant(false)} style={{color:'white',fontSize:22,background:'none',border:'none',cursor:'pointer',lineHeight:1}}>✕</button>
+          </div>
+          <iframe src="/kernkwadranten.html" style={{flex:1,border:'none',width:'100%'}} title="Kernkwadranten"/>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── LOBBY ────────────────────────────────────────────────────────────────────
+function Lobby({onCreate,onJoin,error}){
+  const [name,setName]=useState('');
+  const [code,setCode]=useState('');
+  const [tab,setTab]=useState('create');
+  return(
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24,background:'#0d0d14',position:'relative',overflow:'hidden'}}>
+      <div style={{position:'absolute',top:'25%',left:'25%',width:300,height:300,borderRadius:'50%',background:'radial-gradient(circle,#8b1a4a,transparent)',opacity:.1}}/>
+      <div style={{position:'absolute',bottom:'25%',right:'25%',width:250,height:250,borderRadius:'50%',background:'radial-gradient(circle,#6b21a8,transparent)',opacity:.1}}/>
+      <div style={{width:'100%',maxWidth:420,position:'relative',zIndex:1}}>
+        <div style={{textAlign:'center',marginBottom:32}}>
+          <div style={{fontSize:52,marginBottom:8}}>🐍🪜</div>
+          <h1 style={{fontFamily:'"Playfair Display",serif',fontSize:36,fontWeight:700,background:'linear-gradient(135deg,#d4af37,#f0d060)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',marginBottom:4}}>Slangen & Ladders</h1>
+          <p style={{color:'#8b1a4a',fontFamily:'"Playfair Display",serif',fontStyle:'italic',fontSize:16}}>voor jou & mij — op afstand</p>
+        </div>
+        <div className="glass" style={{borderRadius:20,padding:4,display:'flex',marginBottom:16}}>
+          {['create','join'].map(t=>(
+            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:'10px 0',borderRadius:16,fontWeight:500,fontSize:14,cursor:'pointer',background:tab===t?'#8b1a4a':'transparent',color:tab===t?'white':'#9ca3af',border:'none',transition:'all .2s'}}>
+              {t==='create'?'Nieuwe Kamer':'Kamer Joinen'}
+            </button>
+          ))}
+        </div>
+        <div className="glass" style={{borderRadius:20,padding:24,display:'flex',flexDirection:'column',gap:14}}>
+          <div>
+            <label style={{display:'block',fontSize:13,color:'#d1d5db',marginBottom:6}}>Jouw naam</label>
+            <input value={name} onChange={e=>setName(e.target.value)} placeholder="Jouw naam..." maxLength={20}
+              style={{width:'100%',padding:'12px 16px',borderRadius:14,background:'#1a0a2e',border:'1px solid rgba(139,26,74,.4)',color:'white',fontSize:14,outline:'none'}}/>
+          </div>
+          {tab==='join'&&(
+            <div>
+              <label style={{display:'block',fontSize:13,color:'#d1d5db',marginBottom:6}}>Kamercode</label>
+              <input value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="A1B2C3" maxLength={6}
+                style={{width:'100%',padding:'12px 16px',borderRadius:14,background:'#1a0a2e',border:'1px solid rgba(139,26,74,.4)',color:'white',fontSize:22,outline:'none',fontFamily:'monospace',letterSpacing:8,textAlign:'center'}}/>
+            </div>
+          )}
+          <button onClick={()=>tab==='create'?onCreate(name.trim()):onJoin(name.trim(),code)} disabled={!name.trim()||(tab==='join'&&code.length<6)}
+            style={{padding:'14px',borderRadius:14,background:tab==='create'?'linear-gradient(135deg,#8b1a4a,#c45a8a)':'linear-gradient(135deg,#6b21a8,#9333ea)',color:'white',fontWeight:600,fontSize:15,border:'none',cursor:'pointer',opacity:(!name.trim()||(tab==='join'&&code.length<6))?.4:1}}>
+            {tab==='create'?'Kamer Aanmaken ✨':'Joinen 💜'}
+          </button>
+          {error&&<div style={{padding:10,borderRadius:10,background:'rgba(127,29,29,.3)',color:'#f87171',fontSize:12,textAlign:'center'}}>{error}</div>}
+        </div>
+        <div className="glass" style={{marginTop:16,borderRadius:16,padding:14}}>
+          <p style={{fontSize:11,color:'#6b7280',textAlign:'center',marginBottom:10,fontWeight:600,letterSpacing:1,textTransform:'uppercase'}}>Kleurlegenda</p>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+            {[['#60a5fa','Blauw = Waarheid'],['#f87171','Rood = Durven'],['#c084fc','Paars = Edging'],['#4ade80','Groen = Kleding'],['#fb923c','Oranje = Ladder'],['#cbd5e1','Zilver = Mystery'],['#fbbf24','Goud = Uitdaging']].map(([c,l])=>(
+              <div key={l} style={{display:'flex',alignItems:'center',gap:6}}>
+                <div style={{width:8,height:8,borderRadius:'50%',background:c,flexShrink:0}}/>
+                <span style={{fontSize:10,color:'#d1d5db'}}>{l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── WAITING ROOM ─────────────────────────────────────────────────────────────
+function WaitingRoom({roomId,playerName}){
+  function copy(){navigator.clipboard.writeText(roomId).catch(()=>{});}
+  return(
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24,background:'#0d0d14'}}>
+      <div className="glass" style={{borderRadius:24,padding:32,maxWidth:360,width:'100%',textAlign:'center',display:'flex',flexDirection:'column',gap:20}}>
+        <div style={{fontSize:44}}>⏳</div>
+        <div><h2 style={{fontFamily:'"Playfair Display",serif',fontSize:24,color:'#d4af37',fontWeight:700,marginBottom:4}}>Kamer aangemaakt!</h2><p style={{color:'#6b7280',fontSize:13}}>Wacht op je partner...</p></div>
+        <div>
+          <p style={{fontSize:10,color:'#6b7280',marginBottom:8,textTransform:'uppercase',letterSpacing:1}}>Stuur deze code</p>
+          <button onClick={copy} className="pg" style={{width:'100%',padding:'14px 0',borderRadius:14,fontFamily:'monospace',fontSize:32,letterSpacing:8,fontWeight:'bold',color:'#d4af37',border:'1px solid rgba(212,175,55,.4)',background:'rgba(212,175,55,.05)',cursor:'pointer'}}>
+            {roomId}
+          </button>
+          <p style={{fontSize:10,color:'#6b7280',marginTop:6}}>Klik om te kopiëren</p>
+        </div>
+        <div style={{borderTop:'1px solid rgba(255,255,255,.08)',paddingTop:14}}>
+          <p style={{color:'#d1d5db',fontSize:13}}>Hoi <span style={{color:'#c45a8a',fontWeight:600}}>{playerName}</span> 👋</p>
+          <p style={{color:'#6b7280',fontSize:11,marginTop:4}}>Het spel start zodra je partner de code invoert</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SESSION HELPERS ──────────────────────────────────────────────────────────
+function saveSession(roomId,playerNumber,playerName){
+  try{ localStorage.setItem('slgame',JSON.stringify({roomId,playerNumber,playerName})); }catch(e){}
+}
+function clearSession(){
+  try{ localStorage.removeItem('slgame'); }catch(e){}
+}
+function loadSession(){
+  try{ const s=localStorage.getItem('slgame'); return s?JSON.parse(s):null; }catch(e){return null;}
+}
+
+// ─── APP ──────────────────────────────────────────────────────────────────────
+function App(){
+  const [screen,setScreen]=useState('lobby');
+  const [myNum,setMyNum]=useState(null);
+  const [myName,setMyName]=useState('');
+  const [roomId,setRoomId]=useState(null);
+  const [game,setGame]=useState(null);
+  const [error,setError]=useState('');
+  const [socket,setSocket]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [setupData,setSetupData]=useState({});
+  const socketRef=useRef(null);
+  const pendingNameRef=useRef(''); // naam bewaren voor gebruik in async handlers
+
+  // Check voor opgeslagen sessie bij opstarten
+  useEffect(()=>{
+    const sess=loadSession();
+    if(sess && sess.roomId && sess.playerName && sess.playerNumber!==undefined){
+      setScreen('reconnecting');
+      setMyName(sess.playerName);
+      setMyNum(sess.playerNumber);
+      setRoomId(sess.roomId);
+      // Timeout: als na 6s geen antwoord, toon fallback
+      const timeout=setTimeout(()=>{
+        setError('Geen reactie van server — kamer mogelijk verlopen.');
+      },6000);
+      handleRejoin(sess,timeout);
+    }
+  },[]);
+
+  async function getSocket(){
+    if(socketRef.current)return socketRef.current;
+    try{
+      const io=await loadIO(window.BACKEND_URL);
+      const s=io(window.BACKEND_URL,{autoConnect:true,reconnection:true});
+      s.on('connect_error',()=>setError('Kan geen verbinding maken. Is de backend actief?'));
+      // Normaal joinen — sla sessie op zodra roomId bekend is
+      s.on('room_created',({roomId,playerNumber,game})=>{
+        saveSession(roomId, playerNumber, pendingNameRef.current); // ✓ correcte naam
+        setRoomId(roomId);setMyNum(playerNumber);setGame(game);setScreen('waiting');
+      });
+      s.on('room_joined',({roomId,playerNumber,game})=>{
+        saveSession(roomId, playerNumber, pendingNameRef.current); // ✓ ook voor joiner
+        setRoomId(roomId);setMyNum(playerNumber);setGame(game);
+      });
+      s.on('enter_setup',({game})=>{setGame(game);setScreen('setup');});
+      s.on('setup_update',({setupData})=>setSetupData(setupData));
+      s.on('game_start',({game})=>{setGame(game);setScreen('game');});
+      s.on('player_disconnected',({message})=>setError(message));
+      s.on('error',({message})=>setError(message));
+      // room_rejoined en rejoin_failed worden alleen in handleRejoin geregistreerd (s.once)
+      socketRef.current=s;setSocket(s);return s;
+    }catch(e){setError('Kon socket.io niet laden.');setLoading(false);return null;}
+  }
+
+  async function handleRejoin(sess, timeout){
+    setLoading(true);
+    const s=await getSocket();
+    if(!s){
+      if(timeout)clearTimeout(timeout);
+      setError('Kon geen verbinding maken.');
+      return;
+    }
+    // Eenmalig luisteren met timeout referentie
+    s.once('room_rejoined',({playerNumber,game})=>{
+      if(timeout)clearTimeout(timeout);
+      const stored=loadSession();
+      if(stored) saveSession(stored.roomId, playerNumber, stored.playerName);
+      setMyNum(playerNumber);setGame(game);setError('');
+      const ph=game.phase;
+      if(ph==='waiting') setScreen('waiting');
+      else if(ph==='setup'){setSetupData(game.setupData||{});setScreen('setup');}
+      else setScreen('game');
+      setLoading(false);
+    });
+    s.once('rejoin_failed',({message})=>{
+      if(timeout)clearTimeout(timeout);
+      clearSession();setError(message);setScreen('lobby');setLoading(false);
+    });
+    s.emit('rejoin_room', sess);
+  }
+
+  async function handleCreate(name){
+    setMyName(name);setError('');
+    pendingNameRef.current=name; // bewaar naam voor room_created handler
+    const s=await getSocket();
+    if(s) s.emit('create_room',{playerName:name});
+  }
+  async function handleJoin(name,code){
+    setMyName(name);setError('');
+    pendingNameRef.current=name; // bewaar naam voor room_joined handler
+    const s=await getSocket();
+    if(s) s.emit('join_room',{roomId:code,playerName:name});
+  }
+  function handleSetup(intensity,word){socket&&socket.emit('player_setup',{intensity,word});}
+  function handlePlayAgain(){ clearSession(); window.location.reload(); }
+
+  if(screen==='reconnecting'||loading)return(
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0d0d14'}}>
+      <div style={{textAlign:'center'}}>
+        <div style={{fontSize:40,marginBottom:12}}>🔄</div>
+        <p style={{color:'#d4af37',fontSize:15,fontWeight:600}}>Verbinding herstellen...</p>
+        <p style={{color:'#6b7280',fontSize:12,marginTop:6}}>Even geduld</p>
+        {error&&<>
+          <p style={{color:'#f87171',fontSize:12,marginTop:12}}>{error}</p>
+          <button onClick={()=>{clearSession();setScreen('lobby');setError('');}} style={{marginTop:12,padding:'8px 20px',borderRadius:10,background:'#8b1a4a',color:'white',border:'none',cursor:'pointer',fontSize:13}}>
+            Nieuw spel starten
+          </button>
+        </>}
+      </div>
+    </div>
+  );
+  if(screen==='lobby')return<Lobby onCreate={handleCreate} onJoin={handleJoin} error={error}/>;
+  if(screen==='waiting')return<WaitingRoom roomId={roomId} playerName={myName}/>;
+  if(screen==='setup'&&game)return<PreGameSetup myName={myName} myNumber={myNum} setupData={setupData} onSubmit={handleSetup}/>;
+  if(screen==='game'&&game&&socket)return<Game game={game} myNum={myNum} myName={myName} socket={socket} onPlayAgain={handlePlayAgain}/>;
+  return<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0d0d14'}}><div style={{textAlign:'center'}}><div style={{fontSize:40}}>⏳</div><p style={{color:'#6b7280',marginTop:12}}>Wacht op partner...</p>{error&&<p style={{color:'#f87171',fontSize:12,marginTop:8}}>{error}</p>}</div></div>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
+
