@@ -188,7 +188,12 @@ const ProfielClient = (() => {
       font-weight: 700; color: white;
     `;
     badge.textContent = sessions > 9 ? '9+' : String(sessions);
-    badge.onclick = showProfileModal;
+    // Op profiel.html zelf: open modal. Overal elders: ga naar profiel.html
+    if (window.location.pathname.includes('profiel.html')) {
+      badge.onclick = showProfileModal;
+    } else {
+      badge.onclick = () => { window.location.href = 'profiel.html'; };
+    }
     document.body.appendChild(badge);
   }
 
