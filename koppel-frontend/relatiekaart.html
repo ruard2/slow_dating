@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Jullie Relatiekaart</title>
 <script src="profiel.js"></script>
+<script src="toon-helper.js"></script>
 <style>
 /* ── Reset + base ──────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -442,9 +443,14 @@ function bouwKaart(k, mijnId) {
   let html = '';
 
   // ── Confidence badge
+  // Gebruik toon-helper vertrouwen als beschikbaar
+  const vwWoord = window.TOON
+    ? TOON.vertrouwen(k.rondeCount, 'woord')
+    : (k.confidence === 'high' ? 'aanwezig' : k.confidence === 'medium' ? 'komt terug' : 'lijkt');
+
   html += `<span class="confidence-badge conf-${k.confidence}">
     ${k.confidence === 'high' ? '✦' : k.confidence === 'medium' ? '◆' : '◇'}
-    ${conf.label} — ${k.rondeCount} ronde${k.rondeCount!==1?'s':''}
+    ${conf.label} — ${k.rondeCount} ronde${k.rondeCount!==1?'s':''} · taal: "${vwWoord}"
   </span>`;
 
   // ── Opening

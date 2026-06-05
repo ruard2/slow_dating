@@ -6,6 +6,7 @@
 <title>De Grot — Relatierondes</title>
 <script src="koppel.js"></script>
 <script src="profiel.js"></script>
+<script src="toon-helper.js"></script>
 <style>
 /* ── Reset + base ─────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -430,11 +431,14 @@ html, body {
     <p class="grote-tekst" id="sit-narratief"></p>
   </div>
 
+  <!-- Safety badge: verschijnt alleen bij gevoelige cases -->
+  <div id="sit-safety-badge" style="display:none;"></div>
+
   <p style="font-size:0.8rem;color:var(--grot-muted);margin-bottom:16px;font-style:italic;" id="sit-helper">
     Kies straks wat het meest herkenbaar is — niet wat het netst klinkt.
   </p>
 
-  <button class="btn btn-primary" onclick="startVragen()">Dit herken ik — begin</button>
+  <button class="btn btn-primary" id="sit-start-btn" onclick="startVragen()">Dit herken ik — begin</button>
   <button class="btn btn-ghost" onclick="skipCase()">Sla over →</button>
 </div>
 
@@ -512,6 +516,9 @@ html, body {
     <h4>→ Experiment voor deze week</h4>
     <p id="reveal-experiment"></p>
   </div>
+
+  <!-- Safety nawoord: verschijnt bij diepe/crisis cases -->
+  <div id="reveal-safety-nawoord" style="display:none;"></div>
 
   <div style="margin-top:16px;" id="reveal-tags-sectie">
     <div class="sectie-label">Toegevoegd aan jouw profiel</div>
@@ -919,6 +926,22 @@ function laadCase(casus) {
   document.getElementById('sit-titel').textContent = casus.situation?.title || '';
   document.getElementById('sit-narratief').textContent = casus.situation?.narrative || casus.situation?.short_text || '';
 
+  // ── Safety laag ───────────────────────────────────────
+  const safetyInfo = window.TOON ? TOON.safety(casus) : { klasse: 'normaal', teksten: null };
+  STATE.huidigeRondeSafety = safetyInfo;
+
+  const badgeEl = document.getElementById('sit-safety-badge');
+  const btnEl   = document.getElementById('sit-start-btn');
+
+  if (safetyInfo.klasse !== 'normaal' && safetyInfo.teksten) {
+    badgeEl.style.display = 'block';
+    badgeEl.innerHTML = TOON.safetyBadgeHtml(safetyInfo.klasse, 'dark');
+    if (safetyInfo.teksten.btn) btnEl.textContent = safetyInfo.teksten.btn;
+  } else {
+    badgeEl.style.display = 'none';
+    btnEl.textContent = 'Dit herken ik — begin';
+  }
+
   showScreen('screen-situatie');
 }
 
@@ -1064,11 +1087,32 @@ function gaDirectNaarReveal() {
 function toonSoloReveal() {
   const c = STATE.huidigeCase;
   const output = c?.outputs?.solo || {};
+  const safetyInfo = STATE.huidigeRondeSafety || { klasse: 'normaal', teksten: null };
 
-  document.getElementById('reveal-spiegel').textContent    = output.mirror || output.protection_reflection || '';
-  document.getElementById('reveal-kans').textContent       = output.chance || '';
-  document.getElementById('reveal-uitdaging').textContent  = output.challenge || '';
-  document.getElementById('reveal-experiment').textContent = output.experiment || '';
+  // Tekst veilig maken (verboden woorden eruit) als toon-helper beschikbaar
+  const safe = window.TOON ? TOON.veilig.bind(TOON) : (t) => t;
+
+  document.getElementById('reveal-spiegel').textContent    = safe(output.mirror || output.protection_reflection || '');
+  document.getElementById('reveal-kans').textContent       = safe(output.chance || '');
+  document.getElementById('reveal-uitdaging').textContent  = safe(output.challenge || '');
+  document.getElementById('reveal-experiment').textContent = safe(output.experiment || '');
+
+  // Safety nawoord
+  const nawoordEl = document.getElementById('reveal-safety-nawoord');
+  nawoordEl.style.display = 'none';
+  nawoordEl.innerHTML = '';
+
+  if (window.TOON && safetyInfo.klasse !== 'normaal' && safetyInfo.teksten) {
+    nawoordEl.style.display = 'block';
+    let html = '';
+    if (safetyInfo.teksten.reveal) {
+      html += `<div style="font-size:0.84rem;color:var(--grot-muted);font-style:italic;margin-bottom:8px;">${safetyInfo.teksten.reveal}</div>`;
+    }
+    if (safetyInfo.klasse === 'crisis') {
+      html += TOON.crisisHtml('dark');
+    }
+    nawoordEl.innerHTML = html;
+  }
 
   // Tags tonen als chips
   const chipsEl = document.getElementById('reveal-tags-chips');

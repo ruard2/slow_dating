@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Jouw Profiel</title>
 <script src="profiel.js"></script>
+<script src="toon-helper.js"></script>
 <style>
 /* ── Reset + base ──────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -614,26 +615,25 @@ function bouwProfiel(p) {
 // ── Samenvatting ───────────────────────────────────────────
 function bouwSamenvatting(p) {
   const rondes = p.rondeCount || 0;
-  const conf   = rondes >= 12 ? 'high' : rondes >= 8 ? 'medium' : 'low';
-  const confLabel = TEKST.confidence[conf];
 
-  const zinnen = [];
-  if (p.topBehoeften && p.topBehoeften[0]) {
-    zinnen.push(`${confLabel === 'high' ? 'Duidelijk aanwezig' : confLabel === 'medium' ? 'Terugkerend' : 'Het lijkt erop dat'} jouw sterkste behoefte in relaties ${confLabel === 'high' ? 'is' : 'kan zijn'}: ${p.topBehoeften[0].label.toLowerCase()}.`);
+  // Gebruik toon-helper als beschikbaar, anders lokale fallback
+  let tekst;
+  if (window.TOON) {
+    tekst = TOON.spiegelProfiel(p, rondes);
+  } else {
+    const conf = rondes >= 12 ? 'high' : rondes >= 8 ? 'medium' : 'low';
+    const confLabel = TEKST.confidence[conf];
+    const zinnen = [];
+    if (p.topBehoeften?.[0])
+      zinnen.push(`${confLabel === 'high' ? 'Duidelijk aanwezig' : 'Het lijkt erop dat'} jouw sterkste behoefte: ${p.topBehoeften[0].label.toLowerCase()}.`);
+    if (p.topBeschermingen?.[0])
+      zinnen.push(`Wat jij lijkt te beschermen: ${p.topBeschermingen[0].label.toLowerCase()} — dit bewaakt iets waardevols.`);
+    if (p.disc?.primary && TEKST.disc_kleuren[p.disc.primary])
+      zinnen.push(`Je kleurprofiel wijst op ${TEKST.disc_kleuren[p.disc.primary].toLowerCase()} als dominante stijl.`);
+    if (p.kernkwadranten?.topQualities?.[0])
+      zinnen.push(`Een sterke kernkwaliteit: ${p.kernkwadranten.topQualities[0].name || p.kernkwadranten.topQualities[0].id}.`);
+    tekst = zinnen.length > 0 ? zinnen.join(' ') : TEKST.samen_intro;
   }
-  if (p.topBeschermingen && p.topBeschermingen[0]) {
-    zinnen.push(`Wat jij lijkt te beschermen: ${p.topBeschermingen[0].label.toLowerCase()} — dit bewaakt iets waardevols.`);
-  }
-  if (p.disc && p.disc.primary && TEKST.disc_kleuren[p.disc.primary]) {
-    zinnen.push(`Je kleurprofiel wijst op ${TEKST.disc_kleuren[p.disc.primary].toLowerCase()} als dominante stijl.`);
-  }
-  if (p.kernkwadranten && p.kernkwadranten.topQualities && p.kernkwadranten.topQualities[0]) {
-    zinnen.push(`Een sterke kernkwaliteit: ${p.kernkwadranten.topQualities[0].name || p.kernkwadranten.topQualities[0].id}.`);
-  }
-
-  const tekst = zinnen.length > 0
-    ? zinnen.join(' ')
-    : TEKST.samen_intro;
 
   document.getElementById('samenvatting-tekst').textContent = tekst;
 
