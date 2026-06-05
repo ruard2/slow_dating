@@ -82,6 +82,14 @@ const ProfielClient = (() => {
     return post('/api/profile/kernkwadranten', { topQualities, routesCompleted });
   }
 
+  // ── Waarden sessie opslaan ────────────────────────────────
+  // gekozenZelf: [{id, naam, cat}]
+  // bevestigdVanPartner: [{id, naam, cat}]
+  // modus: 'samen' | 'solo'
+  function saveWaarden({ gekozenZelf, bevestigdVanPartner, modus }) {
+    return post('/api/profile/waarden', { gekozenZelf, bevestigdVanPartner, modus });
+  }
+
   // ── Thema herkenning (vertaalmatrix, groeikaarten) ────────
   function addThema(thema) {
     return post('/api/profile/thema', { thema });
@@ -208,6 +216,7 @@ const ProfielClient = (() => {
     init,
     saveDISC,
     saveKernkwadranten,
+    saveWaarden,
     addThema,
     getReport,
     getLocal,

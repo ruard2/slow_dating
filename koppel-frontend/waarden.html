@@ -212,6 +212,19 @@ h2{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#
 .gesprek-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.15);transition:.2s;}
 .gesprek-dot.active{background:#d4af37;}
 
+/* ── Bevestig kaart ──────────────────────── */
+.bevestig-kaart{display:flex;align-items:center;gap:14px;padding:14px 16px;
+  border-radius:14px;border:1.5px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.04);cursor:pointer;transition:all .2s;}
+.bevestig-kaart.ja{border-color:var(--cat-color);background:rgba(var(--cat-rgb),0.15);}
+.bevestig-kaart-toggle{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:0.85rem;transition:all .2s;}
+.bevestig-kaart.ja .bevestig-kaart-toggle{background:var(--cat-color);border-color:var(--cat-color);color:#fff;}
+.bevestig-kaart-tekst{}
+.bevestig-kaart-naam{font-family:'Playfair Display',serif;font-size:0.95rem;color:#f0e6d3;}
+.bevestig-kaart-desc{font-size:0.75rem;color:#8878a0;margin-top:2px;line-height:1.4;}
+
 /* ── Intro steps ─────────────────────────── */
 .intro-step{text-align:center;padding:12px 0;}
 .intro-icon{font-size:2.5rem;margin-bottom:10px;}
@@ -421,32 +434,30 @@ h2{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#
 <div id="screen-reveal" class="screen">
   <div class="pad gap" style="padding-top:50px;padding-bottom:40px;">
 
-    <div class="center">
+    <div class="center" id="reveal-header">
       <h1 style="font-size:1.6rem;">De onthulling</h1>
-      <p class="sub">Kijk wat jullie voor elkaar kozen</p>
+      <p class="sub" id="reveal-sub">Kijk wat jullie voor elkaar kozen</p>
     </div>
 
-    <!-- Partner gaf jou -->
-    <div>
+    <!-- Partner gaf jou (verborgen bij solo) -->
+    <div id="sectie-partner-gaf">
       <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#d4af37;margin-bottom:10px;">
         💌 Partner gaf jou deze waarden
       </p>
       <div class="reveal-set" id="reveal-partner-gaf"></div>
     </div>
+    <div class="divider" id="divider-1"></div>
 
-    <div class="divider"></div>
-
-    <!-- Jij gaf partner -->
-    <div>
+    <!-- Jij gaf partner (verborgen bij solo) -->
+    <div id="sectie-jij-gaf">
       <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#9e7ace;margin-bottom:10px;">
         🎁 Jij gaf je partner deze waarden
       </p>
       <div class="reveal-set" id="reveal-jij-gaf"></div>
     </div>
+    <div class="divider" id="divider-2"></div>
 
-    <div class="divider"></div>
-
-    <!-- Overlap -->
+    <!-- Overlap (verborgen bij solo) -->
     <div id="overlap-sectie" style="display:none;">
       <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#7ae2c4;margin-bottom:10px;">
         ✨ Dit kozen jullie allebei
@@ -455,24 +466,43 @@ h2{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#
       <div class="divider"></div>
     </div>
 
-    <!-- Eigen keuzes -->
-    <div>
-      <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#7ac47a;margin-bottom:10px;">
+    <!-- Eigen keuzes (altijd zichtbaar) -->
+    <div id="sectie-jij-zelf">
+      <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#7ac47a;margin-bottom:10px;" id="label-jij-zelf">
         🌱 Dit verlang jij voor jezelf
       </p>
       <div class="reveal-set" id="reveal-jij-zelf"></div>
     </div>
+    <div class="divider" id="divider-3"></div>
 
-    <div class="divider"></div>
-
-    <div>
+    <!-- Partner zelf (verborgen bij solo) -->
+    <div id="sectie-partner-zelf">
       <p style="font-size:0.75rem;letter-spacing:0.12em;text-transform:uppercase;color:#e2a47a;margin-bottom:10px;">
         🌱 Dit verlangt je partner voor zichzelf
       </p>
       <div class="reveal-set" id="reveal-partner-zelf"></div>
     </div>
 
-    <button class="btn btn-gold" onclick="goGesprek()">Gesprek starten ✦</button>
+    <button class="btn btn-gold" id="reveal-btn-verder" onclick="goBevestig()">Bevestigen & verder ›</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: BEVESTIGEN (partner-keuzes)
+══════════════════════════════════════ -->
+<div id="screen-bevestig" class="screen">
+  <div class="pad gap" style="padding-top:50px;padding-bottom:40px;">
+
+    <div class="center gap-sm">
+      <h2>Herken jij dit in jezelf?</h2>
+      <p class="sub">Je partner koos deze waarden voor jou.<br>Vink aan welke jij ook in jezelf herkent.</p>
+    </div>
+
+    <div id="bevestig-kaarten" class="gap"></div>
+
+    <div class="divider"></div>
+    <p class="sub" style="font-size:0.78rem;">Alleen de waarden die jij bevestigt worden aan jouw profiel toegevoegd.</p>
+    <button class="btn btn-gold" onclick="confirmBevestig()">Dit klopt — ga verder ✦</button>
   </div>
 </div>
 
@@ -1014,6 +1044,7 @@ function doJoin() {
 
 function startSolo() {
   state.solo = true;
+  state.partnerData = null;
   goIntro();
 }
 
@@ -1023,14 +1054,31 @@ function startSolo() {
 function goIntro() { showScreen('screen-intro'); }
 
 function startFase1() {
-  state.fase = 1;
   state.gekozenPartner = [];
   state.gekozenZelf = [];
-  document.getElementById('fase-badge').textContent = 'Fase 1 van 2';
-  document.getElementById('selecteer-titel').textContent = TEKST.fase1_titel;
-  document.getElementById('selecteer-sub').textContent = TEKST.fase1_sub;
-  renderKaartenGrid(WAARDEN, 'partner');
-  updateSelectBar('partner');
+  state.bevestigdVanPartner = [];
+
+  if (state.solo) {
+    // Solo: sla fase 1 over, ga direct naar zelf-selectie
+    startFase2Solo();
+  } else {
+    state.fase = 1;
+    document.getElementById('fase-badge').textContent = 'Fase 1 van 2';
+    document.getElementById('selecteer-titel').textContent = TEKST.fase1_titel;
+    document.getElementById('selecteer-sub').textContent = TEKST.fase1_sub;
+    renderKaartenGrid(WAARDEN, 'partner');
+    updateSelectBar('partner');
+    showScreen('screen-selecteer');
+  }
+}
+
+function startFase2Solo() {
+  state.fase = 2;
+  document.getElementById('fase-badge').textContent = 'Jouw waarden';
+  document.getElementById('selecteer-titel').textContent = 'Wat leeft in mij';
+  document.getElementById('selecteer-sub').textContent = 'Kies 3 waarden die voor jou het meest resoneren op dit moment';
+  renderKaartenGrid(WAARDEN, 'zelf');
+  updateSelectBar('zelf');
   showScreen('screen-selecteer');
 }
 
@@ -1151,46 +1199,82 @@ function confirmFase() {
 // SUBMIT & SYNC
 // ══════════════════════════════════════════════
 function submitKeuzes() {
+  if (state.solo) {
+    // Solo: geen partner, ga direct naar solo reveal + profiel opslaan
+    buildRevealSolo();
+    showScreen('screen-reveal');
+    return;
+  }
+
   const myData = {
     gegeven: state.gekozenPartner,
     zelf: state.gekozenZelf,
     player: state.player,
   };
 
-  if (!state.solo && window.KoppelClient && state.code) {
+  if (window.KoppelClient && state.code) {
     KoppelClient.done(myData);
     showScreen('screen-wacht');
-  } else {
-    // Solo: simuleer partner met willekeurige keuze
-    state.partnerData = {
-      gegeven: shuffle(WAARDEN).slice(0,3).map(w=>w.id),
-      zelf: shuffle(WAARDEN).slice(0,3).map(w=>w.id),
-    };
-    buildReveal();
-    showScreen('screen-reveal');
   }
 }
 
 // ══════════════════════════════════════════════
 // REVEAL
 // ══════════════════════════════════════════════
+function showRevealSectie(id, zichtbaar) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = zichtbaar ? '' : 'none';
+}
+
 function buildReveal() {
   const pd = state.partnerData;
 
-  // Partner gaf jou = pd.gegeven
+  // Samen modus — toon alles
+  showRevealSectie('sectie-partner-gaf', true);
+  showRevealSectie('sectie-jij-gaf', true);
+  showRevealSectie('sectie-partner-zelf', true);
+  showRevealSectie('divider-1', true);
+  showRevealSectie('divider-2', true);
+  showRevealSectie('divider-3', true);
+  document.getElementById('reveal-sub').textContent = 'Kijk wat jullie voor elkaar kozen';
+  document.getElementById('label-jij-zelf').innerHTML = '🌱 Dit verlang jij voor jezelf';
+  document.getElementById('reveal-btn-verder').textContent = 'Bevestigen & verder ›';
+
   renderRevealSet('reveal-partner-gaf', pd ? pd.gegeven : []);
-  // Jij gaf partner = jouw gekozenPartner
   renderRevealSet('reveal-jij-gaf', state.gekozenPartner);
-  // Overlap (jij gaf partner ∩ partner gaf jou)
+
+  // Overlap
   const overlap = state.gekozenPartner.filter(id => pd && pd.gegeven.includes(id));
   if (overlap.length > 0) {
     document.getElementById('overlap-sectie').style.display = 'block';
     renderRevealSet('reveal-overlap', overlap);
+  } else {
+    document.getElementById('overlap-sectie').style.display = 'none';
   }
-  // Jij voor jezelf
+
   renderRevealSet('reveal-jij-zelf', state.gekozenZelf);
-  // Partner voor zichzelf
   renderRevealSet('reveal-partner-zelf', pd ? pd.zelf : []);
+}
+
+function buildRevealSolo() {
+  // Solo — verberg partner-secties
+  showRevealSectie('sectie-partner-gaf', false);
+  showRevealSectie('sectie-jij-gaf', false);
+  showRevealSectie('sectie-partner-zelf', false);
+  showRevealSectie('overlap-sectie', false);
+  showRevealSectie('divider-1', false);
+  showRevealSectie('divider-2', false);
+  showRevealSectie('divider-3', false);
+
+  document.getElementById('reveal-sub').textContent = 'Jouw waarden — een spiegel van wat nu leeft in jou';
+  document.getElementById('label-jij-zelf').innerHTML = '🌱 Jij koos deze waarden voor jezelf';
+  document.getElementById('reveal-btn-verder').textContent = 'Verder naar gespreksvragen ›';
+
+  renderRevealSet('reveal-jij-zelf', state.gekozenZelf);
+
+  // Direct opslaan bij solo
+  state.bevestigdVanPartner = [];
+  saveWaardenProfiel('solo');
 }
 
 function renderRevealSet(containerId, ids) {
@@ -1312,6 +1396,109 @@ function prevGesprek() {
     state.gesprekIdx--;
     renderGesprek();
   }
+}
+
+// ══════════════════════════════════════════════
+// SOLO REVEAL
+// ══════════════════════════════════════════════
+function buildRevealSolo() {
+  // Solo: toon alleen eigen gekozen waarden + reflectie
+  const container = document.getElementById('reveal-jij-zelf');
+  renderRevealSet('reveal-jij-zelf', state.gekozenZelf);
+
+  // Verberg partner-secties
+  ['reveal-partner-gaf','reveal-jij-gaf','overlap-sectie','reveal-partner-zelf'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.closest('div[style]') && (el.closest('div') ? el.parentElement.style.display='none' : null);
+  });
+  document.querySelectorAll('.screen#screen-reveal [style*="letter-spacing"]').forEach(el => {
+    if (el.textContent.includes('Partner')) el.parentElement.style.display = 'none';
+  });
+
+  // Pas reveal-sectie aan voor solo
+  document.getElementById('reveal-jij-zelf').parentElement.querySelector('p') &&
+    (document.querySelector('#screen-reveal p.sub') || document.createElement('p'));
+
+  // Sla direct op (geen bevestiging nodig bij solo)
+  state.bevestigdVanPartner = [];
+  saveWaardenProfiel('solo');
+}
+
+// ══════════════════════════════════════════════
+// BEVESTIGEN — partner-keuzes valideren
+// ══════════════════════════════════════════════
+function goBevestig() {
+  const pd = state.partnerData;
+
+  // Solo of geen partner-data: sla bevestiging over
+  if (state.solo || !pd || !pd.gegeven || pd.gegeven.length === 0) {
+    saveWaardenProfiel(state.solo ? 'solo' : 'samen');
+    goGesprek();
+    return;
+  }
+
+  // Bouw bevestigingskaarten
+  const container = document.getElementById('bevestig-kaarten');
+  container.innerHTML = '';
+  state._bevestigState = {};
+
+  pd.gegeven.forEach(id => {
+    const w = getWaarde(id);
+    if (!w) return;
+    const cfg = getCat(w.cat);
+    state._bevestigState[id] = false; // default: niet bevestigd
+
+    const el = document.createElement('div');
+    el.className = 'bevestig-kaart';
+    el.style.cssText = `--cat-color:${cfg.kleur};--cat-rgb:${cfg.rgb};`;
+    el.dataset.id = id;
+    el.innerHTML = `
+      <div class="bevestig-kaart-toggle">—</div>
+      <div class="bevestig-kaart-tekst">
+        <div class="bevestig-kaart-naam">${w.naam}</div>
+        <div class="bevestig-kaart-desc">${w.desc}</div>
+      </div>
+    `;
+    el.addEventListener('click', () => {
+      state._bevestigState[id] = !state._bevestigState[id];
+      el.classList.toggle('ja', state._bevestigState[id]);
+      el.querySelector('.bevestig-kaart-toggle').textContent =
+        state._bevestigState[id] ? '✓' : '—';
+    });
+    container.appendChild(el);
+  });
+
+  showScreen('screen-bevestig');
+}
+
+function confirmBevestig() {
+  // Verzamel bevestigde waarden
+  state.bevestigdVanPartner = Object.entries(state._bevestigState || {})
+    .filter(([, v]) => v)
+    .map(([id]) => {
+      const w = getWaarde(id);
+      return w ? { id: w.id, naam: w.naam, cat: w.cat } : null;
+    })
+    .filter(Boolean);
+
+  saveWaardenProfiel('samen');
+  goGesprek();
+}
+
+// ══════════════════════════════════════════════
+// PROFIEL OPSLAAN
+// ══════════════════════════════════════════════
+function saveWaardenProfiel(modus) {
+  if (!window.ProfielClient) return;
+
+  const gekozenZelf = state.gekozenZelf.map(id => {
+    const w = getWaarde(id);
+    return w ? { id: w.id, naam: w.naam, cat: w.cat } : null;
+  }).filter(Boolean);
+
+  const bevestigdVanPartner = state.bevestigdVanPartner || [];
+
+  ProfielClient.saveWaarden({ gekozenZelf, bevestigdVanPartner, modus });
 }
 
 // ══════════════════════════════════════════════

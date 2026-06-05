@@ -198,6 +198,72 @@ function updateKernkwadranten(userId, data) {
 }
 
 /**
+ * updateWaarden — verwerk voltooide waarden-sessie
+ * data: {
+ *   gekozenZelf:       [{id, naam, cat}]  — zelf gekozen
+ *   bevestigdVanPartner: [{id, naam, cat}] — van partner ontvangen + bevestigd
+ *   modus: 'samen' | 'solo'
+ * }
+ */
+function updateWaarden(userId, data) {
+  const p = getOrCreate(userId);
+  p.totalSessions++;
+
+  // Initialiseer waarden-object als het nog niet bestaat
+  if (!p.waarden) {
+    p.waarden = {
+      sessions:            [],
+      topZelf:             [],  // [{id, naam, cat, count}] — meest consistent gekozen voor zichzelf
+      topOntvangen:        [],  // [{id, naam, cat, count}] — meest bevestigd ontvangen van partner
+      topCategorieenZelf:  {},  // {cat: count}
+    };
+  }
+
+  const session = {
+    date:               new Date().toISOString(),
+    modus:              data.modus || 'samen',
+    gekozenZelf:        data.gekozenZelf        || [],
+    bevestigdVanPartner: data.bevestigdVanPartner || [],
+  };
+  p.waarden.sessions.push(session);
+
+  // Aggregeer topZelf
+  const zelfMap = {};
+  p.waarden.sessions.forEach(s => {
+    (s.gekozenZelf || []).forEach(w => {
+      if (!zelfMap[w.id]) zelfMap[w.id] = { id: w.id, naam: w.naam, cat: w.cat, count: 0 };
+      zelfMap[w.id].count++;
+    });
+  });
+  p.waarden.topZelf = Object.values(zelfMap)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  // Aggregeer topOntvangen
+  const ontvangenMap = {};
+  p.waarden.sessions.forEach(s => {
+    (s.bevestigdVanPartner || []).forEach(w => {
+      if (!ontvangenMap[w.id]) ontvangenMap[w.id] = { id: w.id, naam: w.naam, cat: w.cat, count: 0 };
+      ontvangenMap[w.id].count++;
+    });
+  });
+  p.waarden.topOntvangen = Object.values(ontvangenMap)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  // Categorie-distributie (zelf)
+  const catMap = {};
+  p.waarden.topZelf.forEach(w => {
+    catMap[w.cat] = (catMap[w.cat] || 0) + w.count;
+  });
+  p.waarden.topCategorieenZelf = catMap;
+
+  p.insights = generateInsights(p);
+  saveProfiles();
+  return p;
+}
+
+/**
  * addRecognizedThema — wanneer iemand een vertaalmatrix-zin herkent of een groeikaart pakt
  */
 function addRecognizedThema(userId, thema) {
@@ -285,6 +351,24 @@ function generateInsights(profile) {
   const themas = profile.recognizedThemas;
   if (themas.length >= 3) {
     insights.push(`Terugkerende thema's voor jou: ${themas.slice(0, 4).join(', ')}. Dit zijn de gebieden waar communicatie voor jou het meest geladen is.`);
+  }
+
+  // Waarden-inzichten
+  const w = profile.waarden;
+  if (w && w.topZelf && w.topZelf.length >= 3) {
+    const top3 = w.topZelf.slice(0, 3).map(v => v.naam).join(', ');
+    insights.push(`Jouw meest gekozen persoonlijke waarden: ${top3}. Dit zijn de ankerpunten van wie jij wil zijn.`);
+  }
+  if (w && w.topOntvangen && w.topOntvangen.length >= 2) {
+    const top2 = w.topOntvangen.slice(0, 2).map(v => v.naam).join(', ');
+    insights.push(`Je partner herkende ${top2} in jou. Wat anderen in jou zien vertelt ook iets over wie je bent.`);
+  }
+  if (w && w.topZelf && w.topOntvangen) {
+    const zelfIds = w.topZelf.map(v => v.id);
+    const overlap = w.topOntvangen.filter(v => zelfIds.includes(v.id));
+    if (overlap.length > 0) {
+      insights.push(`${overlap.map(v=>v.naam).join(' en ')} kom${overlap.length===1?'t':'en'} zowel in jouw keuze als in die van je partner voor. Dit zijn jouw meest zichtbare waarden.`);
+    }
   }
 
   return insights;
@@ -377,6 +461,7 @@ module.exports = {
   getOrCreate,
   updateDisc,
   updateKernkwadranten,
+  updateWaarden,
   addRecognizedThema,
   generateReport,
   profiles, // for admin endpoint

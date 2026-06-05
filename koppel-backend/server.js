@@ -231,6 +231,13 @@ app.post('/api/profile/kernkwadranten', requireUserId, (req, res) => {
   res.json({ ok: true, profile: sanitize(p) });
 });
 
+// POST /api/profile/waarden — waarden-sessie opslaan
+app.post('/api/profile/waarden', requireUserId, (req, res) => {
+  const { gekozenZelf, bevestigdVanPartner, modus } = req.body;
+  const p = profileStore.updateWaarden(req.userId, { gekozenZelf, bevestigdVanPartner, modus });
+  res.json({ ok: true, profile: sanitize(p) });
+});
+
 // POST /api/profile/thema — herkend thema toevoegen
 app.post('/api/profile/thema', requireUserId, (req, res) => {
   const { thema } = req.body;
@@ -313,6 +320,11 @@ function sanitize(p) {
     patterns:         p.patterns,
     recognizedThemas: p.recognizedThemas,
     insights:         p.insights,
+    waarden: p.waarden ? {
+      topZelf:        (p.waarden.topZelf || []).slice(0, 5),
+      topOntvangen:   (p.waarden.topOntvangen || []).slice(0, 5),
+      sessionCount:   (p.waarden.sessions || []).length,
+    } : null,
   };
 }
 
