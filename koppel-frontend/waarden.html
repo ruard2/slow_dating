@@ -103,6 +103,58 @@ h2{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#
 .waarde-kaart.geselecteerd-partner .kaart-check,
 .waarde-kaart.geselecteerd-zelf .kaart-check{opacity:1;background:var(--cat-color);color:#fff;}
 
+/* ── Info knop ───────────────────────────── */
+.kaart-info-btn{
+  position:absolute;bottom:8px;left:10px;
+  width:18px;height:18px;border-radius:50%;
+  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);
+  color:rgba(255,255,255,0.45);font-size:0.6rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;z-index:2;
+  font-family:'Inter',sans-serif;
+}
+.kaart-info-btn:hover,.kaart-info-btn:active{
+  background:rgba(255,255,255,0.2);color:#fff;transform:scale(1.1);}
+
+/* ── Info bottom sheet ───────────────────── */
+.info-overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,0);pointer-events:none;
+  transition:background .3s;
+}
+.info-overlay.open{background:rgba(0,0,0,0.65);pointer-events:all;}
+.info-sheet{
+  position:absolute;bottom:0;left:50%;transform:translate(-50%,100%);
+  width:100%;max-width:440px;
+  background:linear-gradient(180deg,#1e1240 0%,#150e30 100%);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:24px 24px 0 0;
+  padding:0 20px 40px;
+  transition:transform .38s cubic-bezier(.32,0,.15,1);
+  max-height:85vh;overflow-y:auto;
+}
+.info-overlay.open .info-sheet{transform:translate(-50%,0);}
+.info-handle{width:36px;height:4px;border-radius:2px;
+  background:rgba(255,255,255,0.2);margin:12px auto 20px;}
+.info-cat-stripe{height:3px;border-radius:3px;margin-bottom:18px;
+  background:var(--info-color,#d4af37);}
+.info-naam{font-family:'Playfair Display',serif;font-size:1.5rem;
+  font-weight:700;color:#f0e6d3;margin-bottom:6px;}
+.info-desc{font-size:0.88rem;color:#a090b8;line-height:1.6;margin-bottom:20px;}
+.info-sectie{margin-bottom:18px;}
+.info-sectie-label{font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;
+  color:#d4af37;margin-bottom:7px;display:flex;align-items:center;gap:6px;}
+.info-sectie-tekst{font-size:0.9rem;color:#f0e6d3;line-height:1.6;}
+.info-voorbeeld{background:rgba(255,255,255,0.05);border-left:3px solid var(--info-color,#d4af37);
+  border-radius:0 10px 10px 0;padding:12px 14px;
+  font-size:0.88rem;color:#d4cfe8;font-style:italic;line-height:1.55;}
+.info-vraag{background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.25);
+  border-radius:12px;padding:14px 16px;
+  font-family:'Playfair Display',serif;font-size:1rem;
+  color:#f0e6d3;font-style:italic;line-height:1.55;}
+.info-acties{display:flex;gap:10px;margin-top:20px;}
+.info-acties .btn{flex:1;padding:12px;font-size:0.9rem;}
+
 /* ── Filter bar ──────────────────────────── */
 .filter-bar{display:flex;gap:6px;overflow-x:auto;padding:10px 16px;
   scrollbar-width:none;flex-shrink:0;width:100%;}
@@ -493,115 +545,305 @@ const TEKST = {
 // ══════════════════════════════════════════════
 const WAARDEN = [
   // AUTONOMIE
-  {id:'v001',naam:'Vrijheid',desc:'De ruimte om je eigen keuzes te maken en jezelf te zijn zonder belemmeringen',cat:'autonomie',g:'medium'},
-  {id:'v002',naam:'Onafhankelijkheid',desc:'Op jezelf kunnen steunen en je eigen weg gaan',cat:'autonomie',g:'medium'},
-  {id:'v003',naam:'Authenticiteit',desc:'Echt jezelf zijn, ook als dat niet past bij wat anderen verwachten',cat:'autonomie',g:'diep'},
-  {id:'v004',naam:'Avontuur',desc:'Het onbekende opzoeken en nieuwe ervaringen omarmen',cat:'autonomie',g:'licht'},
-  {id:'v005',naam:'Nieuwsgierigheid',desc:'Een open, onderzoekende houding naar de wereld, ideeën en mensen',cat:'autonomie',g:'licht'},
-  {id:'v006',naam:'Zelfbeschikking',desc:'De bevoegdheid om je eigen leven in te richten zoals jij dat wilt',cat:'autonomie',g:'diep'},
+  {id:'v001',naam:'Vrijheid',desc:'De ruimte om je eigen keuzes te maken en jezelf te zijn zonder belemmeringen',cat:'autonomie',g:'medium',
+   ex:'Je slaat een goedbetaalde baan af omdat je baas je werktijden zou bepalen.',
+   ontdek:'Is er een moment geweest dat jij iets opgaf — geld, gemak, zekerheid — puur om vrij te zijn?'},
+  {id:'v002',naam:'Onafhankelijkheid',desc:'Op jezelf kunnen steunen en je eigen weg gaan',cat:'autonomie',g:'medium',
+   ex:'Je lost problemen het liefst zelf op voor je anderen om hulp vraagt.',
+   ontdek:'Wanneer voelde jij je het meest jezelf — was dat alleen of juist samen met anderen?'},
+  {id:'v003',naam:'Authenticiteit',desc:'Echt jezelf zijn, ook als dat niet past bij wat anderen verwachten',cat:'autonomie',g:'diep',
+   ex:'Je zegt in een gezelschap iets wat niemand wil horen, maar dat jij oprecht denkt.',
+   ontdek:'Is er een deel van jezelf dat je in bepaalde situaties verbergt? Hoe voelt dat?'},
+  {id:'v004',naam:'Avontuur',desc:'Het onbekende opzoeken en nieuwe ervaringen omarmen',cat:'autonomie',g:'licht',
+   ex:'Je boekt een reis naar een land dat je niet kent, zonder vast plan.',
+   ontdek:'Wanneer was de laatste keer dat je iets deed wat je écht nerveus maakte — en blij dat je het deed?'},
+  {id:'v005',naam:'Nieuwsgierigheid',desc:'Een open, onderzoekende houding naar de wereld, ideeën en mensen',cat:'autonomie',g:'licht',
+   ex:'Je verdiept je in een onderwerp dat niets met je werk te maken heeft, puur omdat het je fascineert.',
+   ontdek:'Waar kon jij als kind uren over nadenken? En doet dat nu nog iets met je?'},
+  {id:'v006',naam:'Zelfbeschikking',desc:'De bevoegdheid om je eigen leven in te richten zoals jij dat wilt',cat:'autonomie',g:'diep',
+   ex:'Je neemt een grote beslissing bewust zonder de goedkeuring van familie te zoeken.',
+   ontdek:'Heb je ooit het gevoel gehad dat je leven werd geleefd voor iemand anders? Wat deed je daarmee?'},
   // RELATIE
-  {id:'v007',naam:'Liefde',desc:'Diepe genegenheid en verbondenheid geven en ontvangen',cat:'relatie',g:'diep'},
-  {id:'v008',naam:'Intimiteit',desc:'Je kwetsbaar durven opstellen en echt gekend worden door een ander',cat:'relatie',g:'diep'},
-  {id:'v009',naam:'Trouw',desc:'Betrouwbaar en standvastig aanwezig zijn voor wie op je rekent',cat:'relatie',g:'diep'},
-  {id:'v010',naam:'Verbinding',desc:'Betekenisvolle banden hebben en het gevoel erbij te horen',cat:'relatie',g:'medium'},
-  {id:'v011',naam:'Vriendschap',desc:'Warme, eerlijke relaties met mensen die je leven rijker maken',cat:'relatie',g:'medium'},
-  {id:'v012',naam:'Acceptatie',desc:'Mensen verwelkomen zoals ze zijn, zonder oordeel',cat:'relatie',g:'medium'},
-  {id:'v013',naam:'Vergeving',desc:'Loslaten van wrok en ruimte maken voor herstel na pijn',cat:'relatie',g:'diep'},
-  {id:'v014',naam:'Wederzijdsheid',desc:'Geven en nemen in balans zodat beide partners zich gezien voelen',cat:'relatie',g:'medium'},
-  {id:'v015',naam:'Saamhorigheid',desc:'Samen ergens bij horen en voor elkaar door het vuur gaan',cat:'relatie',g:'medium'},
+  {id:'v007',naam:'Liefde',desc:'Diepe genegenheid en verbondenheid geven en ontvangen',cat:'relatie',g:'diep',
+   ex:'Je past je agenda aan zonder te klagen, omdat iemand die je liefhebt je nodig heeft.',
+   ontdek:'Wanneer voelde jij je voor het laatste echt liefgehad — niet om wat je deed, maar om wie je bent?'},
+  {id:'v008',naam:'Intimiteit',desc:'Je kwetsbaar durven opstellen en echt gekend worden door een ander',cat:'relatie',g:'diep',
+   ex:'Je vertelt iemand iets wat je normaal voor jezelf houdt, en het voelt als opluchting.',
+   ontdek:'Is er iets wat jij nooit vertelt aan mensen, maar waarbij je stiekem hoopt dat iemand het toch ziet?'},
+  {id:'v009',naam:'Trouw',desc:'Betrouwbaar en standvastig aanwezig zijn voor wie op je rekent',cat:'relatie',g:'diep',
+   ex:'Je bent er voor een vriend in een moeilijke periode, ook als het ongelegen komt.',
+   ontdek:'Noem iemand die jij absoluut nooit zou laten vallen. Wat zegt dat over wat trouw voor jou betekent?'},
+  {id:'v010',naam:'Verbinding',desc:'Betekenisvolle banden hebben en het gevoel erbij te horen',cat:'relatie',g:'medium',
+   ex:'Je investeert tijd in een gesprek omdat je echt wilt weten hoe het met iemand gaat.',
+   ontdek:'In welk gezelschap voel jij je écht thuis — waar je niet hoeft te presteren of te filteren?'},
+  {id:'v011',naam:'Vriendschap',desc:'Warme, eerlijke relaties met mensen die je leven rijker maken',cat:'relatie',g:'medium',
+   ex:'Je belt een vriend op, niet omdat er iets te vieren is, maar gewoon om te horen hoe het gaat.',
+   ontdek:'Wie is de persoon buiten je romantische relatie die jou het beste kent? Hoe is die vriendschap gegroeid?'},
+  {id:'v012',naam:'Acceptatie',desc:'Mensen verwelkomen zoals ze zijn, zonder oordeel',cat:'relatie',g:'medium',
+   ex:'Je laat iemand zijn eigen keuze maken zonder commentaar, ook als jij het anders zou doen.',
+   ontdek:'Is er iemand in je leven die jij volledig accepteert, inclusief de dingen die je irriteren? Hoe voelt dat?'},
+  {id:'v013',naam:'Vergeving',desc:'Loslaten van wrok en ruimte maken voor herstel na pijn',cat:'relatie',g:'diep',
+   ex:'Je zegt eerlijk dat iets je heeft geraakt, maar kiest bewust om het niet te blijven meedragen.',
+   ontdek:'Is er iets wat jij jezelf nog niet volledig vergeven hebt? Wat zou het betekenen als je dat deed?'},
+  {id:'v014',naam:'Wederzijdsheid',desc:'Geven en nemen in balans zodat beide partners zich gezien voelen',cat:'relatie',g:'medium',
+   ex:'Je merkt op wanneer jij altijd degene bent die belt, en spreekt dat bespreekbaar.',
+   ontdek:'Wanneer voel jij je in een relatie echt gelijkwaardig — en wanneer niet?'},
+  {id:'v015',naam:'Saamhorigheid',desc:'Samen ergens bij horen en voor elkaar door het vuur gaan',cat:'relatie',g:'medium',
+   ex:'Je staat op voor een collega die oneerlijk behandeld wordt, ook als het jou niet raakt.',
+   ontdek:'Wanneer voelde jij je onderdeel van iets groters dan jezelf? Wat gaf dat gevoel?'},
   // ZORG
-  {id:'v016',naam:'Zorgzaamheid',desc:'Aandacht geven aan het welzijn van mensen die je dierbaar zijn',cat:'zorg',g:'medium'},
-  {id:'v017',naam:'Empathie',desc:'Je inleven in wat een ander voelt zonder dat over te nemen',cat:'zorg',g:'medium'},
-  {id:'v018',naam:'Mededogen',desc:'Bewogen worden door het lijden van anderen en bewust helpen',cat:'zorg',g:'diep'},
-  {id:'v019',naam:'Bescherming',desc:'Een veilige haven zijn voor de mensen die je liefhebt',cat:'zorg',g:'medium'},
-  {id:'v020',naam:'Gastvrijheid',desc:'Anderen welkom heten en een warm thuis bieden',cat:'zorg',g:'licht'},
-  {id:'v021',naam:'Dienstbaarheid',desc:'Vreugde vinden in bijdragen zonder er iets voor terug te verwachten',cat:'zorg',g:'medium'},
+  {id:'v016',naam:'Zorgzaamheid',desc:'Aandacht geven aan het welzijn van mensen die je dierbaar zijn',cat:'zorg',g:'medium',
+   ex:'Je onthoudt wat iemand heeft verteld en vraagt er later naar zonder dat ze erom vroegen.',
+   ontdek:'Aan wie geef jij je zorg het meest spontaan — zonder dat het je moeite kost?'},
+  {id:'v017',naam:'Empathie',desc:'Je inleven in wat een ander voelt zonder dat over te nemen',cat:'zorg',g:'medium',
+   ex:'Je hoeft niets op te lossen — je bent er gewoon, en de ander voelt zich begrepen.',
+   ontdek:'Is er een moment dat jij precies voelde wat iemand anders voelde, zonder dat ze het zeiden?'},
+  {id:'v018',naam:'Mededogen',desc:'Bewogen worden door het lijden van anderen en bewust helpen',cat:'zorg',g:'diep',
+   ex:'Je ziet iemand in nood en handelt, ook als je er zelf niets aan hebt.',
+   ontdek:'Wat raakt jou het meest — het leed van mensen om je heen, of een groter wereldleed? Waarom?'},
+  {id:'v019',naam:'Bescherming',desc:'Een veilige haven zijn voor de mensen die je liefhebt',cat:'zorg',g:'medium',
+   ex:'Je zorgt ervoor dat de mensen in je leven zich nooit alleen hoeven te voelen in moeilijkheden.',
+   ontdek:'Wie bescherm jij in je leven, en wie beschermt jou? Voelt die balans goed?'},
+  {id:'v020',naam:'Gastvrijheid',desc:'Anderen welkom heten en een warm thuis bieden',cat:'zorg',g:'licht',
+   ex:'Je zet altijd koffie als iemand langskomt, ook als het spontaan is en ongelegen.',
+   ontdek:'Hoe voelt het voor jou als mensen bij jou over de vloer komen — geeft dat energie of kost het je?'},
+  {id:'v021',naam:'Dienstbaarheid',desc:'Vreugde vinden in bijdragen zonder er iets voor terug te verwachten',cat:'zorg',g:'medium',
+   ex:'Je helpt een vreemde, en rijdt daarna door zonder te wachten op een bedankje.',
+   ontdek:'Wanneer help jij iemand en voelt dat écht goed — niet verplicht, maar oprecht?'},
   // GROEI
-  {id:'v022',naam:'Groei',desc:'Jezelf voortdurend ontwikkelen en beter worden als persoon',cat:'groei',g:'medium'},
-  {id:'v023',naam:'Leren',desc:'Kennis en wijsheid opdoen als een levenslange passie',cat:'groei',g:'licht'},
-  {id:'v024',naam:'Zelfinzicht',desc:'Je eigen patronen en drijfveren eerlijk onder ogen zien',cat:'groei',g:'diep'},
-  {id:'v025',naam:'Moed',desc:'Handelen vanuit je waarden ook als het spannend of beangstigend is',cat:'groei',g:'diep'},
-  {id:'v026',naam:'Veerkracht',desc:'Opstaan na tegenslagen en sterker worden door moeilijkheden',cat:'groei',g:'medium'},
-  {id:'v027',naam:'Creativiteit',desc:'Nieuwe ideeën bedenken die iets bijzonders toevoegen',cat:'groei',g:'licht'},
-  {id:'v028',naam:'Wijsheid',desc:'Kennis omzetten naar goed oordelen in het echte leven',cat:'groei',g:'diep'},
-  {id:'v029',naam:'Ambitie',desc:'Streven naar doelen die groter zijn dan wat je nu hebt',cat:'groei',g:'medium'},
+  {id:'v022',naam:'Groei',desc:'Jezelf voortdurend ontwikkelen en beter worden als persoon',cat:'groei',g:'medium',
+   ex:'Je kiest bewust voor een situatie die je uitdaagt, ook al is de makkelijkere optie beschikbaar.',
+   ontdek:'Wanneer kijk jij terug en denk je: "Ik ben echt anders geworden"? Wat veroorzaakte die verandering?'},
+  {id:'v023',naam:'Leren',desc:'Kennis en wijsheid opdoen als een levenslange passie',cat:'groei',g:'licht',
+   ex:'Je leest een boek buiten je vakgebied puur uit nieuwsgierigheid, zonder nuttig doel.',
+   ontdek:'Is er een onderwerp waarbij jij uren kwijt bent zonder het door te hebben? Wat zegt dat over jou?'},
+  {id:'v024',naam:'Zelfinzicht',desc:'Je eigen patronen en drijfveren eerlijk onder ogen zien',cat:'groei',g:'diep',
+   ex:'Je herkent in een conflict een patroon van jezelf en benoemt het hardop, ook als het pijnlijk is.',
+   ontdek:'Wat is een patroon in jezelf dat je al lang ziet, maar nog steeds niet volledig hebt veranderd?'},
+  {id:'v025',naam:'Moed',desc:'Handelen vanuit je waarden ook als het spannend of beangstigend is',cat:'groei',g:'diep',
+   ex:'Je zegt iets wat de sfeer kan bederven, omdat je weet dat het gezegd moet worden.',
+   ontdek:'Wanneer was jij moedig terwijl niemand het zag? Hoe voelde dat achteraf?'},
+  {id:'v026',naam:'Veerkracht',desc:'Opstaan na tegenslagen en sterker worden door moeilijkheden',cat:'groei',g:'medium',
+   ex:'Na een mislukking analyseer je wat er misging en begint opnieuw, zonder te lang stil te staan.',
+   ontdek:'Wat is de moeilijkste periode geweest die jij hebt doorgemaakt, en wat heb je daarin over jezelf ontdekt?'},
+  {id:'v027',naam:'Creativiteit',desc:'Nieuwe ideeën bedenken die iets bijzonders toevoegen',cat:'groei',g:'licht',
+   ex:'Je lost een probleem op een manier op die niemand had verwacht, en het werkt.',
+   ontdek:'Wanneer voel jij je het meest creatief — in welke omgeving, op welk moment van de dag?'},
+  {id:'v028',naam:'Wijsheid',desc:'Kennis omzetten naar goed oordelen in het echte leven',cat:'groei',g:'diep',
+   ex:'Je geeft een advies dat iemand niet wil horen, maar later dankbaar voor is.',
+   ontdek:'Welke les heeft het leven jou geleerd die jij nooit uit een boek had kunnen halen?'},
+  {id:'v029',naam:'Ambitie',desc:'Streven naar doelen die groter zijn dan wat je nu hebt',cat:'groei',g:'medium',
+   ex:'Je blijft werken aan iets wat jaren duurt, omdat je weet waarvoor je het doet.',
+   ontdek:'Wat is een droom die jij nog niet hardop hebt uitgesproken, maar al lang in je hoofd draagt?'},
   // PRESTATIE
-  {id:'v030',naam:'Excellentie',desc:'Het beste uit jezelf halen en kwaliteit leveren in wat je doet',cat:'prestatie',g:'medium'},
-  {id:'v031',naam:'Vakmanschap',desc:'Diep meesterschap ontwikkelen in iets wat je belangrijk vindt',cat:'prestatie',g:'medium'},
-  {id:'v032',naam:'Doorzettingsvermogen',desc:'Volhouden als het moeilijk wordt, niet opgeven voor je doel bereikt is',cat:'prestatie',g:'medium'},
-  {id:'v033',naam:'Invloed',desc:'Een positief verschil maken in de wereld om je heen',cat:'prestatie',g:'medium'},
-  {id:'v034',naam:'Erkenning',desc:'Gezien en gewaardeerd worden voor wat je bijdraagt en wie je bent',cat:'prestatie',g:'medium'},
-  {id:'v035',naam:'Leiderschap',desc:'Anderen inspireren en meenemen richting een gemeenschappelijk doel',cat:'prestatie',g:'medium'},
-  {id:'v036',naam:'Succes',desc:'Je eigen definitie van succes nastreven en die bereiken',cat:'prestatie',g:'licht'},
+  {id:'v030',naam:'Excellentie',desc:'Het beste uit jezelf halen en kwaliteit leveren in wat je doet',cat:'prestatie',g:'medium',
+   ex:'Je werkt iets nog een keer over, niet omdat het moet, maar omdat jij weet dat het beter kan.',
+   ontdek:'Op welk gebied houd jij jezelf aan een hogere standaard dan anderen van je eisen?'},
+  {id:'v031',naam:'Vakmanschap',desc:'Diep meesterschap ontwikkelen in iets wat je belangrijk vindt',cat:'prestatie',g:'medium',
+   ex:'Je besteedt jaren aan het verfijnen van één vaardigheid, terwijl anderen al verder zijn gegaan.',
+   ontdek:'Is er iets wat jij doet waarbij je echt trots bent op hoe goed je het bent geworden?'},
+  {id:'v032',naam:'Doorzettingsvermogen',desc:'Volhouden als het moeilijk wordt, niet opgeven voor je doel bereikt is',cat:'prestatie',g:'medium',
+   ex:'Je blijft doorgaan met een project terwijl iedereen om je heen al gestopt is.',
+   ontdek:'Wat is iets wat jij hebt afgemaakt, ondanks dat het je veel meer heeft gekost dan verwacht?'},
+  {id:'v033',naam:'Invloed',desc:'Een positief verschil maken in de wereld om je heen',cat:'prestatie',g:'medium',
+   ex:'Je verandert iets in je omgeving — klein of groot — dat anderen ten goede komt.',
+   ontdek:'Wanneer merkte jij voor het eerst dat jij daadwerkelijk invloed had op mensen om je heen?'},
+  {id:'v034',naam:'Erkenning',desc:'Gezien en gewaardeerd worden voor wat je bijdraagt en wie je bent',cat:'prestatie',g:'medium',
+   ex:'Je voelt een warme voldoening als iemand jouw inspanning opmerkt en benoemt.',
+   ontdek:'Wanneer heb jij iets gedaan waarvoor je nooit de erkenning hebt gekregen die je verdiende? Hoe voelde dat?'},
+  {id:'v035',naam:'Leiderschap',desc:'Anderen inspireren en meenemen richting een gemeenschappelijk doel',cat:'prestatie',g:'medium',
+   ex:'Je neemt het voortouw in een situatie waar niemand anders het durft, niet vanwege macht, maar vanwege richting.',
+   ontdek:'Wanneer voel jij de neiging om voorop te lopen — en wanneer stap jij bewust naar achteren?'},
+  {id:'v036',naam:'Succes',desc:'Je eigen definitie van succes nastreven en die bereiken',cat:'prestatie',g:'licht',
+   ex:'Je hebt een helder beeld van wat "slagen" voor jou betekent — en dat is niet per se wat anderen zien.',
+   ontdek:'Als je eerlijk bent: leef jij nu naar jouw definitie van succes, of naar die van iemand anders?'},
   // VRIJHEID (integriteit)
-  {id:'v037',naam:'Eerlijkheid',desc:'De waarheid spreken ook als dat oncomfortabel is',cat:'vrijheid',g:'diep'},
-  {id:'v038',naam:'Integriteit',desc:'Leven in lijn met je waarden, ook als niemand meekijkt',cat:'vrijheid',g:'diep'},
-  {id:'v039',naam:'Openheid',desc:'Transparant zijn over wie je bent en wat je denkt',cat:'vrijheid',g:'medium'},
-  {id:'v040',naam:'Rechtvaardigheid',desc:'Eerlijk en onpartijdig behandeld worden en anderen zo behandelen',cat:'vrijheid',g:'diep'},
-  {id:'v041',naam:'Gelijkwaardigheid',desc:'Geloven dat ieder mens gelijke waarde en rechten verdient',cat:'vrijheid',g:'diep'},
+  {id:'v037',naam:'Eerlijkheid',desc:'De waarheid spreken ook als dat oncomfortabel is',cat:'vrijheid',g:'diep',
+   ex:'Je geeft feedback die pijn doet, omdat je weet dat de ander het nodig heeft om te groeien.',
+   ontdek:'Wanneer heb jij iets gezegd wat moeite kostte, maar achteraf precies het goede bleek?'},
+  {id:'v038',naam:'Integriteit',desc:'Leven in lijn met je waarden, ook als niemand meekijkt',cat:'vrijheid',g:'diep',
+   ex:'Je doet het goede ook als het jou persoonlijk benadeelt en niemand het ziet.',
+   ontdek:'Is er een moment geweest dat jij de makkelijke weg kon kiezen, maar dat niet deed? Wat hield je tegen?'},
+  {id:'v039',naam:'Openheid',desc:'Transparant zijn over wie je bent en wat je denkt',cat:'vrijheid',g:'medium',
+   ex:'Je deelt je echte mening, ook in een groep waar die niet welkom is.',
+   ontdek:'Over welk onderwerp ben jij het meest open — en waar houd jij dingen nog voor jezelf?'},
+  {id:'v040',naam:'Rechtvaardigheid',desc:'Eerlijk en onpartijdig behandeld worden en anderen zo behandelen',cat:'vrijheid',g:'diep',
+   ex:'Je spreekt ongelijkheid aan, ook als jij er niet direct last van hebt.',
+   ontdek:'Wat maakt jou echt boos als het gaat om onrechtvaardigheid — klein of groot?'},
+  {id:'v041',naam:'Gelijkwaardigheid',desc:'Geloven dat ieder mens gelijke waarde en rechten verdient',cat:'vrijheid',g:'diep',
+   ex:'Je behandelt de schoonmaker met evenveel respect als de directeur.',
+   ontdek:'Is er een situatie geweest waarbij jij bewust koos voor gelijkwaardigheid terwijl dat je iets kostte?'},
   // GEMEENSCHAP
-  {id:'v042',naam:'Familie',desc:'Diepe verbondenheid met de mensen die je thuis noemt',cat:'gemeenschap',g:'diep'},
-  {id:'v043',naam:'Traditie',desc:'Waarde hechten aan gewoonten die verbinden met het verleden',cat:'gemeenschap',g:'medium'},
-  {id:'v044',naam:'Bijdragen',desc:'Iets achterlaten wat de wereld een klein beetje beter maakt',cat:'gemeenschap',g:'diep'},
-  {id:'v045',naam:'Solidariteit',desc:'Naast mensen staan die het moeilijk hebben, ook als het je moeite kost',cat:'gemeenschap',g:'diep'},
-  {id:'v046',naam:'Samenwerking',desc:'Samen iets bereiken wat je alleen niet zou kunnen',cat:'gemeenschap',g:'licht'},
-  {id:'v047',naam:'Diversiteit',desc:'Rijkdom zien in de verscheidenheid van mensen en culturen',cat:'gemeenschap',g:'medium'},
+  {id:'v042',naam:'Familie',desc:'Diepe verbondenheid met de mensen die je thuis noemt',cat:'gemeenschap',g:'diep',
+   ex:'Je past grote levenskeuzes aan om dicht bij de mensen te blijven die je liefhebt.',
+   ontdek:'Wie telt voor jou als "familie" — ook als ze geen bloed zijn? Wat maakt die band?'},
+  {id:'v043',naam:'Traditie',desc:'Waarde hechten aan gewoonten die verbinden met het verleden',cat:'gemeenschap',g:'medium',
+   ex:'Je houdt bepaalde rituelen in stand, niet omdat het moet, maar omdat ze verbinding geven.',
+   ontdek:'Welke traditie of gewoonte uit je opvoeding draag jij bewust mee, en waarom?'},
+  {id:'v044',naam:'Bijdragen',desc:'Iets achterlaten wat de wereld een klein beetje beter maakt',cat:'gemeenschap',g:'diep',
+   ex:'Je zet tijd en energie in iets wat jij niet meer zelf zult meemaken, maar anderen wel.',
+   ontdek:'Als jij morgen zou stoppen te bestaan — wat zou jij willen dat mensen van jou meegenomen hebben?'},
+  {id:'v045',naam:'Solidariteit',desc:'Naast mensen staan die het moeilijk hebben, ook als het je moeite kost',cat:'gemeenschap',g:'diep',
+   ex:'Je spreekt je uit voor iemand die zichzelf niet kan verdedigen, ook als het je populariteit kost.',
+   ontdek:'Wanneer heb jij voor iemand gekozen die het minder makkelijk had — wat dreef je daartoe?'},
+  {id:'v046',naam:'Samenwerking',desc:'Samen iets bereiken wat je alleen niet zou kunnen',cat:'gemeenschap',g:'licht',
+   ex:'Je deelt de eer, zelfs als jij het meeste werk hebt gedaan.',
+   ontdek:'In welk team of welke samenwerking heb jij het meest geleerd van anderen?'},
+  {id:'v047',naam:'Diversiteit',desc:'Rijkdom zien in de verscheidenheid van mensen en culturen',cat:'gemeenschap',g:'medium',
+   ex:'Je zoekt bewust mensen op met andere achtergronden om je eigen kijk te verbreden.',
+   ontdek:'Wie in jouw leven heeft jouw manier van denken het meest veranderd doordat ze zo anders was?'},
   // PLEZIER
-  {id:'v048',naam:'Plezier',desc:'Genieten van het leven en ruimte maken voor luchtigheid',cat:'plezier',g:'licht'},
-  {id:'v049',naam:'Humor',desc:'De lichtere kant van het leven zien en anderen aan het lachen maken',cat:'plezier',g:'licht'},
-  {id:'v050',naam:'Genot',desc:'Bewust genieten van mooie momenten, smaken en aanrakingen',cat:'plezier',g:'licht'},
-  {id:'v051',naam:'Spelen',desc:'Ruimte houden voor spelenderwijs ontdekken, zonder doel',cat:'plezier',g:'licht'},
-  {id:'v052',naam:'Schoonheid',desc:'Oog hebben voor esthetiek en natuur als voeding voor de ziel',cat:'plezier',g:'licht'},
-  {id:'v053',naam:'Passie',desc:'Iets doen met heel je hart en je er volledig in verliezen',cat:'plezier',g:'medium'},
+  {id:'v048',naam:'Plezier',desc:'Genieten van het leven en ruimte maken voor luchtigheid',cat:'plezier',g:'licht',
+   ex:'Je maakt ruimte voor nonsens en lachen, ook als er nog van alles op de to-do lijst staat.',
+   ontdek:'Wanneer was de laatste keer dat jij echt hebt gelachen — niet beleefd, maar van binnen?'},
+  {id:'v049',naam:'Humor',desc:'De lichtere kant van het leven zien en anderen aan het lachen maken',cat:'plezier',g:'licht',
+   ex:'Je maakt een grap op een gespannen moment en ontspant de sfeer.',
+   ontdek:'Denk aan de grappigste versie van jezelf — wanneer kom jij die het vaakst tegen?'},
+  {id:'v050',naam:'Genot',desc:'Bewust genieten van mooie momenten, smaken en aanrakingen',cat:'plezier',g:'licht',
+   ex:'Je neemt de tijd voor een maaltijd, een bad of een wandeling — bewust, zonder afleiding.',
+   ontdek:'Wanneer ben jij het laatste keer echt aanwezig geweest bij iets prettigs, zonder al aan het volgende te denken?'},
+  {id:'v051',naam:'Spelen',desc:'Ruimte houden voor spelenderwijs ontdekken, zonder doel',cat:'plezier',g:'licht',
+   ex:'Je doet iets puur omdat je het leuk vindt — geen resultaat, geen doel, geen publiek.',
+   ontdek:'Wat deed jij als kind urenlang voor je plezier — en doe je dat nu nog ergens in?'},
+  {id:'v052',naam:'Schoonheid',desc:'Oog hebben voor esthetiek en natuur als voeding voor de ziel',cat:'plezier',g:'licht',
+   ex:'Je stopt even om een zonsondergang te bekijken, ook als je haast hebt.',
+   ontdek:'Wat vindt jij werkelijk mooi — op een manier die je raakt, niet alleen visueel?'},
+  {id:'v053',naam:'Passie',desc:'Iets doen met heel je hart en je er volledig in verliezen',cat:'plezier',g:'medium',
+   ex:'Je vergeet de tijd als je met iets bezig bent dat je echt drijft.',
+   ontdek:'Waar verlies jij jezelf volledig in — en hoe lang geleden was dat voor het laatste?'},
   // VEILIGHEID
-  {id:'v054',naam:'Veiligheid',desc:'Een omgeving creëren waar je jezelf kunt zijn zonder angst',cat:'veiligheid',g:'medium'},
-  {id:'v055',naam:'Stabiliteit',desc:'Houvast en voorspelbaarheid als fundament voor alles daarna',cat:'veiligheid',g:'medium'},
-  {id:'v056',naam:'Zekerheid',desc:'Weten dat de basisbehoeften van jezelf en je dierbaren gedekt zijn',cat:'veiligheid',g:'medium'},
-  {id:'v057',naam:'Rust',desc:'Kalmte en stilte als noodzakelijke ruimte voor herstel',cat:'veiligheid',g:'medium'},
-  {id:'v058',naam:'Vertrouwen',desc:'Geloven in goede bedoelingen en je over kunnen geven aan anderen',cat:'veiligheid',g:'diep'},
-  {id:'v059',naam:'Thuis',desc:'Een plek of persoon waarbij je volledig tot rust kunt komen',cat:'veiligheid',g:'diep'},
+  {id:'v054',naam:'Veiligheid',desc:'Een omgeving creëren waar je jezelf kunt zijn zonder angst',cat:'veiligheid',g:'medium',
+   ex:'Je zorgt er bewust voor dat de mensen om je heen zich niet hoeven in te houden.',
+   ontdek:'Bij wie of waar voel jij je volledig veilig — geen masker, geen filter?'},
+  {id:'v055',naam:'Stabiliteit',desc:'Houvast en voorspelbaarheid als fundament voor alles daarna',cat:'veiligheid',g:'medium',
+   ex:'Je kiest bewust voor continuïteit in je leven zodat je energie vrij is voor wat echt belangrijk is.',
+   ontdek:'Wat geeft jou in je dagelijks leven het meeste houvast — en wat zou er gebeuren als dat wegvalt?'},
+  {id:'v056',naam:'Zekerheid',desc:'Weten dat de basisbehoeften van jezelf en je dierbaren gedekt zijn',cat:'veiligheid',g:'medium',
+   ex:'Je zorgt voor een buffer — financieel, emotioneel — zodat je niet overgeleverd bent aan toeval.',
+   ontdek:'Wat moet er in jouw leven "in orde" zijn voordat jij je vrij voelt om te leven?'},
+  {id:'v057',naam:'Rust',desc:'Kalmte en stilte als noodzakelijke ruimte voor herstel',cat:'veiligheid',g:'medium',
+   ex:'Je beschermt je stille tijd, ook als iedereen om je heen druk is.',
+   ontdek:'Wanneer was de laatste keer dat jij werkelijk stil was — van binnen?'},
+  {id:'v058',naam:'Vertrouwen',desc:'Geloven in goede bedoelingen en je over kunnen geven aan anderen',cat:'veiligheid',g:'diep',
+   ex:'Je durft je volledig te geven aan iemand, wetende dat je je kwetsbaar maakt.',
+   ontdek:'Hoe lang duurt het voor jij iemand echt vertrouwt — en wat is het moment dat het kantelt?'},
+  {id:'v059',naam:'Thuis',desc:'Een plek of persoon waarbij je volledig tot rust kunt komen',cat:'veiligheid',g:'diep',
+   ex:'Er is een plek of persoon waarbij je de spanning uit je schouders voelt weggaan.',
+   ontdek:'Waar of bij wie voel jij je het meest thuis — en wat maakt dat zo?'},
   // SPIRITUEEL
-  {id:'v060',naam:'Zingeving',desc:'Leven vanuit de diepe overtuiging dat wat je doet er echt toe doet',cat:'spiritueel',g:'diep'},
-  {id:'v061',naam:'Dankbaarheid',desc:'Het goede in je leven bewust opmerken en er warm van worden',cat:'spiritueel',g:'medium'},
-  {id:'v062',naam:'Hoop',desc:'Geloven in een betere toekomst, ook als het nu moeilijk is',cat:'spiritueel',g:'medium'},
-  {id:'v063',naam:'Innerlijke vrede',desc:'Een plek in jezelf vinden die rustig blijft als de wereld rumoerig is',cat:'spiritueel',g:'diep'},
-  {id:'v064',naam:'Verwondering',desc:'De wereld zien met de ogen van iemand die er voor het eerst naar kijkt',cat:'spiritueel',g:'licht'},
-  {id:'v065',naam:'Spiritualiteit',desc:'Verbinding zoeken met iets groters dan jezelf, hoe je dat ook noemt',cat:'spiritueel',g:'diep'},
+  {id:'v060',naam:'Zingeving',desc:'Leven vanuit de diepe overtuiging dat wat je doet er echt toe doet',cat:'spiritueel',g:'diep',
+   ex:'Je maakt keuzes niet op basis van wat loont, maar op basis van wat betekenis heeft.',
+   ontdek:'Als jij terugkijkt op de afgelopen vijf jaar — welke momenten voelden het meest zinvol?'},
+  {id:'v061',naam:'Dankbaarheid',desc:'Het goede in je leven bewust opmerken en er warm van worden',cat:'spiritueel',g:'medium',
+   ex:'Je neemt even de tijd om op te merken wat goed gaat, ook op een slechte dag.',
+   ontdek:'Wat is iets kleins in je leven waar jij regelmatig dankbaar voor bent, maar zelden uitspreekt?'},
+  {id:'v062',naam:'Hoop',desc:'Geloven in een betere toekomst, ook als het nu moeilijk is',cat:'spiritueel',g:'medium',
+   ex:'In een crisis kies jij bewust voor de mogelijkheid dat het beter wordt.',
+   ontdek:'Wanneer was jij echt hoopvol over iets wat onzeker was — en hoe hield je dat vol?'},
+  {id:'v063',naam:'Innerlijke vrede',desc:'Een plek in jezelf vinden die rustig blijft als de wereld rumoerig is',cat:'spiritueel',g:'diep',
+   ex:'Je raakt niet van slag door externe chaos, omdat je een stabiel centrum in jezelf hebt.',
+   ontdek:'Wanneer voel jij die rust van binnenuit — los van omstandigheden?'},
+  {id:'v064',naam:'Verwondering',desc:'De wereld zien met de ogen van iemand die er voor het eerst naar kijkt',cat:'spiritueel',g:'licht',
+   ex:'Je staat stil bij een alledaags wonder — een spin, een wolk, een woord — en voelt oprechte verrassing.',
+   ontdek:'Wanneer heb jij voor het laatste iets gezien alsof je het voor de eerste keer ontdekte?'},
+  {id:'v065',naam:'Spiritualiteit',desc:'Verbinding zoeken met iets groters dan jezelf, hoe je dat ook noemt',cat:'spiritueel',g:'diep',
+   ex:'Je hebt een persoonlijk gevoel van verbondenheid — met de natuur, het universum, God of iets anders.',
+   ontdek:'Is er een moment geweest dat jij voelde dat je deel uitmaakte van iets veel groters?'},
   // BALANS
-  {id:'v066',naam:'Balans',desc:'Zorg dragen voor een leven waarin werk, relaties en rust in evenwicht zijn',cat:'balans',g:'medium'},
-  {id:'v067',naam:'Gezondheid',desc:'Bewust omgaan met je lichaam en geest als fundament',cat:'balans',g:'medium'},
-  {id:'v068',naam:'Eenvoud',desc:'Kiezen voor het essentiële en loslaten wat overbodig is',cat:'balans',g:'medium'},
-  {id:'v069',naam:'Zelfzorg',desc:'Goed voor jezelf zorgen zodat je ook voor anderen kunt zorgen',cat:'balans',g:'medium'},
-  {id:'v070',naam:'Aanwezigheid',desc:'Echt aanwezig zijn in het moment, zonder afgeleid te worden',cat:'balans',g:'medium'},
-  {id:'v071',naam:'Matigheid',desc:'Bewust kiezen voor genoeg in plaats van altijd meer willen',cat:'balans',g:'medium'},
+  {id:'v066',naam:'Balans',desc:'Zorg dragen voor een leven waarin werk, relaties en rust in evenwicht zijn',cat:'balans',g:'medium',
+   ex:'Je zegt nee tegen een mooie kans omdat het ten koste gaat van iets wat je al hebt.',
+   ontdek:'Op welk vlak in je leven voelt de balans nu het minst goed — en wat zou je daar voor nodig hebben?'},
+  {id:'v067',naam:'Gezondheid',desc:'Bewust omgaan met je lichaam en geest als fundament',cat:'balans',g:'medium',
+   ex:'Je beschermt je slaap, beweging en voeding, niet als verplichting maar als zelfrespect.',
+   ontdek:'Wanneer luister jij echt naar je lichaam — en wanneer negeer je het?'},
+  {id:'v068',naam:'Eenvoud',desc:'Kiezen voor het essentiële en loslaten wat overbodig is',cat:'balans',g:'medium',
+   ex:'Je ruimt dingen op — spullen, verplichtingen, relaties — die je leven zwaarder maken dan nodig.',
+   ontdek:'Als jij morgen drie dingen uit je leven kon schrappen zonder consequenties, wat zou je kiezen?'},
+  {id:'v069',naam:'Zelfzorg',desc:'Goed voor jezelf zorgen zodat je ook voor anderen kunt zorgen',cat:'balans',g:'medium',
+   ex:'Je reserveert tijd voor herstel, ook als anderen een beroep op je doen.',
+   ontdek:'Wanneer zorg jij echt goed voor jezelf — en wanneer stel je dat uit voor iemand anders?'},
+  {id:'v070',naam:'Aanwezigheid',desc:'Echt aanwezig zijn in het moment, zonder afgeleid te worden',cat:'balans',g:'medium',
+   ex:'Je legt je telefoon weg en geeft iemand je volledige aandacht.',
+   ontdek:'Wanneer ben jij écht aanwezig — niet met je gedachten ergens anders?'},
+  {id:'v071',naam:'Matigheid',desc:'Bewust kiezen voor genoeg in plaats van altijd meer willen',cat:'balans',g:'medium',
+   ex:'Je stopt met iets als je genoeg hebt, ook als meer mogelijk is.',
+   ontdek:'Is er een terrein in je leven waar jij moeite hebt met "genoeg" — en wat drijft dat?'},
   // KARAKTER
-  {id:'v072',naam:'Bescheidenheid',desc:'Je sterke kanten kennen zonder er mee te pronken',cat:'karakter',g:'medium'},
-  {id:'v073',naam:'Verantwoordelijkheid',desc:'Eigenaarschap nemen over je keuzes en hun gevolgen',cat:'karakter',g:'diep'},
-  {id:'v074',naam:'Discipline',desc:'Doen wat nodig is, ook als je er geen zin in hebt',cat:'karakter',g:'medium'},
-  {id:'v075',naam:'Geduld',desc:'Kunnen wachten en ruimte geven zonder dat ongeduld het overneemt',cat:'karakter',g:'licht'},
-  {id:'v076',naam:'Kwetsbaarheid',desc:'Jezelf laten zien zoals je werkelijk bent, ook de imperfecte delen',cat:'karakter',g:'diep'},
-  {id:'v077',naam:'Moed',desc:'Overeind blijven bij tegenslagen en bang durven zijn zonder te vluchten',cat:'karakter',g:'diep'},
+  {id:'v072',naam:'Bescheidenheid',desc:'Je sterke kanten kennen zonder er mee te pronken',cat:'karakter',g:'medium',
+   ex:'Je brengt je eigen bijdrage niet naar voren, ook als dat je meer waardering zou geven.',
+   ontdek:'Wanneer ben jij iets goeds gedaan zonder dat iemand het wist — en hoe voelde dat?'},
+  {id:'v073',naam:'Verantwoordelijkheid',desc:'Eigenaarschap nemen over je keuzes en hun gevolgen',cat:'karakter',g:'diep',
+   ex:'Je zegt "ik heb het fout gedaan" zonder te verwijzen naar omstandigheden of anderen.',
+   ontdek:'Wanneer was het moeilijkste moment dat jij volledig verantwoordelijkheid nam?'},
+  {id:'v074',naam:'Discipline',desc:'Doen wat nodig is, ook als je er geen zin in hebt',cat:'karakter',g:'medium',
+   ex:'Je houdt je aan je voornemen, ook als niemand het controleert en de verleiding groot is.',
+   ontdek:'Wat is iets in je leven waar jij meer discipline voor nodig hebt dan anderen van je weten?'},
+  {id:'v075',naam:'Geduld',desc:'Kunnen wachten en ruimte geven zonder dat ongeduld het overneemt',cat:'karakter',g:'licht',
+   ex:'Je laat een proces zijn tijd nemen, ook als je liever vandaag het resultaat ziet.',
+   ontdek:'Wanneer is geduld voor jou het moeilijkst — en wat helpt je dan?'},
+  {id:'v076',naam:'Kwetsbaarheid',desc:'Jezelf laten zien zoals je werkelijk bent, ook de imperfecte delen',cat:'karakter',g:'diep',
+   ex:'Je deelt iets moeilijks over jezelf in een gesprek, wetende dat je je niet kunt verstoppen.',
+   ontdek:'Is er iets van jezelf dat je kwetsbaar voelt om te laten zien — maar waarvan je weet dat het jou menselijker maakt?'},
+  {id:'v077',naam:'Moed',desc:'Overeind blijven bij tegenslagen en bang durven zijn zonder te vluchten',cat:'karakter',g:'diep',
+   ex:'Je loopt naar het moeilijke gesprek toe in plaats van het uit te stellen.',
+   ontdek:'Wat is iets wat jij steeds voor je uitschuift uit angst — en wat zou het betekenen als je het deed?'},
   // BIJDRAGE
-  {id:'v078',naam:'Duurzaamheid',desc:'Keuzes maken die de aarde en toekomstige generaties respecteren',cat:'bijdrage',g:'medium'},
-  {id:'v079',naam:'Vrijgevigheid',desc:'Geven — van tijd, geld of aandacht — zonder bijbedoelingen',cat:'bijdrage',g:'medium'},
-  {id:'v080',naam:'Erfenis',desc:'Iets achterlaten dat voortleeft — een verhaal, werk of herinnering',cat:'bijdrage',g:'diep'},
-  {id:'v081',naam:'Onderwijs',desc:'Kennis doorgeven als een van de mooiste dingen die je kunt doen',cat:'bijdrage',g:'medium'},
-  {id:'v082',naam:'Rechtvaardigheid',desc:'Opkomen voor mensen die geen stem hebben',cat:'bijdrage',g:'diep'},
+  {id:'v078',naam:'Duurzaamheid',desc:'Keuzes maken die de aarde en toekomstige generaties respecteren',cat:'bijdrage',g:'medium',
+   ex:'Je kiest de minder gemakkelijke optie omdat die minder schade aanricht.',
+   ontdek:'Wanneer voel jij je verantwoordelijk voor iets buiten je eigen leven — voor de wereld na jou?'},
+  {id:'v079',naam:'Vrijgevigheid',desc:'Geven — van tijd, geld of aandacht — zonder bijbedoelingen',cat:'bijdrage',g:'medium',
+   ex:'Je geeft iets weg waarvan je weet dat je er zelf ook van had kunnen genieten.',
+   ontdek:'Wanneer gaf jij iets weg en voelde dat dat meer vreugde gaf dan het vasthouden ervan?'},
+  {id:'v080',naam:'Erfenis',desc:'Iets achterlaten dat voortleeft — een verhaal, werk of herinnering',cat:'bijdrage',g:'diep',
+   ex:'Je denkt bij grote beslissingen na: "Wat wil ik dat mensen na mij hiervan zeggen?"',
+   ontdek:'Wat wil jij dat mensen over jou zeggen als je er niet meer bent — niet over je prestaties, maar over wie je was?'},
+  {id:'v081',naam:'Onderwijs',desc:'Kennis doorgeven als een van de mooiste dingen die je kunt doen',cat:'bijdrage',g:'medium',
+   ex:'Je deelt wat je geleerd hebt, ook als je er zelf concurrentie door creëert.',
+   ontdek:'Wat is iets wat jij weet of kunt, dat je van harte zou willen doorgeven aan iemand anders?'},
+  {id:'v082',naam:'Rechtvaardigheid',desc:'Opkomen voor mensen die geen stem hebben',cat:'bijdrage',g:'diep',
+   ex:'Je spreekt je uit, ook als de persoon die het aangaat er niet bij is.',
+   ontdek:'Wanneer was jij getuige van onrecht en deed je iets — of hield je je in? Wat bepaalde dat?'},
   // VERBONDENHEID
-  {id:'v083',naam:'Natuur',desc:'Je verbonden voelen met de wereld buiten de mens: dieren, planten, seizoenen',cat:'verbondenheid',g:'licht'},
-  {id:'v084',naam:'Schoonheid in het alledaagse',desc:'De bijzonderheid zien in gewone dingen en momenten',cat:'verbondenheid',g:'licht'},
-  {id:'v085',naam:'Muziek',desc:'Geluid en ritme als een taal die dieper gaat dan woorden',cat:'verbondenheid',g:'licht'},
-  {id:'v086',naam:'Verhalen',desc:'Betekenis geven aan het leven door het te vertellen en te horen',cat:'verbondenheid',g:'medium'},
-  {id:'v087',naam:'Herinneringen',desc:'Het verleden koesteren als een deel van wie je nu bent',cat:'verbondenheid',g:'medium'},
-  {id:'v088',naam:'Rituelen',desc:'Betekenis geven aan overgangen en momenten door ze te markeren',cat:'verbondenheid',g:'medium'},
-  {id:'v089',naam:'Loyaliteit',desc:'Er zijn voor wie je liefhebt, ook als het lastig is',cat:'verbondenheid',g:'diep'},
-  {id:'v090',naam:'Wortels',desc:'Verbonden blijven met waar je vandaan komt als kracht, niet als last',cat:'verbondenheid',g:'diep'},
-  // Extra (Rokeach + VIA)
-  {id:'v091',naam:'Eigenwaarde',desc:'Jezelf waardig achten — niet vanwege prestaties, maar vanwege wie je bent',cat:'karakter',g:'diep'},
-  {id:'v092',naam:'Innerlijke harmonie',desc:'Vrede hebben met de verschillende kanten van jezelf',cat:'spiritueel',g:'diep'},
-  {id:'v093',naam:'Speelsheid',desc:'Het kind in jezelf levend houden, ook als volwassene',cat:'plezier',g:'licht'},
-  {id:'v094',naam:'Nieuw begin',desc:'De mogelijkheid zien om je leven op elk moment anders te schrijven',cat:'groei',g:'medium'},
-  {id:'v095',naam:'Verbondenheid met de kosmos',desc:'Het gevoel dat je deel uitmaakt van iets oneindig groters dan jezelf',cat:'spiritueel',g:'diep'},
+  {id:'v083',naam:'Natuur',desc:'Je verbonden voelen met de wereld buiten de mens: dieren, planten, seizoenen',cat:'verbondenheid',g:'licht',
+   ex:'Je zoekt bewust de buitenlucht op als je je hoofd leeg wil maken.',
+   ontdek:'Welke plek in de natuur geeft jou het meeste rust of energie — en waarom juist die?'},
+  {id:'v084',naam:'Schoonheid in het alledaagse',desc:'De bijzonderheid zien in gewone dingen en momenten',cat:'verbondenheid',g:'licht',
+   ex:'Je merkt de lichtval op een muur op, de geur van regen, het geluid van een kinderstem.',
+   ontdek:'Wat is iets heel gewoons wat jij oprecht mooi vindt, maar zelden uitspreekt?'},
+  {id:'v085',naam:'Muziek',desc:'Geluid en ritme als een taal die dieper gaat dan woorden',cat:'verbondenheid',g:'licht',
+   ex:'Een liedje brengt je terug naar een gevoel dat je al jaren niet hebt gehad.',
+   ontdek:'Welk nummer raakt jou elke keer weer — en wat doet het met je?'},
+  {id:'v086',naam:'Verhalen',desc:'Betekenis geven aan het leven door het te vertellen en te horen',cat:'verbondenheid',g:'medium',
+   ex:'Je luistert naar het levensverhaal van een oude man en voelt je daarna rijker.',
+   ontdek:'Welk verhaal — van jezelf of een ander — heeft jou het diepst geraakt?'},
+  {id:'v087',naam:'Herinneringen',desc:'Het verleden koesteren als een deel van wie je nu bent',cat:'verbondenheid',g:'medium',
+   ex:'Je bewaart kleine voorwerpen of foto\'s omdat ze een moment vasthouden.',
+   ontdek:'Welke herinnering koester jij het meest — eentje waarvan je hoopt dat je die nooit vergeet?'},
+  {id:'v088',naam:'Rituelen',desc:'Betekenis geven aan overgangen en momenten door ze te markeren',cat:'verbondenheid',g:'medium',
+   ex:'Je hebt kleine gewoonten die de dag structuur en betekenis geven — koffie\'s ochtends, wandelen na het werk.',
+   ontdek:'Welk ritueel of welke gewoonte heeft het meeste betekenis voor jou — en waarom?'},
+  {id:'v089',naam:'Loyaliteit',desc:'Er zijn voor wie je liefhebt, ook als het lastig is',cat:'verbondenheid',g:'diep',
+   ex:'Je staat naast iemand die het moeilijk heeft, ook als de rest zich afwendt.',
+   ontdek:'Voor wie zou jij alles laten vallen als ze je nu belden? Wat zegt dat over jou?'},
+  {id:'v090',naam:'Wortels',desc:'Verbonden blijven met waar je vandaan komt als kracht, niet als last',cat:'verbondenheid',g:'diep',
+   ex:'Je draagt iets van je afkomst met trots mee, ook als je ver van huis bent.',
+   ontdek:'Wat uit je achtergrond of opvoeding ben jij blij mee te dragen — ook al was het niet allemaal makkelijk?'},
+  // Extra
+  {id:'v091',naam:'Eigenwaarde',desc:'Jezelf waardig achten — niet vanwege prestaties, maar vanwege wie je bent',cat:'karakter',g:'diep',
+   ex:'Je vraagt om wat je nodig hebt zonder je ervoor te verontschuldigen.',
+   ontdek:'Wanneer voel jij je de minste waardering voor jezelf hebben — en is dat reëel?'},
+  {id:'v092',naam:'Innerlijke harmonie',desc:'Vrede hebben met de verschillende kanten van jezelf',cat:'spiritueel',g:'diep',
+   ex:'Je hoeft niet meer te kiezen tussen wie je thuis bent en wie je buiten bent.',
+   ontdek:'Zijn er versies van jezelf die met elkaar botsen? Wat zou het kosten om ze te verzoenen?'},
+  {id:'v093',naam:'Speelsheid',desc:'Het kind in jezelf levend houden, ook als volwassene',cat:'plezier',g:'licht',
+   ex:'Je maakt onzin, danst in de keuken, of lacht om je eigen dommigheid.',
+   ontdek:'Wanneer ben jij echt speels — niet sociaal, maar vanuit een echt lichte plek in jezelf?'},
+  {id:'v094',naam:'Nieuw begin',desc:'De mogelijkheid zien om je leven op elk moment anders te schrijven',cat:'groei',g:'medium',
+   ex:'Je neemt een ingrijpende beslissing omdat je weet dat het nooit te laat is om anders te kiezen.',
+   ontdek:'Is er iets in jouw leven waarvan jij diep vanbinnen weet dat je er opnieuw over wilt nadenken?'},
+  {id:'v095',naam:'Verbondenheid met de kosmos',desc:'Het gevoel dat je deel uitmaakt van iets oneindig groters dan jezelf',cat:'spiritueel',g:'diep',
+   ex:'Onder een sterrenhemel of bij de oceaan voel je hoe klein en hoe verbonden je tegelijk bent.',
+   ontdek:'Wanneer voelde jij je voor het laatste onderdeel van iets dat veel groter was dan jijzelf?'},
 ];
 
 // ══════════════════════════════════════════════
@@ -828,8 +1070,16 @@ function renderKaartenGrid(waarden, modus) {
       <div class="kaart-desc">${w.desc}</div>
       <div class="kaart-gewicht">${w.g}</div>
       <div class="kaart-check">${check}</div>
+      <div class="kaart-info-btn" data-id="${w.id}" title="Meer info">ⓘ</div>
     `;
-    el.addEventListener('click', () => toggleKaart(w.id, modus));
+    el.addEventListener('click', (e) => {
+      if (e.target.classList.contains('kaart-info-btn')) {
+        e.stopPropagation();
+        openInfo(w.id, modus);
+      } else {
+        toggleKaart(w.id, modus);
+      }
+    });
     grid.appendChild(el);
   });
 }
@@ -1065,12 +1315,96 @@ function prevGesprek() {
 }
 
 // ══════════════════════════════════════════════
+// INFO BOTTOM SHEET
+// ══════════════════════════════════════════════
+let _infoModus = 'partner';
+let _infoId = null;
+
+function openInfo(id, modus) {
+  const w = getWaarde(id);
+  if (!w) return;
+  const cfg = getCat(w.cat);
+  _infoId = id;
+  _infoModus = modus || (state.fase === 1 ? 'partner' : 'zelf');
+
+  document.getElementById('info-stripe').style.background = cfg.kleur;
+  document.getElementById('info-sheet').style.setProperty('--info-color', cfg.kleur);
+  document.getElementById('info-naam').textContent = w.naam;
+  document.getElementById('info-desc').textContent = w.desc;
+  document.getElementById('info-voorbeeld').textContent = w.ex || '—';
+  document.getElementById('info-vraag').textContent = w.ontdek || '—';
+
+  // Select knop tekst aanpassen aan selectiestatus
+  const arr = _infoModus === 'partner' ? state.gekozenPartner : state.gekozenZelf;
+  const btn = document.getElementById('info-select-btn');
+  if (arr.includes(id)) {
+    btn.textContent = '✓ Geselecteerd';
+    btn.style.background = cfg.kleur;
+  } else {
+    btn.textContent = 'Deze kiezen ✦';
+    btn.style.background = '';
+  }
+
+  document.getElementById('info-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function sluitInfo(e) {
+  if (e && e.target !== document.getElementById('info-overlay')) return;
+  document.getElementById('info-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  _infoId = null;
+}
+
+function selectVanuitInfo() {
+  if (!_infoId) return;
+  toggleKaart(_infoId, _infoModus);
+  // Update knop
+  const arr = _infoModus === 'partner' ? state.gekozenPartner : state.gekozenZelf;
+  const btn = document.getElementById('info-select-btn');
+  const w = getWaarde(_infoId);
+  if (arr.includes(_infoId)) {
+    btn.textContent = '✓ Geselecteerd';
+    if (w) btn.style.background = getCat(w.cat).kleur;
+  } else {
+    btn.textContent = 'Deze kiezen ✦';
+    btn.style.background = '';
+  }
+}
+
+// ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
 window.addEventListener('load', () => {
   if (window.ProfielClient) ProfielClient.init();
 });
 </script>
+
+<!-- ══════════════════════════════════════
+     INFO BOTTOM SHEET (gedeeld)
+══════════════════════════════════════ -->
+<div class="info-overlay" id="info-overlay" onclick="sluitInfo(event)">
+  <div class="info-sheet" id="info-sheet">
+    <div class="info-handle"></div>
+    <div class="info-cat-stripe" id="info-stripe"></div>
+    <div class="info-naam" id="info-naam"></div>
+    <div class="info-desc" id="info-desc"></div>
+    <div class="info-sectie">
+      <div class="info-sectie-label">✦ Voorbeeld</div>
+      <div class="info-voorbeeld" id="info-voorbeeld"></div>
+    </div>
+    <div class="info-sectie">
+      <div class="info-sectie-label">🔍 Is dit jouw waarde?</div>
+      <div class="info-vraag" id="info-vraag"></div>
+    </div>
+    <div class="info-acties">
+      <button class="btn btn-ghost btn-sm" onclick="sluitInfo()">Sluiten</button>
+      <button class="btn btn-gold btn-sm" id="info-select-btn" onclick="selectVanuitInfo()">
+        Deze kiezen ✦
+      </button>
+    </div>
+  </div>
+</div>
 
 <script>
 window.KOPPEL_BACKEND_URL = 'https://snakesandladdders-production.up.railway.app';
