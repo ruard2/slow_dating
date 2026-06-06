@@ -12,9 +12,9 @@ const PRECACHE = [
   '/config.js',
   '/manifest.json',
   '/images/kaart1.webp',
-  '/images/nabijheid_balk2.png',
-  '/images/figuur_t.png',
-  '/images/figuur2_t.png',
+  '/images/nabijheid_balk2.webp',
+  '/images/figuur_t.webp',
+  '/images/figuur2_t.webp',
 ];
 
 self.addEventListener('install', e => {
