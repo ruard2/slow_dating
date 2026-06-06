@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="nl">
-<head>`n<script src="config.js"></script>
+<head>
+<script src="config.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>De Grot — Relatierondes</title>
@@ -728,7 +729,11 @@ const STATE = {
 
 // ── Init ────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-  ProfielClient.init();
+  // Zorg dat de Begin-knop altijd werkt, ook als onclick niet vuur
+  const beginBtn = document.querySelector('#screen-intro .btn-primary');
+  if (beginBtn) beginBtn.addEventListener('click', () => naarModus());
+
+  try { ProfielClient.init(); } catch(e) { console.warn('[grot] ProfielClient.init fout:', e); }
 
   // Gespeelde cases ophalen uit localStorage
   const opgeslagen = localStorage.getItem('grot_gespeeld');
@@ -737,7 +742,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   STATE.rondeCount = parseInt(localStorage.getItem('grot_rondes') || '0');
 
   // Intro bijwerken
-  updateIntroScherm();
+  try { updateIntroScherm(); } catch(e) { console.warn('[grot] updateIntroScherm fout:', e); }
 
   // Koppel.js listeners klaarzetten (connect later bij samen-modus)
   if (window.KoppelClient) {
@@ -981,7 +986,6 @@ function laadCase(casus) {
 
   // ── Modus badge: ronde vs kaart ──────────────────────
   const isRonde = heeftUniekeVragen(casus);
-  const typLabel = TEKST.type_labels[casus.case_type] || casus.case_type;
   document.getElementById('sit-type-badge').textContent =
     isRonde ? typLabel : `${typLabel} · kaart`;
 
@@ -1347,23 +1351,6 @@ function toonSoloReveal() {
     if (safetyInfo.klasse === 'crisis') html += TOON.crisisHtml('dark');
     nawoordEl.innerHTML = html;
   }
-
-  // Tags tonen als chips
-  const chipsEl = document.getElementById('reveal-tags-chips');
-  chipsEl.innerHTML = '';
-  const tags = STATE.verzameldeTagsHuidigeRonde;
-  const topTags = Object.entries(tags)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-  topTags.forEach(([key]) => {
-    const cat = key.split('.')[0];
-    const label = (ProfielClient.getLocal()?.topBehoeften || []).find(b => b.key === key)?.label
-      || key.split('.')[1] || key;
-    let cls = 'chip-beh';
-    if (cat === 'protections') cls = 'chip-besch';
-    if (cat === 'skills') cls = 'chip-skill';
-    chipsEl.innerHTML += `<span class="chip ${cls}">${label}</span>`;
-  });
 
   showScreen('screen-reveal-solo');
 }

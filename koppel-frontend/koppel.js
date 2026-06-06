@@ -88,6 +88,18 @@ const KoppelClient = (() => {
       emit('reset', {});
     });
 
+    socket.on('chat_message', ({ player, text, ts }) => {
+      emit('chat_message', { player, text, ts });
+    });
+
+    socket.on('typing', () => {
+      emit('typing', {});
+    });
+
+    socket.on('webrtc_offer',  ({ offer })     => emit('webrtc_offer',  { offer }));
+    socket.on('webrtc_answer', ({ answer })    => emit('webrtc_answer', { answer }));
+    socket.on('webrtc_ice',    ({ candidate }) => emit('webrtc_ice',    { candidate }));
+
     socket.on('disconnect', () => {
       emit('disconnected', {});
     });
@@ -106,6 +118,14 @@ const KoppelClient = (() => {
     _app = appName;
     connect(() => {
       socket.emit('join_session', { code: code.toUpperCase().trim() });
+    });
+  }
+
+  // Maak sessie aan als die niet bestaat, of join als die al bestaat
+  function joinOrCreate(code, appName) {
+    _app = appName;
+    connect(() => {
+      socket.emit('join_or_create', { code: code.toUpperCase().trim(), app: appName });
     });
   }
 
@@ -131,9 +151,20 @@ const KoppelClient = (() => {
     localStorage.removeItem('koppel_player');
   }
 
+  function chat(text) {
+    if (!socket || !_code) return;
+    socket.emit('chat_message', { code: _code, player: _player, text, ts: Date.now() });
+  }
+
+  function sendTyping() {
+    if (!socket || !_code) return;
+    socket.emit('typing', { code: _code });
+  }
+
   function getCode()   { return _code; }
   function getPlayer() { return _player; }
   function isActive()  { return !!socket && socket.connected && !!_code; }
 
-  return { connect, create, join, done, progress, reset, leave, on, getCode, getPlayer, isActive };
+  return { connect, create, join, joinOrCreate, done, progress, reset, leave, on, chat, sendTyping, getCode, getPlayer, isActive,
+           get _socket() { return socket; } };
 })();

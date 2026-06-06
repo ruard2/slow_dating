@@ -9,6 +9,115 @@ const profileStore = require('./profiles');
 // Load persisted profiles on startup
 profileStore.loadProfiles();
 
+// ── Calling-state store ──────────────────────────────���─────────
+const CALLING_FILE = path.join(__dirname, 'data', 'calling_states.json');
+const callingStates = new Map();
+
+function loadCallingStates() {
+  try {
+    const data = JSON.parse(fs.readFileSync(CALLING_FILE, 'utf8'));
+    Object.entries(data).forEach(([code, st]) => callingStates.set(code, st));
+    console.log(`[calling] Loaded ${callingStates.size} states`);
+  } catch(e) {}
+}
+function saveCallingStates() {
+  try {
+    const obj = {}; callingStates.forEach((st, code) => { obj[code] = st; });
+    fs.writeFileSync(CALLING_FILE, JSON.stringify(obj), 'utf8');
+  } catch(e) { console.warn('[calling] save error:', e.message); }
+}
+function getCS(code) {
+  if (!callingStates.has(code)) callingStates.set(code, {
+    code, sharedSeconds: 0, connectedBothSince: null,
+    messages: { p1: 0, p2: 0 }, boardsCompleted: 0,
+    callUnlocked: false, asker: null,
+    consent: { p1: null, p2: null },
+    cooldownUntil: null, cooldownAsker: null,
+    createdAt: Date.now()
+  });
+  // migrate old boolean field
+  const cs = callingStates.get(code);
+  if (typeof cs.boardCompleted !== 'undefined') { cs.boardsCompleted = cs.boardCompleted ? 1 : 0; delete cs.boardCompleted; }
+  if (typeof cs.boardsCompleted === 'undefined') cs.boardsCompleted = 0;
+  return cs;
+}
+function effectiveSecs(cs) {
+  const bonus = cs.connectedBothSince ? Math.floor((Date.now() - cs.connectedBothSince) / 1000) : 0;
+  return cs.sharedSeconds + bonus;
+}
+function condMet(cs) {
+  return effectiveSecs(cs) >= 1800 &&
+         (cs.messages.p1 || 0) >= 10 && (cs.messages.p2 || 0) >= 10 &&
+         (cs.boardsCompleted || 0) >= 5;
+}
+function buildCSPayload(cs, forPlayer) {
+  return {
+    sharedSeconds:   effectiveSecs(cs),
+    messages:        cs.messages,
+    boardsCompleted: cs.boardsCompleted || 0,
+    callUnlocked:    cs.callUnlocked,
+    consent:        cs.consent,
+    asker:          cs.asker,
+    conditionsMet:  condMet(cs),
+    cooldownUntil:  cs.cooldownUntil,
+    showCooldown:   cs.cooldownAsker === forPlayer && !!cs.cooldownUntil && cs.cooldownUntil > Date.now(),
+  };
+}
+function emitCS(commCode) {
+  const cs = callingStates.get(commCode);
+  const session = sessions.get(commCode);
+  if (!cs || !session) return;
+  Object.entries(session.players).forEach(([player, socketId]) => {
+    const sock = io.sockets.sockets.get(socketId);
+    if (sock) sock.emit('call_state_update', buildCSPayload(cs, player));
+  });
+}
+// ── Couple progress store ─────────────────────────────────────
+const PROGRESS_FILE = path.join(__dirname, 'data', 'couple_progress.json');
+const coupleProgress = new Map();
+
+function loadCoupleProgress() {
+  try {
+    const data = JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf8'));
+    Object.entries(data).forEach(([code, p]) => coupleProgress.set(code, p));
+    console.log(`[progress] Loaded ${coupleProgress.size} couples`);
+  } catch(e) {}
+}
+function saveCoupleProgress() {
+  try {
+    const obj = {}; coupleProgress.forEach((p, code) => { obj[code] = p; });
+    fs.writeFileSync(PROGRESS_FILE, JSON.stringify(obj), 'utf8');
+  } catch(e) { console.warn('[progress] save error:', e.message); }
+}
+function getCP(commCode) {
+  if (!coupleProgress.has(commCode)) coupleProgress.set(commCode, {
+    commCode, games: {}, totalGamesCompleted: 0,
+    cardsUnlocked: [1], createdAt: Date.now()
+  });
+  return coupleProgress.get(commCode);
+}
+function recordGameComplete(commCode, boardName, durationSecs) {
+  const cp = getCP(commCode);
+  if (!cp.games[boardName]) {
+    cp.games[boardName] = { completedAt: Date.now(), durationSecs, plays: 1 };
+    cp.totalGamesCompleted++;
+  } else {
+    cp.games[boardName].plays = (cp.games[boardName].plays || 1) + 1;
+    cp.games[boardName].lastPlayedAt = Date.now();
+  }
+  saveCoupleProgress();
+}
+loadCoupleProgress();
+
+// ── Tick active timers every 30s
+setInterval(() => {
+  callingStates.forEach((cs, code) => {
+    if (cs.connectedBothSince) emitCS(code);
+  });
+  saveCallingStates();
+}, 30000);
+loadCallingStates();
+
 // Load content data (cases, domains, patterns)
 function loadContentData(filename) {
   try {
@@ -64,6 +173,19 @@ function getOrCreate(code) {
 // ── REST health ────────────────────────────────────────────
 app.get('/health', (_, res) => res.json({ ok: true }));
 
+// GET /api/progress/:commCode — koppelvoortgang + unlock status
+app.get('/api/progress/:commCode', (req, res) => {
+  const code = (req.params.commCode || '').toUpperCase().trim();
+  const cp = coupleProgress.get(code) || { games: {}, totalGamesCompleted: 0, cardsUnlocked: [1] };
+  const cs = callingStates.get(code);
+  res.json({
+    gamesCompleted:  cp.totalGamesCompleted || 0,
+    games:           cp.games || {},
+    cardsUnlocked:   cp.cardsUnlocked || [1],
+    boardsCompleted: cs ? (cs.boardsCompleted || 0) : 0,
+  });
+});
+
 app.get('/api/session/:code', (req, res) => {
   const s = sessions.get(req.params.code.toUpperCase());
   if (!s) return res.status(404).json({ error: 'Sessie niet gevonden' });
@@ -101,6 +223,54 @@ io.on('connection', (socket) => {
 
     socket.emit('session_created', { code, player: '1', app: appName });
     console.log(`[+] Session ${code} created by ${socket.id}`);
+  });
+
+  // ── JOIN OR CREATE (vaste koppelcode, bijv. globale sessie) ─
+  socket.on('join_or_create', ({ app: appName, code: rawCode }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    if (!code) return socket.emit('session_error', { message: 'Geen code opgegeven.' });
+
+    if (sessions.has(code)) {
+      const session = sessions.get(code);
+      const takenSlots = Object.keys(session.players).length;
+      if (takenSlots >= 2) {
+        const ep = Object.entries(session.players).find(([, sid]) => sid === socket.id);
+        if (!ep) return socket.emit('session_error', { message: 'Sessie is al vol.' });
+      }
+      const player = session.players['1'] && session.players['1'] !== socket.id ? '2' : '1';
+      session.players[player] = socket.id;
+      socket.join(code); socket.data.code = code; socket.data.player = player;
+      socket.emit('session_joined', { code, player, app: session.app, state: session.state });
+      const count = Object.keys(session.players).length;
+      io.to(code).emit('player_count', { count });
+      if (count === 2) {
+        io.to(code).emit('both_connected', { code });
+        // Track start time for board game duration
+        if (code.includes('.')) session.startedBothAt = session.startedBothAt || Date.now();
+        // Start calling timer for comm sessions
+        if (!code.includes('.')) {
+          const cs = getCS(code);
+          if (!cs.connectedBothSince) { cs.connectedBothSince = Date.now(); saveCallingStates(); }
+          emitCS(code);
+        }
+      } else if (!code.includes('.')) {
+        // Emit current calling state to the joining player
+        const cs = getCS(code);
+        socket.emit('call_state_update', buildCSPayload(cs, player));
+      }
+      console.log(`[+] Player ${player} joined (join_or_create) ${code}`);
+    } else {
+      const session = { code, app: appName || 'global', players: { '1': socket.id }, state: { p1: null, p2: null }, createdAt: Date.now() };
+      sessions.set(code, session);
+      setTimeout(() => sessions.delete(code), 24 * 60 * 60 * 1000);
+      socket.join(code); socket.data.code = code; socket.data.player = '1';
+      socket.emit('session_created', { code, player: '1', app: appName });
+      if (!code.includes('.')) {
+        const cs = getCS(code);
+        socket.emit('call_state_update', buildCSPayload(cs, '1'));
+      }
+      console.log(`[+] Session ${code} created (join_or_create) by ${socket.id}`);
+    }
   });
 
   // ── JOIN SESSION ──────────────────────────────────────────
@@ -142,6 +312,7 @@ io.on('connection', (socket) => {
 
     if (count === 2) {
       io.to(code).emit('both_connected', { code });
+      if (code.includes('.')) session.startedBothAt = session.startedBothAt || Date.now();
       console.log(`[=] Session ${code}: both players connected`);
     }
 
@@ -165,6 +336,23 @@ io.on('connection', (socket) => {
     if (session.state.p1?.done && session.state.p2?.done) {
       io.to(code).emit('session_complete', { state: session.state });
       console.log(`[v] Session ${code}: both players done`);
+      // Track board completion for calling unlock + couple progress
+      if (code.includes('.')) {
+        const commCode  = code.split('.')[0];
+        const boardName = code.split('.')[1] || 'unknown';
+        const durationSecs = session.startedBothAt
+          ? Math.floor((Date.now() - session.startedBothAt) / 1000) : 0;
+        // Calling state: count unique boards
+        const cs = getCS(commCode);
+        if (!cs.completedBoards) cs.completedBoards = [];
+        if (!cs.completedBoards.includes(boardName)) {
+          cs.completedBoards.push(boardName);
+          cs.boardsCompleted = cs.completedBoards.length;
+          saveCallingStates(); emitCS(commCode);
+        }
+        // Couple progress
+        recordGameComplete(commCode, boardName, durationSecs);
+      }
     }
   });
 
@@ -189,11 +377,108 @@ io.on('connection', (socket) => {
     console.log(`[~] Session ${code} reset`);
   });
 
+  // ── CHAT MESSAGE (relay to whole room) ───────────────────
+  socket.on('chat_message', ({ code: rawCode, player, text, ts }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    const session = sessions.get(code);
+    if (!session) return;
+    io.to(code).emit('chat_message', { player, text, ts: ts || Date.now() });
+    // Count messages in global comm sessions for calling unlock
+    if (!code.includes('.') && player) {
+      const cs = getCS(code);
+      const key = player === '1' ? 'p1' : 'p2';
+      cs.messages[key] = (cs.messages[key] || 0) + 1;
+      saveCallingStates();
+      emitCS(code);
+    }
+  });
+
+  // ── TYPING INDICATOR (relay to partner) ──────────────────
+  socket.on('typing', ({ code: rawCode }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    socket.to(code).emit('typing');
+  });
+
+  // ── WEBRTC SIGNALING (relay to partner) ──────────────────
+  socket.on('webrtc_offer', ({ code: rawCode, offer }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    socket.to(code).emit('webrtc_offer', { offer });
+  });
+  socket.on('webrtc_answer', ({ code: rawCode, answer }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    socket.to(code).emit('webrtc_answer', { answer });
+  });
+  socket.on('webrtc_ice', ({ code: rawCode, candidate }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    socket.to(code).emit('webrtc_ice', { candidate });
+  });
+
+  // ── DISCONNECT ────────────────────────────────────────────
+  // ── CALLING UNLOCK EVENTS ─────────────────────────────────
+
+  socket.on('call_unlock_ask', ({ code: rawCode }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    const cs = callingStates.get(code); if (!cs || !condMet(cs)) return;
+    if (cs.cooldownUntil && cs.cooldownUntil > Date.now()) return;
+    if (cs.callUnlocked || cs.asker) return; // already in progress
+    const player = socket.data.player;
+    cs.asker = player;
+    const key = player === '1' ? 'p1' : 'p2';
+    cs.consent[key] = 'yes';
+    saveCallingStates(); emitCS(code);
+  });
+
+  socket.on('call_unlock_answer', ({ code: rawCode, answer, reason }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    const cs = callingStates.get(code); if (!cs || !cs.asker) return;
+    const player = socket.data.player;
+    const key = player === '1' ? 'p1' : 'p2';
+    cs.consent[key] = answer;
+    if (answer === 'yes' && cs.consent.p1 === 'yes' && cs.consent.p2 === 'yes') {
+      cs.callUnlocked = true; cs.asker = null;
+      cs.cooldownUntil = null; cs.cooldownAsker = null;
+      saveCallingStates(); emitCS(code);
+      io.to(code).emit('call_unlocked_celebration');
+    } else if (answer === 'no') {
+      const askerPlayer = cs.asker;
+      cs.consent = { p1: null, p2: null }; cs.asker = null;
+      cs.cooldownUntil = Date.now() + 30 * 60 * 1000;
+      cs.cooldownAsker = askerPlayer;
+      if (reason && reason.trim())
+        io.to(code).emit('chat_message', { player, text: reason.trim(), ts: Date.now() });
+      saveCallingStates(); emitCS(code);
+    }
+  });
+
+  socket.on('call_withdraw_no', ({ code: rawCode }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    const cs = callingStates.get(code); if (!cs) return;
+    cs.consent = { p1: null, p2: null }; cs.asker = null;
+    cs.cooldownUntil = null; cs.cooldownAsker = null;
+    saveCallingStates(); emitCS(code);
+  });
+
+  socket.on('call_relock', ({ code: rawCode }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    const cs = callingStates.get(code); if (!cs) return;
+    cs.callUnlocked = false; cs.consent = { p1: null, p2: null }; cs.asker = null;
+    saveCallingStates(); emitCS(code);
+  });
+
   // ── DISCONNECT ────────────────────────────────────────────
   socket.on('disconnect', () => {
     const code = socket.data.code;
     const player = socket.data.player;
     if (!code) return;
+    // Pause calling timer
+    if (!code.includes('.') && callingStates.has(code)) {
+      const cs = callingStates.get(code);
+      if (cs.connectedBothSince) {
+        cs.sharedSeconds += Math.floor((Date.now() - cs.connectedBothSince) / 1000);
+        cs.connectedBothSince = null;
+        saveCallingStates();
+      }
+    }
 
     const session = sessions.get(code);
     if (!session) return;

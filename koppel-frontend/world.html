@@ -1,562 +1,495 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="nl">
-<head>`n<script src="config.js"></script>
-  <meta charset="UTF-8">
+<head>
+<meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>De Wereld</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+  <title>Slow Dating</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Slow Dating">
+  <link rel="apple-touch-icon" href="images/icon-192.png">
+
+  <script src="config.js"></script>
+  <script src="comm.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
       height: 100%;
-      background: #1a0e00;
+      background: #0a0a0a;
+      overflow: hidden;
+    }
+
+    /* ── Outer scroll container ──────────────────── */
+    #world-outer {
+      position: fixed; inset: 0;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
+      background: #0a0a0a;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      overflow: hidden;
     }
+    /* hide scrollbar */
+    #world-outer::-webkit-scrollbar { display: none; }
+    #world-outer { scrollbar-width: none; }
 
-    /* ── Map container ────────────────────────────── */
-    .map {
+    /* ── Locked kaart (boven) ─────────────────────── */
+    .locked-kaart {
       position: relative;
-      width: 100vw;
-      height: 100vh;
-      max-width: 480px;
-      max-height: 900px;
-      background-color: #f0e0b0;
-      background-image:
-        radial-gradient(ellipse at 15% 20%, rgba(160,100,20,0.12) 0%, transparent 55%),
-        radial-gradient(ellipse at 85% 75%, rgba(120,70,10,0.10) 0%, transparent 55%),
-        radial-gradient(ellipse at 50% 50%, rgba(200,140,40,0.06) 0%, transparent 80%),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-      background-size: auto, auto, auto, 300px 300px;
+      flex-shrink: 0;
+      scroll-snap-align: start;
+      cursor: pointer;
       overflow: hidden;
-      /* Edge vignette for aged look */
-      box-shadow:
-        inset 0 0 80px rgba(80,40,0,0.35),
-        inset 0 0 160px rgba(60,30,0,0.15);
+      /* size set by fitMap() */
     }
+    .lk-img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+      filter: blur(4px) brightness(.55) saturate(.75);
+      transform: scale(1.03);
+      display: block;
+    }
+    .lk-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .lk-content {
+      text-align: center; font-family: sans-serif; padding: 20px;
+      background: rgba(0,0,0,.38);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .lk-lock  { font-size: 2.4rem; margin-bottom: 14px; }
+    .lk-title { font-size: 1.6rem; font-family: serif; font-weight: 700;
+                color: rgba(255,255,255,.92); margin-bottom: 8px; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+    .lk-req   { font-size: .82rem; color: rgba(220,220,200,.75); margin-bottom: 6px; }
+    .lk-hint  { font-size: .68rem; color: rgba(200,200,180,.50); margin-top: 16px; letter-spacing: .06em; }
+    /* Genoeg voortgang maar nog niet betaald — geen blur, wel banner */
+    .locked-kaart.ready .lk-img     { filter: none; transform: none; }
 
-    /* ── Decorative border ──────────────────────── */
-    .map::before {
-      content: '';
-      position: absolute;
-      inset: 10px;
-      border: 1px solid rgba(100,60,10,0.45);
-      pointer-events: none;
-      z-index: 20;
-    }
-    .map::after {
-      content: '';
-      position: absolute;
-      inset: 14px;
-      border: 0.5px solid rgba(100,60,10,0.2);
-      pointer-events: none;
-      z-index: 20;
-    }
+    /* Volledig betaald/unlocked — geen blur, geen banner */
+    .locked-kaart.unlocked .lk-img    { filter: none; transform: none; }
+    .locked-kaart.unlocked .lk-overlay { display: none; }
 
-    /* ── Corner ornaments ───────────────────────── */
-    .corner {
+    /* Congrats toast */
+    #congrats-toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      z-index: 6000; display: none;
+      background: linear-gradient(135deg,#2a4a10,#3a6a18);
+      border: 1px solid rgba(160,220,80,.35);
+      border-radius: 16px; padding: 14px 20px;
+      font-family: sans-serif; text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+      max-width: 300px; width: calc(100% - 40px);
+      animation: toastIn .4s ease;
+    }
+    #congrats-toast.show { display: block; }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .ct-emoji { font-size: 1.6rem; margin-bottom: 6px; }
+    .ct-title { color: #c0e060; font-size: .95rem; font-weight: 700; margin-bottom: 4px; }
+    .ct-hint  { color: rgba(180,220,100,.7); font-size: .78rem; }
+
+    /* ── Nabijheidsgroei balk (alleen ornament-img) ─────────── */
+    #nabijheid-bar {
+      position: fixed;
+      top: 0; left: 50%; transform: translateX(-50%);
+      z-index: 20;
+      pointer-events: none;
+      line-height: 0;
+      /* breedte gezet door fitMap() */
+    }
+    #nb-img {
+      display: block;
+      width: 100%;
+      height: auto;
+      filter: invert(1);
+      mix-blend-mode: screen;
+      opacity: .45;
+      -webkit-mask-image:
+        linear-gradient(to right,  transparent 0%, black 6%, black 94%, transparent 100%),
+        linear-gradient(to bottom, black 0%, black 45%, transparent 100%);
+      -webkit-mask-composite: destination-in;
+      mask-image:
+        linear-gradient(to right,  transparent 0%, black 6%, black 94%, transparent 100%),
+        linear-gradient(to bottom, black 0%, black 45%, transparent 100%);
+      mask-composite: intersect;
+    }
+    /* ── Poppetjes — absoluut in balkdiv ────────────────────── */
+    .nb-fig {
       position: absolute;
       z-index: 21;
-      width: 30px;
-      height: 30px;
+      height: 28px;
+      width: auto;
       pointer-events: none;
+      filter: brightness(1.2) drop-shadow(0 1px 3px rgba(0,0,0,.45));
+      /* verticaal: voeten op de ornamentenlijn */
+      bottom: 52%;
     }
-    .corner svg { width: 100%; height: 100%; }
-    .corner-tl { top: 6px;  left: 6px; }
-    .corner-tr { top: 6px;  right: 6px;  transform: scaleX(-1); }
-    .corner-bl { bottom: 6px; left: 6px;  transform: scaleY(-1); }
-    .corner-br { bottom: 6px; right: 6px; transform: scale(-1,-1); }
+    /* fig1 via left, fig2 via right — gecentreerd op het waypoint */
+    #nb-fig1 { transition: left  1.2s cubic-bezier(.4,0,.2,1); transform: translateX(-50%); }
+    #nb-fig2 { transition: right 1.2s cubic-bezier(.4,0,.2,1); transform: translateX(50%);  }
 
-    /* ── Title ──────────────────────────────────── */
-    .map-title {
-      position: absolute;
-      top: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 15;
-      text-align: center;
-      white-space: nowrap;
-    }
-    .map-title h1 {
-      font-family: 'Cinzel', 'Times New Roman', serif;
-      font-size: clamp(1rem, 4vw, 1.4rem);
-      font-weight: 700;
-      color: #1e0e00;
-      letter-spacing: 6px;
-      text-transform: uppercase;
-      line-height: 1;
-      text-shadow: 1px 1px 0 rgba(255,220,120,0.3);
-    }
-    .map-title .rule {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 5px;
-    }
-    .map-title .rule::before,
-    .map-title .rule::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, #9a6820, transparent);
-    }
-    .map-title .rule span {
-      font-size: 0.6rem;
-      color: #9a6820;
-      letter-spacing: 2px;
-      font-family: 'IM Fell English', serif;
-      font-style: italic;
+    /* ── Map container ────────────────────────────── */
+    #map {
+      position: relative;
+      flex-shrink: 0;
+      scroll-snap-align: start;
+      /* size set by fitMap() */
+      overflow: hidden;
     }
 
-    /* ── SVG roads layer ────────────────────────── */
-    .roads {
+    #map img.bg {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
-      z-index: 3;
-      pointer-events: none;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
     }
 
-    /* ── Location cards ─────────────────────────── */
-    .loc {
+    /* ── Hotspot — volledig onzichtbaar ─────────── */
+    .hs {
       position: absolute;
-      z-index: 10;
-      width: 130px;
-    }
-    .loc-card {
-      display: block;
-      background: rgba(244, 228, 188, 0.93);
-      border: 1px solid rgba(90,50,5,0.55);
-      border-radius: 3px;
-      padding: 9px 10px 8px;
-      text-decoration: none;
-      box-shadow:
-        2px 3px 12px rgba(0,0,0,0.22),
-        inset 0 0 16px rgba(160,100,20,0.08);
-      transition: transform 0.18s ease, box-shadow 0.18s ease;
       cursor: pointer;
-    }
-    .loc-card:active,
-    .loc-card:hover {
-      transform: translateY(-3px) rotate(0.4deg);
-      box-shadow: 4px 7px 20px rgba(0,0,0,0.28), inset 0 0 16px rgba(160,100,20,0.12);
-    }
-    .loc-card.locked {
-      opacity: 0.52;
-      filter: grayscale(0.3);
-      cursor: default;
-    }
-    .loc-card.locked:hover,
-    .loc-card.locked:active { transform: none; box-shadow: 2px 3px 12px rgba(0,0,0,0.22); }
-
-    .loc-icon { font-size: 1.7rem; text-align: center; line-height: 1; margin-bottom: 5px; }
-    .loc-name {
-      font-family: 'Cinzel', 'Times New Roman', serif;
-      font-size: 0.62rem;
-      font-weight: 700;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      color: #1e0e00;
-      text-align: center;
-      line-height: 1.25;
-      margin-bottom: 3px;
-    }
-    .loc-desc {
-      font-family: 'IM Fell English', Georgia, serif;
-      font-style: italic;
-      font-size: 0.63rem;
-      color: #5c3a0a;
-      text-align: center;
-      line-height: 1.3;
-      margin-bottom: 7px;
-    }
-    .loc-btn {
-      display: block;
-      text-align: center;
-      font-family: 'Cinzel', serif;
-      font-size: 0.56rem;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      color: #f0e0b0;
-      background: #6b4410;
-      padding: 4px 6px;
-      border-radius: 2px;
       text-decoration: none;
-      transition: background 0.15s;
-    }
-    .loc-btn:hover { background: #3d2206; }
-    .loc-btn.soon { background: #a0905a; pointer-events: none; }
-
-    /* ── Compass rose ───────────────────────────── */
-    .compass {
-      position: absolute;
-      z-index: 15;
-      pointer-events: none;
+      background: transparent;
+      border: none;
+      outline: none;
     }
 
-    /* ── Start marker ───────────────────────────── */
-    .start {
+    /* ── Comm overlay — onderin op het kaartplaatje ─── */
+    #comm-overlay {
       position: absolute;
-      z-index: 10;
+      bottom: 3%;
       left: 50%;
       transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.38);
+      backdrop-filter: blur(10px) saturate(1.4);
+      -webkit-backdrop-filter: blur(10px) saturate(1.4);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 40px;
+      padding: 8px 20px;
+      z-index: 10;
+      pointer-events: all;
+    }
+    .co-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 4px 8px;
+      border-radius: 20px;
+      transition: background .15s;
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .co-btn:active { background: rgba(255,255,255,.12); }
+    .co-ico { font-size: 1.4rem; line-height: 1; }
+    .co-lbl { font-size: .5rem; color: rgba(255,255,255,.55); letter-spacing: .06em; text-transform: uppercase; }
+    .co-badge {
+      position: absolute;
+      top: 1px; right: 3px;
+      background: #e05050;
+      color: #fff;
+      border-radius: 8px;
+      font-size: .52rem;
+      font-weight: 800;
+      padding: 1px 4px;
+      min-width: 14px;
       text-align: center;
-      pointer-events: none;
+      display: none;
+      line-height: 1.3;
     }
-    .start-star {
-      font-size: 1rem;
-      color: #9a6820;
-      display: block;
-      filter: drop-shadow(0 0 4px rgba(196,146,42,0.5));
-    }
-    .start-label {
-      font-family: 'IM Fell English', Georgia, serif;
-      font-style: italic;
-      font-size: 0.62rem;
-      color: #6b4410;
-      letter-spacing: 0.5px;
-      margin-top: 1px;
-    }
+    .co-sep { width: 1px; height: 28px; background: rgba(255,255,255,.15); flex-shrink: 0; }
 
-    /* ── Region labels (background flavour) ─────── */
-    .region {
-      position: absolute;
-      font-family: 'IM Fell English', serif;
-      font-style: italic;
-      font-size: 0.55rem;
-      color: rgba(80,45,5,0.28);
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      z-index: 4;
-      pointer-events: none;
-      white-space: nowrap;
+    /* ── Welkom overlay ─────────────────────────────────────── */
+    #welkom-overlay {
+      position: fixed; inset: 0; z-index: 8000;
+      background: linear-gradient(160deg, #0d1a05 0%, #071010 100%);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 30px 24px;
+      font-family: sans-serif;
     }
+    .wl-title { color: #c8e060; font-size: 2rem; font-family: serif; margin: 0; text-align: center; }
+    .wl-sub   { color: #7a9060; font-size: .87rem; text-align: center; max-width: 290px; line-height: 1.7; margin: 0; }
+    .wl-block { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px; }
+    .wl-btn-gold    { background: linear-gradient(135deg,#8ab030,#c0e050); color: #0d1a05; border: none;
+                      border-radius: 14px; padding: 14px 20px; font-size: 1rem; font-weight: 700;
+                      cursor: pointer; width: 100%; font-family: inherit; }
+    .wl-btn-outline { background: transparent; border: 1.5px solid #6a9030; color: #a0c050;
+                      border-radius: 14px; padding: 14px 20px; font-size: 1rem; font-weight: 600;
+                      cursor: pointer; width: 100%; font-family: inherit; }
+    .wl-btn-ghost   { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+                      color: #9ab070; border-radius: 14px; padding: 11px 20px; font-size: .9rem;
+                      cursor: pointer; width: 100%; font-family: inherit; }
+    .wl-code-big  { font-size: 2.4rem; letter-spacing: .4em; color: #c0e050; font-family: serif; text-align: center; }
+    .wl-hint      { color: #5a7040; font-size: .78rem; text-align: center; }
+    .wl-input     { text-align: center; font-size: 1.6rem; letter-spacing: .3em; text-transform: uppercase;
+                    font-weight: 700; background: rgba(255,255,255,.07); border: 2px solid rgba(140,200,60,.35);
+                    border-radius: 14px; padding: 14px; color: #c0e050; width: 100%; font-family: sans-serif; outline: none; }
+    .wl-err       { color: #e07070; font-size: .82rem; text-align: center; display: none; }
+    .wl-dots span { display: inline-block; animation: wldot 1.2s infinite; }
+    .wl-dots span:nth-child(2){ animation-delay:.2s; }
+    .wl-dots span:nth-child(3){ animation-delay:.4s; }
+    @keyframes wldot{ 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-7px)} }
 
-    /* ── Road junction dot ──────────────────────── */
-    .jdot {
-      position: absolute;
-      width: 7px;
-      height: 7px;
-      background: #c4922a;
-      border: 1.5px solid #f0e0b0;
-      border-radius: 50%;
-      z-index: 8;
-      transform: translate(-50%, -50%);
-      box-shadow: 0 0 6px rgba(196,146,42,0.55);
-      pointer-events: none;
+    /* ── Unlock popup ───────────────────────────────────────── */
+    #unlock-popup {
+      position: fixed; inset: 0; z-index: 7000;
+      display: none; align-items: center; justify-content: center;
+      background: rgba(0,0,0,.65); padding: 24px;
     }
+    #unlock-popup.show { display: flex; }
+    #unlock-popup .up-card {
+      background: #0d1a08; border: 1px solid rgba(160,200,80,.2);
+      border-radius: 20px; padding: 24px 22px; max-width: 320px; width: 100%;
+      font-family: sans-serif;
+    }
+    #unlock-popup h3 { color: #c0e060; font-size: 1.1rem; margin: 0 0 6px; }
+    #unlock-popup .up-sub { color: #7a9060; font-size: .82rem; margin: 0 0 18px; line-height: 1.5; }
+    .up-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .up-row .up-ico  { font-size: 1.1rem; flex-shrink: 0; }
+    .up-row .up-txt  { font-size: .82rem; color: #c8c0a8; flex: 1; }
+    .up-row .up-done { color: #90d890; font-weight: 700; font-size: .8rem; }
+    .up-row .up-nd   { color: #9a7860; font-size: .8rem; }
+    .up-divider { height: 1px; background: rgba(255,255,255,.06); margin: 14px 0; }
+    .up-price { text-align: center; color: #c8a040; font-size: .9rem; font-weight: 600; margin-bottom: 14px; }
+    .up-btn-pay { width: 100%; background: linear-gradient(135deg,#8ab030,#c0e050); color: #0d1a05;
+                  border: none; border-radius: 14px; padding: 13px; font-size: 1rem; font-weight: 700;
+                  cursor: pointer; font-family: inherit; margin-bottom: 8px; }
+    .up-btn-close { width: 100%; background: none; border: none; color: #5a7040;
+                    font-size: .82rem; cursor: pointer; font-family: inherit; padding: 6px; }
 
-    /* ── Tap ripple for mobile ──────────────────── */
-    @keyframes ripple {
-      from { transform: translate(-50%,-50%) scale(0); opacity: 0.5; }
-      to   { transform: translate(-50%,-50%) scale(2.5); opacity: 0; }
-    }
+    /* Ripple */
     .ripple {
       position: absolute;
-      width: 40px; height: 40px;
       border-radius: 50%;
-      background: rgba(196,146,42,0.35);
-      animation: ripple 0.5s ease-out forwards;
+      width: 60px; height: 60px;
+      margin-left: -30px; margin-top: -30px;
+      background: rgba(255,255,255,0.35);
+      animation: rip 0.55s ease-out forwards;
       pointer-events: none;
-      z-index: 9;
+    }
+    @keyframes rip {
+      from { transform: scale(0); opacity: 1; }
+      to   { transform: scale(3); opacity: 0; }
     }
   </style>
 </head>
 <body>
-<div class="map" id="map">
 
-  <!-- Corner ornaments -->
-  <div class="corner corner-tl"><svg viewBox="0 0 30 30"><path d="M2,2 L12,2 L2,12 Z" fill="#9a6820" opacity=".55"/><line x1="2" y1="2" x2="2" y2="18" stroke="#9a6820" stroke-width="1" opacity=".4"/><line x1="2" y1="2" x2="18" y2="2" stroke="#9a6820" stroke-width="1" opacity=".4"/></svg></div>
-  <div class="corner corner-tr"><svg viewBox="0 0 30 30"><path d="M2,2 L12,2 L2,12 Z" fill="#9a6820" opacity=".55"/><line x1="2" y1="2" x2="2" y2="18" stroke="#9a6820" stroke-width="1" opacity=".4"/><line x1="2" y1="2" x2="18" y2="2" stroke="#9a6820" stroke-width="1" opacity=".4"/></svg></div>
-  <div class="corner corner-bl"><svg viewBox="0 0 30 30"><path d="M2,2 L12,2 L2,12 Z" fill="#9a6820" opacity=".55"/><line x1="2" y1="2" x2="2" y2="18" stroke="#9a6820" stroke-width="1" opacity=".4"/><line x1="2" y1="2" x2="18" y2="2" stroke="#9a6820" stroke-width="1" opacity=".4"/></svg></div>
-  <div class="corner corner-br"><svg viewBox="0 0 30 30"><path d="M2,2 L12,2 L2,12 Z" fill="#9a6820" opacity=".55"/><line x1="2" y1="2" x2="2" y2="18" stroke="#9a6820" stroke-width="1" opacity=".4"/><line x1="2" y1="2" x2="18" y2="2" stroke="#9a6820" stroke-width="1" opacity=".4"/></svg></div>
+<!-- ── Nabijheidsgroei-balk ─────────────────────────────── -->
+<div id="nabijheid-bar">
+  <img id="nb-img" src="images/nabijheid_balk2.png" alt="">
+  <img id="nb-fig1" class="nb-fig" src="images/figuur_t.png"  alt="">
+  <img id="nb-fig2" class="nb-fig" src="images/figuur2_t.png" alt="">
+</div>
 
-  <!-- Title -->
-  <div class="map-title">
-    <h1>De Wereld</h1>
-    <div class="rule"><span>een kaart voor zelfkennis &amp; verbinding</span></div>
+<div id="world-outer">
+
+<!-- Kaart 5 — geblurd, hoogste boven -->
+<div class="locked-kaart" id="locked-5" onclick="portalClick(5)">
+  <img src="images/kaart5.png" class="lk-img" alt="Wereld 5">
+  <div class="lk-overlay">
+    <div class="lk-content">
+      <div class="lk-lock">🔒</div>
+      <div class="lk-title">Wereld 5 — Ziel</div>
+      <div class="lk-req"  id="lk-req-5">Voltooi eerst wereld 4</div>
+      <div class="lk-hint" id="lk-hint-5">↓ tik voor meer info</div>
+    </div>
   </div>
+</div>
 
-  <!-- Region labels for atmosphere -->
-  <div class="region" style="top:31%; left:4%; writing-mode:vertical-rl; transform:rotate(180deg); letter-spacing:3px;">Het Woud</div>
-  <div class="region" style="top:52%; right:5%;">De Bergen</div>
-  <div class="region" style="top:14%; left:5%;">De Diepe Grond</div>
-  <div class="region" style="bottom:14%; left:50%; transform:translateX(-50%);">Het Open Veld</div>
-
-  <!-- ── SVG: roads, terrain, decorations ───────── -->
-  <svg class="roads" viewBox="0 0 480 860" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <!-- Hand-drawn wobble filter -->
-      <filter id="ink" x="-5%" y="-5%" width="110%" height="110%">
-        <feTurbulence type="turbulence" baseFrequency="0.03 0.02" numOctaves="2" seed="7" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.8" xChannelSelector="R" yChannelSelector="G"/>
-      </filter>
-      <!-- Softer wobble for terrain -->
-      <filter id="soft-ink" x="-10%" y="-10%" width="120%" height="120%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" seed="12" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G"/>
-      </filter>
-    </defs>
-
-    <!-- ░░ TERRAIN DECORATIONS ░░ -->
-
-    <!-- Forest patch — left, near Boshuisje -->
-    <g filter="url(#soft-ink)" opacity="0.22" fill="#3a5a30">
-      <circle cx="72"  cy="620" r="18"/>
-      <circle cx="88"  cy="608" r="14"/>
-      <circle cx="58"  cy="605" r="16"/>
-      <circle cx="75"  cy="592" r="12"/>
-      <circle cx="92"  cy="598" r="10"/>
-      <!-- Tree trunks -->
-      <rect x="70" y="632" width="3" height="10" fill="#5a3a10" opacity="1.5"/>
-      <rect x="86" y="620" width="3" height="8"  fill="#5a3a10" opacity="1.5"/>
-    </g>
-    <!-- Forest patch — left middle -->
-    <g filter="url(#soft-ink)" opacity="0.18" fill="#3a5a30">
-      <circle cx="55"  cy="490" r="14"/>
-      <circle cx="68"  cy="478" r="11"/>
-      <circle cx="44"  cy="480" r="12"/>
-    </g>
-    <!-- Forest patch — right upper -->
-    <g filter="url(#soft-ink)" opacity="0.17" fill="#3a5a30">
-      <circle cx="400" cy="350" r="13"/>
-      <circle cx="415" cy="340" r="10"/>
-      <circle cx="388" cy="342" r="11"/>
-    </g>
-
-    <!-- Mountain range — right, near Kleurenberg -->
-    <g filter="url(#soft-ink)" opacity="0.28">
-      <polygon points="330,500 355,458 380,500" fill="#8a7050"/>
-      <polygon points="348,500 368,465 388,500" fill="#7a6040"/>
-      <polygon points="362,500 376,475 390,500" fill="#9a8060"/>
-      <!-- snow caps -->
-      <polygon points="355,458 350,470 360,470" fill="#d8c8a0" opacity="0.7"/>
-      <polygon points="368,465 363,475 373,475" fill="#d8c8a0" opacity="0.6"/>
-    </g>
-
-    <!-- Small hills — bottom area -->
-    <g filter="url(#soft-ink)" opacity="0.15" fill="#8a7850">
-      <ellipse cx="150" cy="800" rx="70" ry="28"/>
-      <ellipse cx="320" cy="810" rx="60" ry="22"/>
-    </g>
-
-    <!-- River / stream — left side -->
-    <path d="M 55 430 C 62 420 58 410 65 398 C 72 386 68 374 76 362"
-          stroke="#7a9aac" stroke-width="2.5" fill="none" filter="url(#ink)"
-          opacity="0.3" stroke-linecap="round"/>
-    <path d="M 50 435 C 57 425 53 415 60 403 C 67 391 63 379 71 367"
-          stroke="#7a9aac" stroke-width="1.5" fill="none" filter="url(#ink)"
-          opacity="0.18" stroke-linecap="round"/>
-
-    <!-- Cave mouth — upper right area -->
-    <path d="M 370 190 Q 385 175 400 190 L 400 210 Q 385 215 370 210 Z"
-          fill="#4a3520" opacity="0.2" filter="url(#soft-ink)"/>
-    <ellipse cx="385" cy="200" rx="12" ry="8" fill="#2a1a08" opacity="0.18"/>
-
-    <!-- ░░ MAIN ROAD ░░ -->
-    <!-- Shadow -->
-    <path d="M 242 840
-             C 230 800 252 770 240 740
-             C 228 710 254 682 240 652
-             C 226 622 254 594 240 564
-             C 226 534 254 506 240 476
-             C 226 446 254 418 240 388
-             C 226 358 254 330 240 300
-             C 226 270 254 242 240 212
-             C 226 182 254 154 240 124
-             C 226 94  240 74  240 54"
-          stroke="rgba(60,30,5,0.25)" stroke-width="11" fill="none"
-          stroke-linecap="round" transform="translate(3,4)"/>
-    <!-- Main road body -->
-    <path id="main-road"
-          d="M 240 840
-             C 230 800 252 770 240 740
-             C 228 710 254 682 240 652
-             C 226 622 254 594 240 564
-             C 226 534 254 506 240 476
-             C 226 446 254 418 240 388
-             C 226 358 254 330 240 300
-             C 226 270 254 242 240 212
-             C 226 182 254 154 240 124
-             C 226 94  240 74  240 54"
-          stroke="#7a5428" stroke-width="7" fill="none"
-          filter="url(#ink)"
-          stroke-linecap="round" opacity="0.9"/>
-    <!-- Centre dashes (worn road marking) -->
-    <path d="M 240 840
-             C 230 800 252 770 240 740
-             C 228 710 254 682 240 652
-             C 226 622 254 594 240 564
-             C 226 534 254 506 240 476
-             C 226 446 254 418 240 388
-             C 226 358 254 330 240 300
-             C 226 270 254 242 240 212
-             C 226 182 254 154 240 124
-             C 226 94  240 74  240 54"
-          stroke="#c4a050" stroke-width="1.5" fill="none"
-          filter="url(#ink)"
-          stroke-dasharray="12,18" opacity="0.35" stroke-linecap="round"/>
-
-    <!-- ░░ BRANCH — Het Boshuisje (left, y≈652) ░░ -->
-    <path d="M 240 652 C 210 650 168 646 108 644"
-          stroke="#7a5428" stroke-width="4.5" fill="none"
-          filter="url(#ink)" stroke-linecap="round" opacity="0.75"
-          stroke-dasharray="9,6"/>
-
-    <!-- ░░ BRANCH — De Kleurenberg (right, y≈476) ░░ -->
-    <path d="M 240 476 C 272 474 316 466 374 466"
-          stroke="#7a5428" stroke-width="4.5" fill="none"
-          filter="url(#ink)" stroke-linecap="round" opacity="0.75"
-          stroke-dasharray="9,6"/>
-
-    <!-- ░░ BRANCH — De Oude Boom (left, y≈300) ░░ -->
-    <path d="M 240 300 C 208 298 162 290 100 290"
-          stroke="#7a5428" stroke-width="4.5" fill="none"
-          filter="url(#ink)" stroke-linecap="round" opacity="0.75"
-          stroke-dasharray="9,6"/>
-
-    <!-- ░░ BRANCH — De Grot (right, y≈148) ░░ -->
-    <path d="M 240 148 C 272 146 318 138 372 138"
-          stroke="#7a5428" stroke-width="4.5" fill="none"
-          filter="url(#ink)" stroke-linecap="round" opacity="0.5"
-          stroke-dasharray="5,9"/>
-
-    <!-- Distance tick marks on main road -->
-    <g stroke="#7a5428" stroke-width="1.5" opacity="0.35" filter="url(#ink)">
-      <line x1="234" y1="740" x2="246" y2="740"/>
-      <line x1="232" y1="564" x2="248" y2="564"/>
-      <line x1="232" y1="388" x2="248" y2="388"/>
-      <line x1="232" y1="212" x2="248" y2="212"/>
-      <line x1="232" y1="74"  x2="248" y2="74"/>
-    </g>
-
-    <!-- Compass rose -->
-    <g transform="translate(398,72)">
-      <circle cx="0" cy="0" r="28" stroke="#7a5428" stroke-width="0.8" fill="rgba(240,224,176,0.4)" opacity="0.6"/>
-      <circle cx="0" cy="0" r="22" stroke="#7a5428" stroke-width="0.4" fill="none" opacity="0.3"/>
-      <!-- N arrow (dark, pointy) -->
-      <polygon points="0,-24 3,-10 0,-15 -3,-10" fill="#2a1200" opacity="0.8"/>
-      <!-- S -->
-      <polygon points="0,24 3,10 0,15 -3,10" fill="#7a5428" opacity="0.5"/>
-      <!-- E -->
-      <polygon points="24,0 10,3 15,0 10,-3" fill="#7a5428" opacity="0.5"/>
-      <!-- W -->
-      <polygon points="-24,0 -10,3 -15,0 -10,-3" fill="#7a5428" opacity="0.5"/>
-      <!-- Centre -->
-      <circle cx="0" cy="0" r="3.5" fill="#c4922a" opacity="0.85"/>
-      <circle cx="0" cy="0" r="1.5" fill="#f0e0b0"/>
-      <!-- N label -->
-      <text x="0" y="-30" text-anchor="middle"
-            font-family="Cinzel,serif" font-size="7" font-weight="700"
-            fill="#2a1200" opacity="0.75">N</text>
-    </g>
-
-    <!-- "Jij begint hier" star -->
-    <text x="240" y="866" text-anchor="middle"
-          font-family="IM Fell English,serif" font-style="italic"
-          font-size="9" fill="#6b4410" opacity="0.7">✦ jij begint hier ✦</text>
-  </svg>
-
-  <!-- ══ JUNCTION DOTS (where branches meet main road) ══ -->
-  <!-- Using percentage of map dimensions: map is 480×860 in SVG coords -->
-  <div class="jdot" style="left:50%; top:75.8%;"></div>  <!-- Boshuisje ~y652/860 -->
-  <div class="jdot" style="left:50%; top:55.3%;"></div>  <!-- Kleurenberg ~y476/860 -->
-  <div class="jdot" style="left:50%; top:34.9%;"></div>  <!-- Oude Boom ~y300/860 -->
-  <div class="jdot" style="left:50%; top:17.2%;"></div>  <!-- Grot ~y148/860 -->
-
-  <!-- ══ LOCATION CARDS ══ -->
-
-  <!-- ① HET BOSHUISJE — Snakes & Ladders -->
-  <div class="loc" style="left:2%; top:68%; transform:translateY(-50%);">
-    <a href="index.html" class="loc-card">
-      <div class="loc-icon">🏡</div>
-      <div class="loc-name">Het Boshuisje</div>
-      <div class="loc-desc">Een speels spel voor twee</div>
-      <div class="loc-btn">Betreed →</div>
-    </a>
+<!-- Kaart 4 -->
+<div class="locked-kaart" id="locked-4" onclick="portalClick(4)">
+  <img src="images/kaart4.png" class="lk-img" alt="Wereld 4">
+  <div class="lk-overlay">
+    <div class="lk-content">
+      <div class="lk-lock">🔒</div>
+      <div class="lk-title">Wereld 4 — Intimiteit</div>
+      <div class="lk-req"  id="lk-req-4">Voltooi eerst wereld 3</div>
+      <div class="lk-hint" id="lk-hint-4">↓ tik voor meer info</div>
+    </div>
   </div>
+</div>
 
-  <!-- ② DE KLEURENBERG — KleurKompas -->
-  <div class="loc" style="right:2%; top:48%; transform:translateY(-50%);">
-    <a href="kleurkompas.html" class="loc-card">
-      <div class="loc-icon">🎨</div>
-      <div class="loc-name">De Kleurenberg</div>
-      <div class="loc-desc">Ontdek je kleurprofiel</div>
-      <div class="loc-btn">Betreed →</div>
-    </a>
+<!-- Kaart 3 -->
+<div class="locked-kaart" id="locked-3" onclick="portalClick(3)">
+  <img src="images/kaart3.png" class="lk-img" alt="Wereld 3">
+  <div class="lk-overlay">
+    <div class="lk-content">
+      <div class="lk-lock">🔒</div>
+      <div class="lk-title">Wereld 3 — Verbinding</div>
+      <div class="lk-req"  id="lk-req-3">Voltooi eerst wereld 2</div>
+      <div class="lk-hint" id="lk-hint-3">↓ tik voor meer info</div>
+    </div>
   </div>
+</div>
 
-  <!-- ③ DE OUDE BOOM — Kernkwadranten -->
-  <div class="loc" style="left:2%; top:28%; transform:translateY(-50%);">
-    <a href="kernkwadranten.html" class="loc-card">
-      <div class="loc-icon">🌳</div>
-      <div class="loc-name">De Oude Boom</div>
-      <div class="loc-desc">Jouw kernkwaliteiten</div>
-      <div class="loc-btn">Betreed →</div>
-    </a>
+<!-- Kaart 2 — geblurd, direct boven kaart 1 -->
+<div class="locked-kaart" id="locked-2" onclick="portalClick(2)">
+  <img src="images/kaart2.png" class="lk-img" alt="Wereld 2">
+  <div class="lk-overlay">
+    <div class="lk-content">
+      <div class="lk-lock">🔒</div>
+      <div class="lk-title">Wereld 2 — Verdieping</div>
+      <div class="lk-req"  id="lk-req-2">Voltooi 5 ontdekkingen</div>
+      <div class="lk-hint" id="lk-hint-2">↓ tik voor meer info</div>
+    </div>
   </div>
+</div>
 
-  <!-- ④ DE HERBERG — Leer Elkaar Kennen -->
-  <div class="loc" style="right:2%; top:11%; transform:translateY(-50%);">
-    <a href="kennismaking.html" class="loc-card">
-      <div class="loc-icon">💫</div>
-      <div class="loc-name">De Herberg</div>
-      <div class="loc-desc">Leer elkaar echt kennen</div>
-      <div class="loc-btn">Betreed →</div>
-    </a>
-  </div>
+<div id="map">
+  <img class="bg" src="images/kaart1.png" alt="Kaart 1 – Het Beginland">
 
-  <!-- ⑤ DE WAARDENTUIN — Waarden kaartspel -->
-  <div class="loc" style="left:2%; top:11%; transform:translateY(-50%);">
-    <a href="waarden.html" class="loc-card">
-      <div class="loc-icon">🧭</div>
-      <div class="loc-name">De Waardentuin</div>
-      <div class="loc-desc">Wat drijft jullie echt?</div>
-      <div class="loc-btn">Betreed →</div>
-    </a>
-  </div>
+  <!--
+    Bbox-posities als % van originele afbeelding (941 × 1672).
+    left=bbox.x/941, top=bbox.y/1672, width=bbox.width/941, height=bbox.height/1672
+  -->
 
-  <!-- ⑥ DE GROT — Relatierondes -->
-  <div class="loc" style="left:50%; top:5%; transform:translateX(-50%);">
-    <a href="grot.html" class="loc-card">
-      <div class="loc-icon">🔮</div>
-      <div class="loc-name">De Grot</div>
-      <div class="loc-desc">Patronen &amp; beschermingen</div>
-      <div class="loc-btn">Verken →</div>
-    </a>
-  </div>
+  <!-- Je waarden → waarden.html -->
+  <a class="hs" href="waarden.html"        style="left:80.0%;top:19.6%;width:15.2%;height:7.3%;"></a>
 
-  <!-- ⑦ JOUW PROFIEL — persoonlijk overzicht -->
-  <div class="loc" style="right:4%; bottom:8%; transform:none;">
-    <a href="profiel.html" class="loc-card">
-      <div class="loc-icon">👤</div>
-      <div class="loc-name">Jouw Profiel</div>
-      <div class="loc-desc">Jouw spiegel</div>
-      <div class="loc-btn">Bekijk →</div>
-    </a>
-  </div>
+  <!-- Lach samen → lach_samen.html -->
+  <a class="hs" href="lach_samen.html"     style="left:17.1%;top:33.8%;width:15.3%;height:7.8%;"></a>
 
-  <!-- ⑧ RELATIEKAART — koppel inzicht -->
-  <div class="loc" style="right:4%; bottom:28%; transform:none;">
-    <a href="relatiekaart.html" class="loc-card">
-      <div class="loc-icon">🗺️</div>
-      <div class="loc-name">Relatiekaart</div>
-      <div class="loc-desc">Samen gespeeld</div>
-      <div class="loc-btn">Bekijk →</div>
-    </a>
+  <!-- Leer elkaar kennen → kennismaking.html -->
+  <a class="hs" href="kennismaking.html"   style="left:10.7%;top:44.9%;width:20.0%;height:6.7%;"></a>
+
+  <!-- Je familieboom → profiel.html -->
+  <a class="hs" href="familiedorp.html"    style="left:77.3%;top:44.2%;width:19.2%;height:7.5%;"></a>
+
+  <!-- Je kwaliteiten → kernkwadranten.html -->
+  <a class="hs" href="kernkwadranten.html" style="left:76.9%;top:57.7%;width:19.7%;height:6.8%;"></a>
+
+  <!-- Stille vijver → kleurkompas.html -->
+  <a class="hs" href="stille_vijver.html"  style="left:14.6%;top:70.4%;width:18.3%;height:7.4%;"></a>
+
+  <!-- Brug van ontdekking → brug_ontdekking.html -->
+  <a class="hs" href="brug_ontdekking.html" style="left:71.7%;top:72.8%;width:22.0%;height:7.3%;"></a>
+
+  <!-- Comm overlay — op het plaatje, onderin -->
+  <div id="comm-overlay">
+    <button class="co-btn" onclick="CommLayer.toggleChat()">
+      <span class="co-badge" data-comm-badge></span>
+      <span class="co-ico">💬</span>
+      <span class="co-lbl">Chat</span>
+    </button>
+    <div class="co-sep"></div>
+    <button class="co-btn" onclick="CommLayer.toggleCall()">
+      <span class="co-ico" data-comm-call>📞</span>
+      <span class="co-lbl" id="co-call-lbl">Bellen</span>
+    </button>
+    <div class="co-sep"></div>
+    <button class="co-btn" onclick="CommLayer.toggleSett()">
+      <span class="co-badge" data-comm-sett-badge style="display:none;background:#c8a040;"></span>
+      <span class="co-ico">⚙️</span>
+      <span class="co-lbl">Opties</span>
+    </button>
   </div>
 
 </div><!-- /map -->
+</div><!-- /world-outer -->
+
+<!-- ── Congrats toast ─────────────────────────────────────── -->
+<div id="congrats-toast">
+  <div class="ct-emoji">🎉</div>
+  <div class="ct-title" id="ct-title">Wereld 2 vrijgespeeld!</div>
+  <div class="ct-hint">Scroll omhoog om te openen ↑</div>
+</div>
+
+<!-- ── Unlock popup ──────────────────────────────────────── -->
+<div id="unlock-popup">
+  <div class="up-card">
+    <h3>🗺 Wereld 2 — Verdieping</h3>
+    <p class="up-sub">Jullie ontdekken elkaar steeds dieper.<br>Wereld 2 opent als jullie klaar zijn.</p>
+
+    <div class="up-row">
+      <span class="up-ico">🌿</span>
+      <span class="up-txt">Minstens 5 ontdekkingen samen</span>
+      <span id="up-games-status" class="up-nd">0 / 5</span>
+    </div>
+    <div class="up-row">
+      <span class="up-ico">💳</span>
+      <span class="up-txt">Wereld 2 vrijschakelen</span>
+      <span id="up-pay-status" class="up-nd">Nog niet</span>
+    </div>
+
+    <div class="up-divider"></div>
+    <p class="up-price">€ 2,00 — één keer, samen</p>
+    <button class="up-btn-pay" id="up-pay-btn" onclick="unlockPay()">✦ Schakelen vrij</button>
+    <button class="up-btn-close" onclick="document.getElementById('unlock-popup').classList.remove('show')">Misschien later</button>
+  </div>
+</div>
+
+<!-- ── Welkom & koppel overlay ─────────────────────────── -->
+<div id="welkom-overlay">
+
+  <div style="text-align:center;">
+    <div style="font-size:3.2rem;margin-bottom:8px;">🌿</div>
+    <h1 class="wl-title">Welkom</h1>
+    <p class="wl-sub" style="margin-top:10px;">
+      Slow Dating doe je samen.<br>
+      Koppel eerst met je partner om te beginnen.
+    </p>
+  </div>
+
+  <!-- State: keuze -->
+  <div id="wl-start" class="wl-block">
+    <button class="wl-btn-gold" onclick="wlCreate()">✦ Begin samen</button>
+    <button class="wl-btn-outline" onclick="wlShowJoin()">Ik heb een koppelcode</button>
+  </div>
+
+  <!-- State: aanmaken -->
+  <div id="wl-creating" class="wl-block" style="display:none;text-align:center;align-items:center;">
+    <p class="wl-hint">Jouw koppelcode:</p>
+    <div class="wl-code-big" id="wl-code">···</div>
+    <p class="wl-hint" style="max-width:240px;line-height:1.6;">Geef deze code aan je partner<br>en wacht samen tot jullie verbonden zijn.</p>
+    <p class="wl-hint wl-dots" style="margin-top:4px;">Wachten<span>.</span><span>.</span><span>.</span></p>
+    <button class="wl-btn-ghost" style="margin-top:8px;" onclick="wlShowStart()">← Terug</button>
+  </div>
+
+  <!-- State: joinen -->
+  <div id="wl-joining" class="wl-block" style="display:none;">
+    <input id="wl-input" class="wl-input" maxlength="8" placeholder="ABCDE"
+           oninput="this.value=this.value.toUpperCase()"
+           onkeydown="if(event.key==='Enter')wlJoin()"/>
+    <p id="wl-err" class="wl-err"></p>
+    <button class="wl-btn-gold" onclick="wlJoin()">Verbinden →</button>
+    <button class="wl-btn-ghost" onclick="wlShowStart()">← Terug</button>
+  </div>
+
+</div><!-- /welkom-overlay -->
 
 <script>
-  // ── Tap ripple effect ──────────────────────────────────
-  document.querySelectorAll('.loc-card:not(.locked)').forEach(card => {
-    card.addEventListener('click', function(e) {
+  // ── Ripple on tap ──────────────────────────────────────
+  document.querySelectorAll('.hs').forEach(el => {
+    el.addEventListener('click', function(e) {
       const r = document.createElement('div');
       r.className = 'ripple';
       const rect = this.getBoundingClientRect();
@@ -567,29 +500,280 @@
     });
   });
 
-  // ── Fit map to viewport while keeping ratio ───────────
+  // ── Fit map to viewport keeping image ratio (941×1672) ─
   function fitMap() {
-    const map = document.getElementById('map');
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    // SVG ratio is 480×860 ≈ 0.558
-    const mapRatio = 480 / 860;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const imgRatio = 941 / 1672;
     const vpRatio  = vw / vh;
     let w, h;
-    if (vpRatio > mapRatio) {
-      // viewport wider than map ratio → constrain by height
-      h = Math.min(vh, 900);
-      w = Math.min(h * mapRatio, 480);
-    } else {
-      // viewport narrower → constrain by width
-      w = Math.min(vw, 480);
-      h = Math.min(w / mapRatio, 900);
-    }
-    map.style.width  = w + 'px';
-    map.style.height = h + 'px';
+    if (vpRatio > imgRatio) { h = vh; w = h * imgRatio; }
+    else                    { w = vw; h = w / imgRatio; }
+
+    document.getElementById('map').style.width  = w + 'px';
+    document.getElementById('map').style.height = h + 'px';
+
+    // Gelockte kaarten krijgen dezelfde afmetingen
+    document.querySelectorAll('.locked-kaart').forEach(el => {
+      el.style.width  = w + 'px';
+      el.style.height = h + 'px';
+    });
+
+    // Nabijheidsbalk: exact even breed als de kaart
+    const nbBar = document.getElementById('nabijheid-bar');
+    if (nbBar) nbBar.style.width = w + 'px';
+
+    // Scroll naar kaart1 (sla gelockte kaarten boven over)
+    const outer   = document.getElementById('world-outer');
+    const locked  = document.querySelectorAll('.locked-kaart').length;
+    outer.scrollTo({ top: locked * h, behavior: 'instant' });
   }
   fitMap();
-  window.addEventListener('resize', fitMap);
+  window.addEventListener('resize', () => {
+    fitMap();
+    // Herpositioneer poppetjes na resize
+    if (typeof window.__lastNbDone !== 'undefined') updateNabijheid(window.__lastNbDone);
+  });
+  // Herbereken zodra balk-img geladen is (offsetWidth beschikbaar)
+  document.getElementById('nb-img').addEventListener('load', () => {
+    fitMap();
+    if (typeof window.__lastNbDone !== 'undefined') updateNabijheid(window.__lastNbDone);
+  });
+
+  // ── Portaal: laad unlock status ────────────────────────────
+  (function() {
+    const CARDS = [
+      null, // index 0 unused
+      null, // kaart1 = huidige
+      { title: 'Wereld 2 — Verdieping', img: 'images/kaart2.png', price: '€ 2', req: 5,  prev: 1, page: 'world2.html' },
+      { title: 'Wereld 3 — Verbinding', img: 'images/kaart3.png', price: '€ 3', req: 10, prev: 2, page: 'world3.html' },
+      { title: 'Wereld 4 — Intimiteit', img: 'images/kaart4.png', price: '€ 4', req: 15, prev: 3, page: 'world4.html' },
+      { title: 'Wereld 5 — Ziel',       img: 'images/kaart5.png', price: '€ 5', req: 20, prev: 4, page: 'world5.html' },
+    ];
+    let progress = { gamesCompleted: 0, cardsUnlocked: [1], boardsCompleted: 0 };
+
+    // ── Nabijheidsgroei-balk updaten ──────────────────────────
+    // Balk loopt van 0 → 5 spellen (kaart1 vereiste)
+    // Beide figuren naderen het midden: fig1 van 0%→50%, fig2 van 100%→50%
+    function updateNabijheid(totalDone) {
+      const fig1 = document.getElementById('nb-fig1');
+      const fig2 = document.getElementById('nb-fig2');
+      if (!fig1 || !fig2) return;
+
+      // Exacte waypoints gemeten uit nabijheid_balk2.png (2804px breed):
+      //   0 games  → startpunt net na grote krul : 7.4%
+      //   5 games  → markering "2"               : 14.5%
+      //  10 games  → markering "3"               : 24.9%
+      //  15 games  → markering "4"               : 35.2%
+      //  20 games  → midden "5" (naast elkaar)   : 48.5%
+      const WAYPOINTS = [7.4, 14.5, 24.9, 35.2, 48.5];
+
+      const clamped = Math.min(Math.max(totalDone, 0), 20);
+      let pos;
+      if (clamped >= 20) {
+        pos = WAYPOINTS[4];
+      } else {
+        const seg  = Math.floor(clamped / 5);           // segment 0-3
+        const frac = (clamped % 5) / 5;                 // 0.0–1.0 binnen segment
+        pos = WAYPOINTS[seg] + frac * (WAYPOINTS[seg + 1] - WAYPOINTS[seg]);
+      }
+
+      fig1.style.left  = pos.toFixed(2) + '%';
+      fig2.style.right = pos.toFixed(2) + '%';
+      fig2.style.left  = 'auto';
+    }
+
+    let _toastTimer = null;
+    function showCongratsToast(cardTitle) {
+      const toast = document.getElementById('congrats-toast');
+      document.getElementById('ct-title').textContent = cardTitle + ' vrijgespeeld!';
+      toast.classList.add('show');
+      clearTimeout(_toastTimer);
+      _toastTimer = setTimeout(() => toast.classList.remove('show'), 6000);
+    }
+
+    function renderAllPortals() {
+      const unlocked = progress.cardsUnlocked || [1];
+      const done     = progress.boardsCompleted || 0;
+      let firstReady = null;
+
+      for (let i = 2; i <= 5; i++) {
+        const card = CARDS[i];
+        const el   = document.getElementById('locked-' + i);
+        const req  = document.getElementById('lk-req-' + i);
+        const hint = document.getElementById('lk-hint-' + i);
+        const lock = el ? el.querySelector('.lk-lock') : null;
+        if (!el) continue;
+
+        const isUnlocked   = unlocked.includes(i);
+        const prevUnlocked = unlocked.includes(card.prev);
+        const isReady      = !isUnlocked && prevUnlocked && done >= card.req;
+
+        el.classList.remove('unlocked', 'ready');
+
+        if (isUnlocked) {
+          el.classList.add('unlocked');
+          // Navigeer automatisch als kaart volledig betaald/unlocked
+          if (i === 2) { window.location.href = card.page; return; }
+        } else if (isReady) {
+          el.classList.add('ready');
+          if (lock) lock.textContent = '✨';
+          if (req)  req.textContent  = `${card.price} — vrijschakelen om te openen`;
+          if (hint) hint.textContent = '↓ tik hier';
+          if (!firstReady) firstReady = card.title;
+        } else if (!prevUnlocked) {
+          if (lock) lock.textContent = '🔒';
+          if (req)  req.textContent  = `Voltooi eerst wereld ${card.prev}`;
+          if (hint) hint.textContent = '↓ tik voor meer info';
+        } else {
+          if (lock) lock.textContent = '🔒';
+          if (req)  req.textContent  = `${done} / ${card.req} ontdekkingen nodig`;
+          if (hint) hint.textContent = '↓ tik voor meer info';
+        }
+      }
+
+      // Toon toast als er een kaart ready is die nog niet eerder gezien
+      if (firstReady) {
+        const seenKey = 'congrats_seen_' + firstReady;
+        if (!localStorage.getItem(seenKey)) {
+          localStorage.setItem(seenKey, '1');
+          setTimeout(() => showCongratsToast(firstReady), 800);
+        }
+      }
+
+      // Balk updaten
+      window.__lastNbDone = progress.boardsCompleted || 0;
+      updateNabijheid(window.__lastNbDone);
+    }
+
+    window.portalClick = function(cardNum) {
+      const card     = CARDS[cardNum];
+      const unlocked = progress.cardsUnlocked || [1];
+      if (unlocked.includes(cardNum)) { window.location.href = card.page; return; }
+
+      // Vorige wereld niet unlocked → toon info alleen
+      if (!unlocked.includes(card.prev)) {
+        document.querySelector('#unlock-popup h3').textContent = '🗺 ' + card.title;
+        document.getElementById('up-games-status').textContent = `Voltooi eerst wereld ${card.prev}`;
+        document.getElementById('up-games-status').className   = 'up-nd';
+        document.getElementById('up-pay-status').textContent   = 'Nog niet beschikbaar';
+        document.getElementById('up-pay-btn').style.display    = 'none';
+        document.querySelector('.up-price').textContent        = '';
+        document.getElementById('unlock-popup').classList.add('show');
+        return;
+      }
+
+      document.getElementById('up-pay-btn').style.display = '';
+      const done = progress.boardsCompleted || 0;
+      document.querySelector('#unlock-popup h3').textContent = '🗺 ' + card.title;
+      document.getElementById('up-games-status').textContent = done + ' / ' + card.req;
+      document.getElementById('up-games-status').className   = done >= card.req ? 'up-done' : 'up-nd';
+      document.getElementById('up-pay-status').textContent   = 'Nog niet';
+      document.getElementById('up-pay-btn').textContent      = `✦ Vrijschakelen ${card.price}`;
+      document.querySelector('.up-price').textContent        = `${card.price} — één keer, samen`;
+      document.getElementById('unlock-popup').classList.add('show');
+    };
+
+    window.unlockPay = function() {
+      // Placeholder — betaling komt later
+      alert('Betaalfunctie komt binnenkort!\nVoor nu: gebruik admin code 1111 om te testen.');
+    };
+
+    // Fetch progress from backend
+    const gc = localStorage.getItem('comm_code');
+    if (gc && gc !== '1111') {
+      fetch(`${window.KOPPEL_BACKEND_URL || 'https://snakesandladdders-production.up.railway.app'}/api/progress/${gc}`)
+        .then(r => r.json())
+        .then(data => { progress = data; renderAllPortals(); })
+        .catch(() => renderAllPortals());
+    } else if (gc === '1111') {
+      // Admin: 0 spellen gedaan — test startpositie
+      progress = { gamesCompleted: 0, cardsUnlocked: [1], boardsCompleted: 0 };
+      renderAllPortals();
+    } else {
+      renderAllPortals();
+    }
+  })();
+
+  // ── Welkom gate: toon overlay als niet gekoppeld ───────────
+  (function() {
+    const gc = localStorage.getItem('comm_code');
+    if (gc) return; // al gekoppeld
+
+    const overlay = document.getElementById('welkom-overlay');
+    const commOv  = document.getElementById('comm-overlay');
+    overlay.style.display  = 'flex';
+    commOv.style.display   = 'none';
+
+    function loadKoppelJS(cb) {
+      if (window.KoppelClient) { cb(); return; }
+      const s = document.createElement('script');
+      s.src = 'koppel.js'; s.onload = cb;
+      document.head.appendChild(s);
+    }
+
+    function onPaired(code, player) {
+      localStorage.setItem('comm_code', code);
+      localStorage.setItem('comm_player', player);
+      window.CommLayer?.setSession(code, player);
+      overlay.style.display = 'none';
+      commOv.style.display  = 'flex';
+    }
+
+    window.wlCreate = function() {
+      document.getElementById('wl-start').style.display    = 'none';
+      document.getElementById('wl-creating').style.display = 'flex';
+      document.getElementById('wl-creating').style.flexDirection = 'column';
+      loadKoppelJS(() => {
+        KoppelClient.on('session_created', ({ code }) => {
+          document.getElementById('wl-code').textContent = code;
+        });
+        KoppelClient.on('both_connected', () => {
+          onPaired(KoppelClient.getCode(), KoppelClient.getPlayer());
+        });
+        KoppelClient.create('global');
+      });
+    };
+
+    window.wlShowJoin = function() {
+      document.getElementById('wl-start').style.display   = 'none';
+      document.getElementById('wl-joining').style.display = 'flex';
+      document.getElementById('wl-joining').style.flexDirection = 'column';
+      setTimeout(() => document.getElementById('wl-input')?.focus(), 80);
+    };
+
+    window.wlShowStart = function() {
+      document.getElementById('wl-start').style.display    = 'flex';
+      document.getElementById('wl-creating').style.display = 'none';
+      document.getElementById('wl-joining').style.display  = 'none';
+    };
+
+    window.wlJoin = function() {
+      const code = (document.getElementById('wl-input')?.value || '').trim().toUpperCase();
+      if (!code) return;
+      document.getElementById('wl-err').style.display = 'none';
+
+      // Admin bypass
+      if (code === '1111') { onPaired('1111', '1'); return; }
+
+      loadKoppelJS(() => {
+        KoppelClient.on('session_joined', ({ code: c, player }) => {
+          onPaired(c, player);
+        });
+        KoppelClient.on('error', ({ message }) => {
+          const e = document.getElementById('wl-err');
+          e.textContent = message; e.style.display = 'block';
+        });
+        KoppelClient.join(code, 'global');
+      });
+    };
+  })();
+</script>
+
+<script>
+  // Service worker registreren (PWA)
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
 </script>
 </body>
 </html>
