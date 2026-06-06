@@ -1,8 +1,2 @@
-[build]
-  command = "node build.js"
-  publish = "."
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Niet meer in gebruik — app staat in koppel-frontend
+# Zie root netlify.toml
