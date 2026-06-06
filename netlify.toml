@@ -1,5 +1,5 @@
 [build]
-  command = "echo 'Slow Dating deploy'"
+  command = "git fetch --unshallow 2>/dev/null || true"
   publish = "koppel-frontend"
 
 [[redirects]]
