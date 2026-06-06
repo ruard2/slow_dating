@@ -519,7 +519,7 @@
       sock.on('connect', () => {
         // Doe join_session met de globale code (alleen om in de room te zitten)
         sock.emit('join_or_create', { code: C.code, app: 'comm' });
-        C.koppelReady = true;
+        // koppelReady wordt gezet na server bevestiging (session_created/joined)
 
         sock.on('webrtc_offer', async ({ offer }) => {
           if (!C.inCall && C.callingPref) {
@@ -555,13 +555,21 @@
         });
         sock.on('call_unlocked_celebration', () => showFireworks());
 
-        sock.on('partner_progress', ({ progress }) => {
-          if (progress?.type === 'game_entered') {
-            (window.__gameInviteCbs || []).forEach(fn => { try { fn(progress); } catch(e){} });
-          }
-        });
+        // Zet koppelReady zodra server bevestigt dat we in de room zitten
+        sock.on('session_created', () => { C.koppelReady = true; });
+        sock.on('session_joined',  () => { C.koppelReady = true; });
 
         sock.on('chat_message', ({ player, text }) => {
+          // Game invite relay — special prefix __GAME__:key:name
+          if (typeof text === 'string' && text.startsWith('__GAME__:')) {
+            if (player !== C.player) { // only from partner
+              const parts = text.split(':');
+              const gameKey  = parts[1] || '';
+              const gameName = parts[2] || gameKey;
+              (window.__gameInviteCbs || []).forEach(fn => { try { fn({ game: gameKey, name: gameName }); } catch(e){} });
+            }
+            return; // never show in chat UI
+          }
           const side = player === C.player ? 'me' : 'them';
           const log = loadLog(); log.push({ text, side }); saveLog(log);
           addBubble(text, side);
@@ -702,19 +710,20 @@
       window.__commChatCbs.push(fn);
     },
 
-    // ── Game invite systeem ───────────────────────────────────
+    // ── Game invite systeem (via chat_message relay) ──────────
     announceGame(gameKey, gameName) {
+      const msg = '__GAME__:' + gameKey + ':' + gameName;
+      // Wait until socket is in the room (koppelReady = true after join_or_create confirmed)
       const send = () => {
-        if (!window._commSocket?.connected) return false;
-        window._commSocket.emit('player_progress', {
-          code: C.code, player: C.player,
-          progress: { type: 'game_entered', game: gameKey, name: gameName }
+        if (!C.koppelReady || !window._commSocket?.connected) return false;
+        window._commSocket.emit('chat_message', {
+          code: C.code, player: C.player, text: msg, ts: Date.now()
         });
         return true;
       };
       if (!send()) {
-        const iv = setInterval(() => { if (send()) clearInterval(iv); }, 600);
-        setTimeout(() => clearInterval(iv), 12000);
+        const iv = setInterval(() => { if (send()) clearInterval(iv); }, 400);
+        setTimeout(() => clearInterval(iv), 20000);
       }
     },
     onGameInvite(fn) {

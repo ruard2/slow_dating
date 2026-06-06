@@ -241,33 +241,53 @@ io.on('connection', (socket) => {
 
     if (sessions.has(code)) {
       const session = sessions.get(code);
-      const takenSlots = Object.keys(session.players).length;
-      if (takenSlots >= 2) {
-        const ep = Object.entries(session.players).find(([, sid]) => sid === socket.id);
-        if (!ep) return socket.emit('session_error', { message: 'Sessie is al vol.' });
+
+      // Check if this socket is already in the session
+      const existingEntry = Object.entries(session.players).find(([, sid]) => sid === socket.id);
+      if (existingEntry) {
+        // Already in session — just re-join room and confirm
+        socket.join(code); socket.data.code = code; socket.data.player = existingEntry[0];
+        socket.emit('session_joined', { code, player: existingEntry[0], app: session.app, state: session.state });
+        return;
       }
-      const player = session.players['1'] && session.players['1'] !== socket.id ? '2' : '1';
-      session.players[player] = socket.id;
-      socket.join(code); socket.data.code = code; socket.data.player = player;
-      socket.emit('session_joined', { code, player, app: session.app, state: session.state });
-      const count = Object.keys(session.players).length;
+
+      // Find a free or disconnected slot
+      let assignedPlayer = null;
+      for (const p of ['1', '2']) {
+        if (!session.players[p]) {
+          assignedPlayer = p; break; // empty slot
+        }
+        // Check if existing socket is disconnected
+        const existingSock = io.sockets.sockets.get(session.players[p]);
+        if (!existingSock || !existingSock.connected) {
+          assignedPlayer = p; break; // take over disconnected slot
+        }
+      }
+
+      if (!assignedPlayer) {
+        return socket.emit('session_error', { message: 'Sessie is al vol.' });
+      }
+
+      session.players[assignedPlayer] = socket.id;
+      socket.join(code); socket.data.code = code; socket.data.player = assignedPlayer;
+      socket.emit('session_joined', { code, player: assignedPlayer, app: session.app, state: session.state });
+      const count = Object.values(session.players).filter(sid => {
+        const s = io.sockets.sockets.get(sid); return s && s.connected;
+      }).length;
       io.to(code).emit('player_count', { count });
       if (count === 2) {
         io.to(code).emit('both_connected', { code });
-        // Track start time for board game duration
         if (code.includes('.')) session.startedBothAt = session.startedBothAt || Date.now();
-        // Start calling timer for comm sessions
         if (!code.includes('.')) {
           const cs = getCS(code);
           if (!cs.connectedBothSince) { cs.connectedBothSince = Date.now(); saveCallingStates(); }
           emitCS(code);
         }
       } else if (!code.includes('.')) {
-        // Emit current calling state to the joining player
         const cs = getCS(code);
-        socket.emit('call_state_update', buildCSPayload(cs, player));
+        socket.emit('call_state_update', buildCSPayload(cs, assignedPlayer));
       }
-      console.log(`[+] Player ${player} joined (join_or_create) ${code}`);
+      console.log(`[+] Player ${assignedPlayer} joined (join_or_create) ${code}`);
     } else {
       const session = { code, app: appName || 'global', players: { '1': socket.id }, state: { p1: null, p2: null }, createdAt: Date.now() };
       sessions.set(code, session);
