@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=no">
   <title>Slow Dating</title>
 
   <!-- PWA -->
@@ -150,8 +150,15 @@
       scroll-snap-align: start;
       /* size set by fitMap() */
       overflow: hidden;
+      touch-action: none;  /* wij regelen touch zelf */
     }
-
+    /* Inner wrapper krijgt de zoom/pan transform */
+    #map-inner {
+      position: absolute;
+      inset: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
     #map img.bg {
       position: absolute;
       inset: 0;
@@ -365,6 +372,7 @@
 </div>
 
 <div id="map">
+ <div id="map-inner">
   <img class="bg" src="images/kaart1.webp" alt="Kaart 1 – Het Beginland">
 
   <!--
@@ -384,8 +392,8 @@
   <!-- Je familieboom → profiel.html -->
   <a class="hs" href="familiedorp.html"    style="left:77.3%;top:44.2%;width:19.2%;height:7.5%;"></a>
 
-  <!-- Je kwaliteiten → kernkwadranten.html -->
-  <a class="hs" href="kernkwadranten.html" style="left:76.9%;top:57.7%;width:19.7%;height:6.8%;"></a>
+  <!-- Je kwaliteiten → kwaliteiten.html -->
+  <a class="hs" href="kwaliteiten.html" style="left:76.9%;top:57.7%;width:19.7%;height:6.8%;"></a>
 
   <!-- Stille vijver → kleurkompas.html -->
   <a class="hs" href="stille_vijver.html"  style="left:14.6%;top:70.4%;width:18.3%;height:7.4%;"></a>
@@ -393,7 +401,9 @@
   <!-- Brug van ontdekking → brug_ontdekking.html -->
   <a class="hs" href="brug_ontdekking.html" style="left:71.7%;top:72.8%;width:22.0%;height:7.3%;"></a>
 
-  <!-- Comm overlay — op het plaatje, onderin -->
+ </div><!-- /map-inner -->
+
+  <!-- Comm overlay — op het plaatje, onderin (buiten map-inner zodat het niet meeschaalt) -->
   <div id="comm-overlay">
     <button class="co-btn" onclick="CommLayer.toggleChat()">
       <span class="co-badge" data-comm-badge></span>
@@ -774,6 +784,97 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
+
+  // ── Pinch-zoom & pan op de kaart ──────────────────────────
+  (function() {
+    const map   = document.getElementById('map');
+    const inner = document.getElementById('map-inner');
+    if (!map || !inner) return;
+
+    let scale = 1, minScale = 1, maxScale = 4;
+    let tx = 0, ty = 0;          // pan offset
+    let startDist = 0, startScale = 1;
+    let startTx = 0, startTy = 0;
+    let startMidX = 0, startMidY = 0;
+    let lastTap = 0;
+
+    function clamp(val, lo, hi) { return Math.max(lo, Math.min(hi, val)); }
+
+    function applyTransform(animate) {
+      const w = map.offsetWidth, h = map.offsetHeight;
+      // Begrens pan zodat de kaart het scherm altijd vult
+      const maxTx = 0, minTx = w - w * scale;
+      const maxTy = 0, minTy = h - h * scale;
+      tx = clamp(tx, minTx, maxTx);
+      ty = clamp(ty, minTy, maxTy);
+      inner.style.transition = animate ? 'transform .25s ease' : 'none';
+      inner.style.transform  = `translate(${tx}px,${ty}px) scale(${scale})`;
+    }
+
+    function dist(t) {
+      const dx = t[0].clientX - t[1].clientX;
+      const dy = t[0].clientY - t[1].clientY;
+      return Math.hypot(dx, dy);
+    }
+    function midpoint(t) {
+      return {
+        x: (t[0].clientX + t[1].clientX) / 2,
+        y: (t[0].clientY + t[1].clientY) / 2,
+      };
+    }
+
+    map.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        startDist  = dist(e.touches);
+        startScale = scale;
+        const mid  = midpoint(e.touches);
+        const rect = map.getBoundingClientRect();
+        startMidX  = mid.x - rect.left;
+        startMidY  = mid.y - rect.top;
+        startTx    = tx; startTy = ty;
+      } else if (e.touches.length === 1 && scale > 1) {
+        startTx = tx - e.touches[0].clientX;
+        startTy = ty - e.touches[0].clientY;
+      }
+      // Dubbeltik → reset zoom
+      const now = Date.now();
+      if (now - lastTap < 300 && e.touches.length === 1) {
+        scale = 1; tx = 0; ty = 0;
+        applyTransform(true);
+        // scroll-snap weer inschakelen
+        document.getElementById('world-outer').style.overflowY = 'scroll';
+      }
+      lastTap = now;
+    }, { passive: false });
+
+    map.addEventListener('touchmove', e => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const newDist = dist(e.touches);
+        scale = clamp(startScale * (newDist / startDist), minScale, maxScale);
+        // Zoom rondom het middelpunt van de pinch
+        tx = startMidX - (startMidX - startTx) * (scale / startScale);
+        ty = startMidY - (startMidY - startTy) * (scale / startScale);
+        applyTransform(false);
+        // Schakel scroll-snap uit tijdens zoom
+        document.getElementById('world-outer').style.overflowY = scale > 1 ? 'hidden' : 'scroll';
+      } else if (e.touches.length === 1 && scale > 1) {
+        e.preventDefault();
+        tx = e.touches[0].clientX + startTx;
+        ty = e.touches[0].clientY + startTy;
+        applyTransform(false);
+      }
+    }, { passive: false });
+
+    map.addEventListener('touchend', e => {
+      if (scale <= 1) {
+        scale = 1; tx = 0; ty = 0;
+        applyTransform(true);
+        document.getElementById('world-outer').style.overflowY = 'scroll';
+      }
+    });
+  })();
 </script>
 </body>
 </html>
