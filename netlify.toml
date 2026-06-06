@@ -1,5 +1,5 @@
 [build]
-  command = ""
+  command = "echo 'Slow Dating deploy'"
   publish = "koppel-frontend"
 
 [[redirects]]
