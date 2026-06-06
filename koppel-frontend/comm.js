@@ -555,6 +555,12 @@
         });
         sock.on('call_unlocked_celebration', () => showFireworks());
 
+        sock.on('partner_progress', ({ progress }) => {
+          if (progress?.type === 'game_entered') {
+            (window.__gameInviteCbs || []).forEach(fn => { try { fn(progress); } catch(e){} });
+          }
+        });
+
         sock.on('chat_message', ({ player, text }) => {
           const side = player === C.player ? 'me' : 'them';
           const log = loadLog(); log.push({ text, side }); saveLog(log);
@@ -694,6 +700,26 @@
       // Avoid duplicates on page re-load
       window.__commChatCbs = window.__commChatCbs.filter(f => f !== fn);
       window.__commChatCbs.push(fn);
+    },
+
+    // ── Game invite systeem ───────────────────────────────────
+    announceGame(gameKey, gameName) {
+      const send = () => {
+        if (!window._commSocket?.connected) return false;
+        window._commSocket.emit('player_progress', {
+          code: C.code, player: C.player,
+          progress: { type: 'game_entered', game: gameKey, name: gameName }
+        });
+        return true;
+      };
+      if (!send()) {
+        const iv = setInterval(() => { if (send()) clearInterval(iv); }, 600);
+        setTimeout(() => clearInterval(iv), 12000);
+      }
+    },
+    onGameInvite(fn) {
+      window.__gameInviteCbs = window.__gameInviteCbs || [];
+      window.__gameInviteCbs.push(fn);
     },
 
     setCallingPref(val) {

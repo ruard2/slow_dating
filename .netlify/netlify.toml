@@ -1,0 +1,39 @@
+redirectsOrigin = "config"
+plugins = []
+headers = []
+
+[functions]
+
+[functions."*"]
+
+[build]
+publish = "C:\\Users\\Eliane Stolper\\Desktop\\snakes and ladders\\koppel-frontend"
+publishOrigin = "config"
+commandOrigin = "config"
+command = "git fetch --unshallow 2>/dev/null || true"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
+
+[[redirects]]
+from = "/"
+to = "/world.html"
+status = 302.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]

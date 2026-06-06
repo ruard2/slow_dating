@@ -529,6 +529,7 @@ function addChatMsg(text, type) {
   const gc = localStorage.getItem('comm_code');
   if (!gc) return; // niet gekoppeld: normale flow
 
+  window.CommLayer?.announceGame('waarden', 'Je Waarden');
   if (gc === '1111') { S.code='1111'; S.player='1'; startKiezen(); return; }
 
   showScreen('s-wacht');

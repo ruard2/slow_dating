@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="nl">
-<head>`n<script src="config.js"></script>
+<head>
+<script src="config.js"></script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>Leer Elkaar Kennen ✦</title>
@@ -1229,5 +1230,27 @@ window.KOPPEL_BACKEND_URL = 'https://snakesandladdders-production.up.railway.app
 </script>
 <script src="profiel.js" onerror="window.ProfielClient=null"></script>
 <script src="toon-helper.js"></script>
+<script>
+// AUTO-START — loopt na alle scripts
+(function() {
+  const gc = localStorage.getItem('comm_code');
+  if (!gc) return;
+  const s = window._kmState;
+  const gn = window._kmGoNiveau;
+  if (!s || !gn) return;
+  s.code   = gc;
+  s.solo   = (gc === '1111');
+  s.player = '1';
+  window.CommLayer?.announceGame('kennismaking', 'Leer Elkaar Kennen');
+  gn();
+})();
+</script>
+<script>
+// ── AUTO-START: na alles geladen, skip koppelscherm als gekoppeld ──
+// Maak state globaal toegankelijk zodat andere script-blokken het kunnen benaderen
+window._kmState    = state;
+window._kmGoNiveau = goNiveau;
+window._kmShowScr  = showScreen;
+</script>
 </body>
 </html>

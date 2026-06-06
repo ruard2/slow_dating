@@ -642,6 +642,8 @@ function lsForget() {
 }
 
 function showConnected() {
+  // In comm_code mode: skip lobby, start immediately
+  if (localStorage.getItem('comm_code')) { lsStart(); return; }
   document.getElementById('connected-box').style.display = 'block';
 }
 
@@ -833,10 +835,14 @@ function appendChat(side, text) {
     return;
   }
 
-  document.getElementById('new-block').style.display='none';
-  document.getElementById('saved-block').style.display='none';
-  setStatus('Verbinden met partner...', false);
+  // Hide entire lobby — show spinner
+  document.getElementById('screen-koppel').innerHTML =
+    '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>' +
+    '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">' +
+    '<div style="width:40px;height:40px;border:3px solid rgba(63,207,180,.15);border-top-color:#3fcfb4;border-radius:50%;animation:spin 1s linear infinite"></div>' +
+    '<div style="color:#6a9a6a;font-size:.88rem;font-family:Segoe UI,sans-serif">Even verbinden…</div></div>';
 
+  window.CommLayer?.announceGame('lach_samen', 'Lach Samen');
   setupCallbacks();
   KoppelClient.on('session_created',({code,player})=>{S.player=player;S.code=code;window.CommLayer?.setSession(code,player);});
   KoppelClient.on('session_joined', ({code,player})=>{S.player=player;S.code=code;window.CommLayer?.setSession(code,player);});

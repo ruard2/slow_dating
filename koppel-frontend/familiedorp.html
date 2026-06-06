@@ -544,6 +544,7 @@ function clearKoppel() { ['fd_code','fd_player','fd_ts'].forEach(k => localStora
 
 function setupCb() {
   KoppelClient.on('both_connected', () => {
+    if (localStorage.getItem('comm_code')) { goScreen('screen-intro'); return; }
     document.getElementById('connected-box').style.display = 'block';
     document.getElementById('code-display') && (document.getElementById('code-display').querySelector('.dots').style.display='none');
   });
@@ -1190,15 +1191,18 @@ function buildNapraat() {
 
   if(gc==='1111'){
     S.player='1';S.adminMode=true;S.code='1111';
-    document.getElementById('connected-box').style.display='block';
+    goScreen('screen-intro');
     return;
   }
 
-  // Verberg create/join UI, toon loading
-  document.getElementById('new-block').style.display='none';
-  document.getElementById('saved-block').style.display='none';
-  setStatus('Verbinden met partner...', false);
+  // Replace entire lobby with spinner
+  document.getElementById('screen-koppel').innerHTML =
+    '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>' +
+    '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">' +
+    '<div style="width:40px;height:40px;border:3px solid rgba(212,120,74,.15);border-top-color:#d4784a;border-radius:50%;animation:spin 1s linear infinite"></div>' +
+    '<div style="color:#9A5840;font-size:.88rem;font-family:Segoe UI,sans-serif">Even verbinden…</div></div>';
 
+  window.CommLayer?.announceGame('familiedorp', 'Je Familieboom');
   setupCb();
   KoppelClient.on('session_created',({code,player})=>{S.code=code;S.player=player;window.CommLayer?.setSession(code,player);});
   KoppelClient.on('session_joined', ({code,player})=>{S.code=code;S.player=player;window.CommLayer?.setSession(code,player);});

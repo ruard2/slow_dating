@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kernkwadranten",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "3002"],
+      "port": 3002
+    }
+  ]
+}
