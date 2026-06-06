@@ -1,8 +1,8 @@
 [build]
-  command   = ""
-  publish   = "koppel-frontend"
+  command = ""
+  publish = "koppel-frontend"
 
 [[redirects]]
-  from = "/*"
-  to   = "/index.html"
-  status = 200
+  from   = "/"
+  to     = "/world.html"
+  status = 302
