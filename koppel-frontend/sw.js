@@ -11,7 +11,7 @@ const PRECACHE = [
   '/koppel.js',
   '/config.js',
   '/manifest.json',
-  '/images/kaart1.png',
+  '/images/kaart1.webp',
   '/images/nabijheid_balk2.png',
   '/images/figuur_t.png',
   '/images/figuur2_t.png',
