@@ -145,9 +145,10 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 // Serveer frontend statische bestanden
-app.use(express.static(path.join(__dirname, '../koppel-frontend')));
-// Root → world.html
-app.get('/', (_, res) => res.sendFile(path.join(__dirname, '../koppel-frontend/world.html')));
+// __dirname = koppel-backend/, ../koppel-frontend = koppel-frontend/
+const FRONTEND_DIR = path.join(__dirname, '../koppel-frontend');
+app.use(express.static(FRONTEND_DIR));
+app.get('/', (_, res) => res.sendFile(path.join(FRONTEND_DIR, 'world.html')));
 
 const server = http.createServer(app);
 const io = new Server(server, {

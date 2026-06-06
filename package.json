@@ -1,0 +1,7 @@
+{
+  "name": "slow-dating",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node koppel-backend/server.js"
+  }
+}
