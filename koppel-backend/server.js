@@ -144,6 +144,11 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
+// Serveer frontend statische bestanden
+app.use(express.static(path.join(__dirname, '../koppel-frontend')));
+// Root → world.html
+app.get('/', (_, res) => res.sendFile(path.join(__dirname, '../koppel-frontend/world.html')));
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
