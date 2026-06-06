@@ -10,6 +10,9 @@ const profileStore = require('./profiles');
 profileStore.loadProfiles();
 
 // ── Calling-state store ──────────────────────────────���─────────
+const DATA_DIR = path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
 const CALLING_FILE = path.join(__dirname, 'data', 'calling_states.json');
 const callingStates = new Map();
 
