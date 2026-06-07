@@ -81,7 +81,7 @@ const SDClient = window.SDClient || (() => {
       _socket.on('player_count',    d => _fire('player_count', d));
       _socket.on('session_update',  d => _fire('session_update', d));
       _socket.on('complete',        d => _fire('complete', d));
-      _socket.on('player_progress', d => _fire('partner_progress', d));
+      _socket.on('partner_progress', d => _fire('partner_progress', d));
       _socket.on('reset',           d => _fire('reset', d));
       _socket.on('chat_message',    d => _fire('chat_message', d));
       _socket.on('typing',          d => _fire('typing', d));
