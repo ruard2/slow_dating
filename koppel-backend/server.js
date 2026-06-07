@@ -408,6 +408,23 @@ io.on('connection', (socket) => {
     console.log(`[~] Session ${code} reset`);
   });
 
+  // ── JOIN COMM ROOM (for receiving game_invite events) ────
+  socket.on('join_comm', ({ code: rawCode }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    if (!code) return;
+    socket.join(code);
+    console.log(`[join_comm] ${socket.id} joined room ${code}`);
+  });
+
+  // ── ANNOUNCE GAME (tell partner you opened a game) ────────
+  // No session check — just relay to all others in the room
+  socket.on('announce_game', ({ code: rawCode, gameKey, gameName }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    if (!code || !gameKey) return;
+    console.log(`[announce_game] ${gameKey} -> room ${code}`);
+    socket.to(code).emit('game_invite', { gameKey, gameName });
+  });
+
   // ── CHAT MESSAGE (relay to whole room) ───────────────────
   socket.on('chat_message', ({ code: rawCode, player, text, ts }) => {
     const code = (rawCode || '').toUpperCase().trim();

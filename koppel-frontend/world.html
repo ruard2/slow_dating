@@ -15,6 +15,7 @@
   <link rel="apple-touch-icon" href="images/icon-192.png">
 
   <script src="config.js"></script>
+  <script src="sd-client.js"></script>
   <script src="comm.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -714,13 +715,6 @@
     overlay.style.display  = 'flex';
     commOv.style.display   = 'none';
 
-    function loadKoppelJS(cb) {
-      if (window.KoppelClient) { cb(); return; }
-      const s = document.createElement('script');
-      s.src = 'koppel.js'; s.onload = cb;
-      document.head.appendChild(s);
-    }
-
     function onPaired(code, player) {
       localStorage.setItem('comm_code', code);
       localStorage.setItem('comm_player', player);
@@ -733,15 +727,13 @@
       document.getElementById('wl-start').style.display    = 'none';
       document.getElementById('wl-creating').style.display = 'flex';
       document.getElementById('wl-creating').style.flexDirection = 'column';
-      loadKoppelJS(() => {
-        KoppelClient.on('session_created', ({ code }) => {
-          document.getElementById('wl-code').textContent = code;
-        });
-        KoppelClient.on('both_connected', () => {
-          onPaired(KoppelClient.getCode(), KoppelClient.getPlayer());
-        });
-        KoppelClient.create('global');
+      SDClient.on('session_created', ({ code }) => {
+        document.getElementById('wl-code').textContent = code;
       });
+      SDClient.on('both_connected', () => {
+        onPaired(SDClient.getCode(), SDClient.getPlayer());
+      });
+      SDClient.create('global');
     };
 
     window.wlShowJoin = function() {
@@ -765,16 +757,14 @@
       // Admin bypass
       if (code === '1111') { onPaired('1111', '1'); return; }
 
-      loadKoppelJS(() => {
-        KoppelClient.on('session_joined', ({ code: c, player }) => {
-          onPaired(c, player);
-        });
-        KoppelClient.on('error', ({ message }) => {
-          const e = document.getElementById('wl-err');
-          e.textContent = message; e.style.display = 'block';
-        });
-        KoppelClient.join(code, 'global');
+      SDClient.on('session_joined', ({ code: c, player }) => {
+        onPaired(c, player);
       });
+      SDClient.on('error', ({ message }) => {
+        const e = document.getElementById('wl-err');
+        e.textContent = message; e.style.display = 'block';
+      });
+      SDClient.join(code, 'global');
     };
   })();
 </script>
@@ -929,21 +919,11 @@ function dismissGameInvite() {
   _pendingGameUrl = null;
 }
 
-// Luister op game invites van partner — register direct (not just on load)
-function _registerInviteCb() {
-  if (window.CommLayer) {
-    CommLayer.onGameInvite(function(data) {
-      console.log('[world] game invite ontvangen:', data);
-      showGameInvite(data.game, data.name);
-    });
-    console.log('[world] invite callback geregistreerd');
-  } else {
-    console.warn('[world] CommLayer niet beschikbaar bij registratie');
-  }
-}
-// Try immediately and again on load (belt + braces)
-_registerInviteCb();
-window.addEventListener('load', _registerInviteCb);
+// Luister op game invites via SDClient (eenvoudig en direct)
+SDClient.onGameInvite(function(data) {
+  console.log('[world] game invite:', data);
+  showGameInvite(data.game, data.name);
+});
 </script>
 </body>
 </html>
