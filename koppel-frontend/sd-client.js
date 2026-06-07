@@ -11,10 +11,7 @@
  *   SDClient.onGameInvite(({ game, name }) => showPopup(game, name));
  */
 
-// Guard: only initialize once even if script loaded twice
-if (window.SDClient) { window.KoppelClient = window.SDClient; }
-else
-const SDClient = (() => {
+const SDClient = window.SDClient || (() => {
   // ── Backend URL (auto-detect local vs production) ──────────
   const BACKEND = (() => {
     const h = window.location.hostname;
@@ -189,6 +186,5 @@ const SDClient = (() => {
   return API;
 })();
 
-// ── Backward compatibility: games still reference KoppelClient ──
 window.KoppelClient = SDClient;
 window.SDClient     = SDClient;
