@@ -929,14 +929,21 @@ function dismissGameInvite() {
   _pendingGameUrl = null;
 }
 
-// Luister op game invites van partner
-window.addEventListener('load', function() {
+// Luister op game invites van partner — register direct (not just on load)
+function _registerInviteCb() {
   if (window.CommLayer) {
     CommLayer.onGameInvite(function(data) {
+      console.log('[world] game invite ontvangen:', data);
       showGameInvite(data.game, data.name);
     });
+    console.log('[world] invite callback geregistreerd');
+  } else {
+    console.warn('[world] CommLayer niet beschikbaar bij registratie');
   }
-});
+}
+// Try immediately and again on load (belt + braces)
+_registerInviteCb();
+window.addEventListener('load', _registerInviteCb);
 </script>
 </body>
 </html>

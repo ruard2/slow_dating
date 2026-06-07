@@ -567,13 +567,15 @@
 
         sock.on('chat_message', ({ player, text }) => {
           // Game invite relay — special prefix __GAME__:key:name
+          // Backend uses socket.to() so this only arrives at the partner — no player check needed
           if (typeof text === 'string' && text.startsWith('__GAME__:')) {
-            if (player !== C.player) { // only from partner
-              const parts = text.split(':');
-              const gameKey  = parts[1] || '';
-              const gameName = parts[2] || gameKey;
-              (window.__gameInviteCbs || []).forEach(fn => { try { fn({ game: gameKey, name: gameName }); } catch(e){} });
-            }
+            console.log('[CommLayer] game invite received:', text);
+            const parts = text.split(':');
+            const gameKey  = parts[1] || '';
+            const gameName = parts[2] || gameKey;
+            const cbs = window.__gameInviteCbs || [];
+            console.log('[CommLayer] calling', cbs.length, 'invite callbacks');
+            cbs.forEach(fn => { try { fn({ game: gameKey, name: gameName }); } catch(e){ console.error('[CommLayer] invite cb error', e); } });
             return; // never show in chat UI
           }
           const side = player === C.player ? 'me' : 'them';
@@ -736,7 +738,8 @@
     },
     onGameInvite(fn) {
       window.__gameInviteCbs = window.__gameInviteCbs || [];
-      window.__gameInviteCbs.push(fn);
+      // Prevent duplicate registrations
+      if (!window.__gameInviteCbs.includes(fn)) window.__gameInviteCbs.push(fn);
     },
 
     setCallingPref(val) {
