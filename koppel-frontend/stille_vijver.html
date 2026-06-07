@@ -1015,7 +1015,7 @@ function appendMsg(side, text) {
     '<div style="width:40px;height:40px;border:3px solid rgba(63,207,180,.15);border-top-color:#3fcfb4;border-radius:50%;animation:spin 1s linear infinite"></div>' +
     '<div style="color:#6a9a6a;font-size:.88rem;font-family:Segoe UI,sans-serif">Even verbinden…</div></div>';
 
-  window.CommLayer?.announceGame('stille_vijver', 'Stille Vijver');
+  SDClient.announceGame('stille_vijver', 'Stille Vijver');
   setupCallbacks();
   KoppelClient.on('session_created',({code,player})=>{STATE.player=player;saveSession(code,player);window.CommLayer?.setSession(code,player);});
   KoppelClient.on('session_joined', ({code,player})=>{STATE.player=player;saveSession(code,player);window.CommLayer?.setSession(code,player);});

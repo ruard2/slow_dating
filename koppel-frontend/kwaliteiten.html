@@ -1326,7 +1326,7 @@ function sendChat() {
     return;
   }
 
-  window.CommLayer?.announceGame('kwaliteiten', 'Je Kwaliteiten');
+  SDClient.announceGame('kwaliteiten', 'Je Kwaliteiten');
   S.player = gp || '1';
   S.sessionCode = gc + '.K';
   setStatus('Verbinden…');

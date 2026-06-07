@@ -643,7 +643,8 @@ function lsForget() {
 }
 
 function showConnected() {
-  // In comm_code mode: skip lobby, start immediately
+  console.log('[LS] showConnected, comm_code=', localStorage.getItem('comm_code'), 'player=', S.player, 'code=', S.code);
+  // In comm_code mode: both are connected, start game
   if (localStorage.getItem('comm_code')) { lsStart(); return; }
   document.getElementById('connected-box').style.display = 'block';
 }
@@ -843,11 +844,20 @@ function appendChat(side, text) {
     '<div style="width:40px;height:40px;border:3px solid rgba(63,207,180,.15);border-top-color:#3fcfb4;border-radius:50%;animation:spin 1s linear infinite"></div>' +
     '<div style="color:#6a9a6a;font-size:.88rem;font-family:Segoe UI,sans-serif">Even verbinden…</div></div>';
 
-  window.CommLayer?.announceGame('lach_samen', 'Lach Samen');
   setupCallbacks();
-  KoppelClient.on('session_created',({code,player})=>{S.player=player;S.code=code;window.CommLayer?.setSession(code,player);});
-  KoppelClient.on('session_joined', ({code,player})=>{S.player=player;S.code=code;window.CommLayer?.setSession(code,player);});
-  KoppelClient.joinOrCreate(gc+'.L','lach_samen');
+  SDClient.on('session_created', ({ code, player }) => {
+    S.player = player; S.code = code;
+    window.CommLayer?.setSession(code, player);
+    // Announce AFTER we're in the session (so comm room is also ready)
+    SDClient.announceGame('lach_samen', 'Lach Samen');
+    console.log('[LS] session_created, player=', player, 'code=', code);
+  });
+  SDClient.on('session_joined', ({ code, player }) => {
+    S.player = player; S.code = code;
+    window.CommLayer?.setSession(code, player);
+    console.log('[LS] session_joined, player=', player, 'code=', code);
+  });
+  SDClient.joinOrCreate(gc + '.L', 'lach_samen');
 })();
 </script>
 </body>
