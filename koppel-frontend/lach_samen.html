@@ -576,7 +576,8 @@ function clearSession() {
 })();
 
 function setupCallbacks() {
-  KoppelClient.on('both_connected', showConnected);
+  console.log('[LS] setupCallbacks registered');
+  KoppelClient.on('both_connected', (d) => { console.log('[LS] both_connected fired', d); showConnected(); });
   KoppelClient.on('partner_progress', ({ progress }) => onPartnerProgress(progress));
   KoppelClient.on('chat_message', ({ player, text }) => onChatMsg(player, text));
   KoppelClient.on('typing', showTyping);
@@ -643,17 +644,22 @@ function lsForget() {
 }
 
 function showConnected() {
-  console.log('[LS] showConnected, comm_code=', localStorage.getItem('comm_code'), 'player=', S.player, 'code=', S.code);
-  // In comm_code mode: both are connected, start game
+  console.log('[LS] showConnected player=', S.player, 'code=', S.code);
   if (localStorage.getItem('comm_code')) { lsStart(); return; }
   document.getElementById('connected-box').style.display = 'block';
 }
 
 function lsStart() {
-  S.questions = pickSession(S.code);
-  S.idx = 0;
-  goScreen('screen-spel');
-  renderQuestion();
+  console.log('[LS] lsStart code=', S.code, 'player=', S.player);
+  try {
+    S.questions = pickSession(S.code);
+    S.idx = 0;
+    console.log('[LS] goScreen screen-spel, questions=', S.questions?.length);
+    goScreen('screen-spel');
+    renderQuestion();
+  } catch(e) {
+    console.error('[LS] lsStart ERROR:', e);
+  }
 }
 
 function showErr(msg) {
