@@ -612,6 +612,8 @@
   // ── Publieke API
   window.CommLayer = {
     setSession(code, player) {
+      // Never save game sub-codes (e.g. ABCD.L) as comm_code — only base codes
+      if (code && code.includes('.')) return;
       C.code = code; C.player = player;
       localStorage.setItem(K.code, code);
       localStorage.setItem(K.player, player);

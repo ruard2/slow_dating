@@ -847,14 +847,11 @@ function appendChat(side, text) {
   setupCallbacks();
   SDClient.on('session_created', ({ code, player }) => {
     S.player = player; S.code = code;
-    window.CommLayer?.setSession(code, player);
-    // Announce AFTER we're in the session (so comm room is also ready)
     SDClient.announceGame('lach_samen', 'Lach Samen');
     console.log('[LS] session_created, player=', player, 'code=', code);
   });
   SDClient.on('session_joined', ({ code, player }) => {
     S.player = player; S.code = code;
-    window.CommLayer?.setSession(code, player);
     console.log('[LS] session_joined, player=', player, 'code=', code);
   });
   SDClient.joinOrCreate(gc + '.L', 'lach_samen');
