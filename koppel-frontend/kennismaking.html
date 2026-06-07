@@ -751,7 +751,7 @@ let socket = null;
 function loadKoppelScript(cb) {
   if (window.KoppelClient) { cb(); return; }
   const s = document.createElement('script');
-  s.src = 'koppel.js';
+  s.src = 'sd-client.js'; // was koppel.js
   s.onload = cb;
   document.head.appendChild(s);
 }
