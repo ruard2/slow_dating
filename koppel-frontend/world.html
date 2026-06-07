@@ -909,8 +909,9 @@ function showGameInvite(gameKey, gameName) {
 }
 
 function acceptGameInvite() {
+  const url = _pendingGameUrl;   // save before dismiss clears it
   dismissGameInvite();
-  if (_pendingGameUrl) window.location.href = _pendingGameUrl;
+  if (url) window.location.href = url;
 }
 
 function dismissGameInvite() {
