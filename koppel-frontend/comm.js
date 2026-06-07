@@ -719,14 +719,16 @@
     // ── Game invite systeem (via chat_message relay) ──────────
     announceGame(gameKey, gameName) {
       const msg = '__GAME__:' + gameKey + ':' + gameName;
-      // Wait until socket is in the room (koppelReady = true after join_or_create confirmed)
       const send = () => {
         if (!C.koppelReady || !window._commSocket?.connected) return false;
         window._commSocket.emit('chat_message', {
           code: C.code, player: C.player, text: msg, ts: Date.now()
         });
+        console.log('[CommLayer] announceGame sent:', msg);
         return true;
       };
+      // Make sure connectKoppel has been called (may not be if called before DOMContentLoaded)
+      if (!C.koppelReady) connectKoppel();
       if (!send()) {
         const iv = setInterval(() => { if (send()) clearInterval(iv); }, 400);
         setTimeout(() => clearInterval(iv), 20000);

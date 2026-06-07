@@ -413,6 +413,11 @@ io.on('connection', (socket) => {
     const code = (rawCode || '').toUpperCase().trim();
     const session = sessions.get(code);
     if (!session) return;
+    // __GAME__ invites: only send to partner (not back to sender)
+    if (typeof text === 'string' && text.startsWith('__GAME__:')) {
+      socket.to(code).emit('chat_message', { player, text, ts: ts || Date.now() });
+      return;
+    }
     io.to(code).emit('chat_message', { player, text, ts: ts || Date.now() });
     // Count messages in global comm sessions for calling unlock
     if (!code.includes('.') && player) {
