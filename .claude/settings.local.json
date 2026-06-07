@@ -79,7 +79,15 @@
       "Bash(sort -t'.' -k2)",
       "Bash(python3 -c \"from PIL import Image; img = Image.open\\('C:/Users/Eliane Stolper/Desktop/snakes and ladders/koppel-frontend/images/nabijheid_balk.png'\\); print\\(img.size\\)\")",
       "mcp__Claude_in_Chrome__tabs_context_mcp",
-      "Bash(grep -v \"if.*comm_code\\\\|getItem\\\\|//\\\\|node_modules\")"
+      "Bash(grep -v \"if.*comm_code\\\\|getItem\\\\|//\\\\|node_modules\")",
+      "Bash(npx serve *)",
+      "Bash(python -m http.server 3001)",
+      "Bash(python -m http.server 8080)",
+      "Bash(Start-Sleep -Seconds 3)",
+      "Bash(findstr \"8080\\\\|3000\")",
+      "Bash(findstr LISTENING)",
+      "Bash(ipconfig)",
+      "Bash(python -m http.server 8888)"
     ]
   }
 }

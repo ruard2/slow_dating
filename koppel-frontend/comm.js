@@ -512,7 +512,13 @@
     if (!C.code || C.koppelReady) return;
 
     function go() {
-      const BACKEND_URL = window.KOPPEL_BACKEND_URL || 'https://snakesandladdders-production.up.railway.app';
+      if (!window.KOPPEL_BACKEND_URL) {
+        window.KOPPEL_BACKEND_URL =
+          (window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.')
+            ? 'http://' + window.location.hostname + ':3000'
+            : 'https://snakesandladdders-production.up.railway.app');
+      }
+      const BACKEND_URL = window.KOPPEL_BACKEND_URL;
       const sock = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
       window._commSocket = sock;
 

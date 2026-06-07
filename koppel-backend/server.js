@@ -308,7 +308,9 @@ io.on('connection', (socket) => {
     const session = sessions.get(code);
 
     if (!session) {
-      return socket.emit('session_error', { message: 'Code niet gevonden. Controleer en probeer opnieuw.' });
+      // Auto-recreate session — comm_code exists in localStorage but backend restarted
+      sessions.set(code, { app: 'global', players: {}, state: {} });
+      console.log(`[+] Session ${code} auto-recreated (join_session, backend restart recovery)`);
     }
 
     const takenSlots = Object.keys(session.players).length;
