@@ -442,7 +442,7 @@ io.on('connection', (socket) => {
       socket.to(code).emit('chat_message', { player, text, ts: ts || Date.now() });
       return;
     }
-    io.to(code).emit('chat_message', { player, text, ts: ts || Date.now() });
+    socket.to(code).emit('chat_message', { player, text, ts: ts || Date.now() });
     // Count messages in global comm sessions for calling unlock
     if (!code.includes('.') && player) {
       const cs = getCS(code);
