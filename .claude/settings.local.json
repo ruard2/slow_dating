@@ -87,7 +87,14 @@
       "Bash(findstr \"8080\\\\|3000\")",
       "Bash(findstr LISTENING)",
       "Bash(ipconfig)",
-      "Bash(python -m http.server 8888)"
+      "Bash(python -m http.server 8888)",
+      "Bash(grep -l \"koppel.js\" stille_vijver.html familiedorp.html brug_ontdekking.html kennismaking.html kwaliteiten.html waarden.html)",
+      "Bash(grep -rn \"CommLayer.*announceGame\" stille_vijver.html familiedorp.html brug_ontdekking.html kennismaking.html kwaliteiten.html waarden.html)",
+      "Bash(grep -n \"CommLayer.*setSession\" stille_vijver.html familiedorp.html brug_ontdekking.html kennismaking.html kwaliteiten.html waarden.html)",
+      "Bash(grep -n \"both_connected\\\\|showConnected\\\\|showBothConnected\" stille_vijver.html familiedorp.html brug_ontdekking.html kennismaking.html kwaliteiten.html waarden.html)",
+      "Bash(grep -n \"announceGame\\\\|joinOrCreate\\\\|setupCallbacks\" stille_vijver.html familiedorp.html brug_ontdekking.html kennismaking.html kwaliteiten.html waarden.html)",
+      "Bash(git -C \"C:\\\\Users\\\\Eliane Stolper\\\\Desktop\\\\snakes and ladders\" remote -v)",
+      "Bash(git -C \"C:\\\\Users\\\\Eliane Stolper\\\\Desktop\\\\snakes and ladders\" branch -a)"
     ]
   }
 }
