@@ -152,7 +152,11 @@ app.get('/', (_, res) => res.sendFile(path.join(FRONTEND_DIR, 'world.html')));
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] }
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+  pingTimeout:    60000,   // wacht 60s voor disconnect
+  pingInterval:   25000,   // ping elke 25s
+  upgradeTimeout: 30000,   // geef polling tijd om naar ws te upgraden
+  transports:     ['polling', 'websocket'], // polling-first voor Railway
 });
 
 // ── Session store ──────────────────────────────────────────
