@@ -438,12 +438,16 @@ io.on('connection', (socket) => {
     const session = sessions.get(code);
     if (!session) return;
     const msgId = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    const room = io.sockets.adapter.rooms.get(code);
+    const roomSize = room ? room.size : 0;
+    console.log(`[chat] from=${socket.id} code=${code} msgId=${msgId} roomSize=${roomSize} text="${(text||'').slice(0,30)}"`);
     // __GAME__ invites: only send to partner (not back to sender)
     if (typeof text === 'string' && text.startsWith('__GAME__:')) {
       socket.to(code).emit('chat_message', { player, text, ts: ts || Date.now(), msgId });
       return;
     }
     socket.to(code).emit('chat_message', { player, text, ts: ts || Date.now(), msgId });
+    console.log(`[chat] emitted to ${roomSize - 1} others in room ${code}`);
     // Count messages in global comm sessions for calling unlock
     if (!code.includes('.') && player) {
       const cs = getCS(code);
