@@ -437,12 +437,13 @@ io.on('connection', (socket) => {
     const code = (rawCode || '').toUpperCase().trim();
     const session = sessions.get(code);
     if (!session) return;
+    const msgId = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
     // __GAME__ invites: only send to partner (not back to sender)
     if (typeof text === 'string' && text.startsWith('__GAME__:')) {
-      socket.to(code).emit('chat_message', { player, text, ts: ts || Date.now() });
+      socket.to(code).emit('chat_message', { player, text, ts: ts || Date.now(), msgId });
       return;
     }
-    socket.to(code).emit('chat_message', { player, text, ts: ts || Date.now() });
+    socket.to(code).emit('chat_message', { player, text, ts: ts || Date.now(), msgId });
     // Count messages in global comm sessions for calling unlock
     if (!code.includes('.') && player) {
       const cs = getCS(code);
