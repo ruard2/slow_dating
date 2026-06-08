@@ -261,16 +261,19 @@ io.on('connection', (socket) => {
         if (!session.players[p]) {
           assignedPlayer = p; break; // empty slot
         }
-        // Check if existing socket is disconnected
+        // Check if existing socket is disconnected (WebSocket) of recent left (polling)
         const existingSock = io.sockets.sockets.get(session.players[p]);
-        if (!existingSock || !existingSock.connected) {
-          assignedPlayer = p; break; // take over disconnected slot
+        const recentDisconnect = session.disconnectedAt?.[p] && (Date.now() - session.disconnectedAt[p] < 60000);
+        if (!existingSock || !existingSock.connected || recentDisconnect) {
+          assignedPlayer = p; break; // take over disconnected/left slot
         }
       }
 
       if (!assignedPlayer) {
         return socket.emit('session_error', { message: 'Sessie is al vol.' });
       }
+      // Reset disconnectedAt voor dit slot
+      if (session.disconnectedAt) delete session.disconnectedAt[assignedPlayer];
 
       session.players[assignedPlayer] = socket.id;
       socket.join(code); socket.data.code = code; socket.data.player = assignedPlayer;
@@ -541,6 +544,11 @@ io.on('connection', (socket) => {
     if (!session) return;
 
     // Don't immediately remove player — allow reconnect within 30s
+    // Mark as disconnected so join_or_create can take over the slot
+    const s2 = sessions.get(code);
+    if (s2) s2.disconnectedAt = s2.disconnectedAt || {};
+    if (s2) s2.disconnectedAt[player] = Date.now();
+
     setTimeout(() => {
       const s = sessions.get(code);
       if (!s) return;
@@ -552,6 +560,17 @@ io.on('connection', (socket) => {
         console.log(`[-] Player ${player} disconnected from ${code}`);
       }
     }, 30000);
+  });
+
+  // ── PLAYER LEAVING (refresh/sluiten — slot direct vrijgeven) ──
+  socket.on('player_leaving', ({ code: rawCode, player }) => {
+    const code = (rawCode || '').toUpperCase().trim();
+    const session = sessions.get(code);
+    if (!session) return;
+    if (session.players[player] !== socket.id) return; // niet de juiste socket
+    delete session.players[player];
+    io.to(code).emit('player_count', { count: Object.keys(session.players).length });
+    console.log(`[~] Player ${player} left (beforeunload) session ${code}`);
   });
 });
 
