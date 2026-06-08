@@ -1137,8 +1137,8 @@ function onVragenKlaar(partnerVragenVoorMij) {
   requestAnimationFrame(() => updatePresContentBottom());
 
   if (!S.adminMode) {
-    window.CommLayer?.onChatMessage((player, text) => {
-      addBubble(text, player === S.player ? 'me' : 'them');
+    window.CommLayer?.onChatMessage(({ text, side }) => {
+      addBubble(text, side);
     });
   }
 }
@@ -1326,33 +1326,24 @@ function sendChat() {
     return;
   }
 
-  SDClient.announceGame('kwaliteiten', 'Je Kwaliteiten');
   S.player = gp || '1';
   S.sessionCode = gc + '.K';
   setStatus('Verbinden…');
-
-  function saveSession(code, player) {
-    localStorage.setItem('comm_code', code);
-    localStorage.setItem('comm_player', player);
-    window.CommLayer?.setSession(code, player);
-  }
 
   KoppelClient.on('both_connected',  () => { setStatus(''); show('screen-kwaliteiten'); });
   KoppelClient.on('complete',        ({ state }) => onSelectiesKlaar(state));
   KoppelClient.on('error',           ({ message }) => setStatus('Fout: ' + message));
   KoppelClient.on('disconnected',    () => setStatus('Verbinding verbroken'));
-  KoppelClient.on('session_created', ({ code, player }) => { S.player=player; saveSession(code,player); setStatus(''); show('screen-kwaliteiten'); });
-  KoppelClient.on('session_joined',  ({ player }) => { S.player=player; saveSession(gc,player); setStatus(''); show('screen-kwaliteiten'); });
+  KoppelClient.on('session_created', ({ code, player }) => { S.player=player; SDClient.announceGame('kwaliteiten','Je Kwaliteiten'); });
+  KoppelClient.on('session_joined',  ({ code, player }) => { S.player=player; });
 
   // Partner question picks
-  setTimeout(() => {
-    window._commSocket?.on('partner_progress', ({ progress }) => {
-      if (progress?.type === 'kwaliteiten_vragen') {
-        S.partnerVragen = progress.vragen;
-        if (el('screen-waiting-vragen').classList.contains('active')) onVragenKlaar(S.partnerVragen);
-      }
-    });
-  }, 1000);
+  KoppelClient.on('partner_progress', ({ progress }) => {
+    if (progress?.type === 'kwaliteiten_vragen') {
+      S.partnerVragen = progress.vragen;
+      if (el('screen-waiting-vragen').classList.contains('active')) onVragenKlaar(S.partnerVragen);
+    }
+  });
 
   KoppelClient.joinOrCreate(S.sessionCode, 'kwaliteiten');
 

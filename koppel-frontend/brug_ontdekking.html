@@ -433,7 +433,7 @@ function setupL(){
     document.getElementById('k-join-w').style.display='none';
   });
   KoppelClient.on('session_complete',({state})=>onDone(state));
-  KoppelClient.on('session_update',({state})=>onDone(state));
+  // session_update = één speler klaar, wacht op allebei via session_complete
 }
 function onDone(state){
   const pk=S.player==='1'?'p2':'p1';
@@ -614,8 +614,8 @@ function brugSendChat(){
   if(S.code==='1111'||S.solo){setTimeout(()=>brugAddChat('😊','them'),800);return;}
   window.CommLayer?.sendBoardChat(text);
 }
-window.CommLayer?.onChatMessage(({player,text})=>{
-  if(player!==S.player) brugAddChat(text,'them');
+window.CommLayer?.onChatMessage(({text,side})=>{
+  if(side==='them') brugAddChat(text,'them');
 });
 function brugAddChat(text,side){
   const msgs=document.getElementById('brug-chat-msgs');
@@ -634,12 +634,11 @@ function brugAddChat(text,side){
   showS('s-wacht');
 
   function go(){
-    KoppelClient.on('session_created',({code,player})=>{S.code=code;S.player=player;window.CommLayer?.setSession(code,player);});
-    KoppelClient.on('session_joined', ({code,player})=>{S.code=code;S.player=player;window.CommLayer?.setSession(code,player);startKiezen();});
+    KoppelClient.on('session_created',({code,player})=>{S.code=code;S.player=player;SDClient.announceGame('brug_ontdekking', 'Brug van Ontdekking');});
+    KoppelClient.on('session_joined', ({code,player})=>{S.code=code;S.player=player;});
     KoppelClient.on('both_connected', ()=>startKiezen());
     KoppelClient.on('session_complete',({state})=>{const pk=S.player==='1'?'p2':'p1';if(state[pk]?.done&&state[pk]?.stenen){S.partner=state[pk].stenen;buildReveal();showS('s-reveal');}});
-    KoppelClient.on('session_update',  ({state})=>{const pk=S.player==='1'?'p2':'p1';if(state[pk]?.done&&state[pk]?.stenen){S.partner=state[pk].stenen;buildReveal();showS('s-reveal');}});
-    SDClient.announceGame('brug_ontdekking', 'Brug van Ontdekking');
+    // session_update = één speler klaar, wacht op allebei via session_complete
     KoppelClient.joinOrCreate(gc+'.B','brug');
   }
   go();

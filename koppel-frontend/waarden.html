@@ -78,7 +78,6 @@ h2{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:600;color:#
   color:#d4af37;font-style:normal;font-family:'Inter',sans-serif;margin-bottom:8px;}
 .chat-box{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
   width:100%;max-width:440px;z-index:100;
-  background:linear-gradient(0deg,#120a28 70%,transparent);
   padding-top:20px;}
 .chat-toggle{display:flex;align-items:center;justify-content:space-between;
   padding:10px 16px;cursor:pointer;user-select:none;}
@@ -380,13 +379,7 @@ function setupListeners() {
       buildReveal(); showScreen('s-reveal');
     }
   });
-  KoppelClient.on('session_update', ({ state }) => {
-    const pk = S.player === '1' ? 'p2' : 'p1';
-    if (state[pk] && state[pk].done && state[pk].waarden) {
-      S.partnerGekozen = state[pk].waarden;
-      buildReveal(); showScreen('s-reveal');
-    }
-  });
+  // session_update = één speler klaar, wacht op allebei via session_complete
 }
 
 function doJoin() {
@@ -508,9 +501,9 @@ function sendChat() {
   }
   window.CommLayer?.sendBoardChat(text);
 }
-// Ontvang chat van globale socket
-window.CommLayer?.onChatMessage(({ player, text }) => {
-  if (player !== S.player) addChatMsg(text, 'them');
+// Ontvang chat van globale socket (gebruik CommLayer's 'side' om dubbele berichten te voorkomen)
+window.CommLayer?.onChatMessage(({ text, side }) => {
+  if (side === 'them') addChatMsg(text, 'them');
 });
 
 function addChatMsg(text, type) {
@@ -530,7 +523,6 @@ function addChatMsg(text, type) {
   const gc = localStorage.getItem('comm_code');
   if (!gc) return; // niet gekoppeld: normale flow
 
-  SDClient.announceGame('waarden', 'Je Waarden');
   if (gc === '1111') { S.code='1111'; S.player='1'; startKiezen(); return; }
 
   showScreen('s-wacht');
@@ -538,22 +530,17 @@ function addChatMsg(text, type) {
   function go() {
     KoppelClient.on('session_created', ({ code, player }) => {
       S.code=code; S.player=player;
-      window.CommLayer?.setSession(code, player);
+      SDClient.announceGame('waarden', 'Je Waarden');
     });
     KoppelClient.on('session_joined', ({ code, player }) => {
       S.code=code; S.player=player;
-      window.CommLayer?.setSession(code, player);
-      startKiezen();
     });
     KoppelClient.on('both_connected', () => startKiezen());
     KoppelClient.on('session_complete', ({ state }) => {
       const pk = S.player==='1'?'p2':'p1';
       if (state[pk]?.waarden) { S.partnerGekozen=state[pk].waarden; buildReveal(); showScreen('s-reveal'); }
     });
-    KoppelClient.on('session_update', ({ state }) => {
-      const pk = S.player==='1'?'p2':'p1';
-      if (state[pk]?.done && state[pk]?.waarden) { S.partnerGekozen=state[pk].waarden; buildReveal(); showScreen('s-reveal'); }
-    });
+    // session_update = één speler klaar, maar we wachten op allebei (session_complete)
     KoppelClient.joinOrCreate(gc + '.W', 'waarden');
   }
   window.KoppelClient ? go() : loadKoppelScript(go);

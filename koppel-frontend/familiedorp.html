@@ -1132,10 +1132,9 @@ function appendRevealBubble(side, text, panelId) {
 }
 
 // Ontvang chat via CommLayer
-window.CommLayer?.onChatMessage(({ player, text }) => {
-  const isMe = player === S.player;
-  appendRevealBubble(isMe ? 'me' : 'them', text, 'chat-panel-me');
-  fdAddChatMsg(text, isMe ? 'me' : 'them');
+window.CommLayer?.onChatMessage(({ text, side }) => {
+  appendRevealBubble(side, text, 'chat-panel-me');
+  fdAddChatMsg(text, side);
 });
 
 // Bellen + chat gaan via CommLayer
@@ -1203,10 +1202,9 @@ function buildNapraat() {
     '<div style="width:40px;height:40px;border:3px solid rgba(212,120,74,.15);border-top-color:#d4784a;border-radius:50%;animation:spin 1s linear infinite"></div>' +
     '<div style="color:#9A5840;font-size:.88rem;font-family:Segoe UI,sans-serif">Even verbinden…</div></div>';
 
-  SDClient.announceGame('familiedorp', 'Je Familieboom');
   setupCb();
-  KoppelClient.on('session_created',({code,player})=>{S.code=code;S.player=player;window.CommLayer?.setSession(code,player);});
-  KoppelClient.on('session_joined', ({code,player})=>{S.code=code;S.player=player;window.CommLayer?.setSession(code,player);});
+  KoppelClient.on('session_created',({code,player})=>{S.code=code;S.player=player;SDClient.announceGame('familiedorp','Je Familieboom');});
+  KoppelClient.on('session_joined', ({code,player})=>{S.code=code;S.player=player;});
   KoppelClient.joinOrCreate(gc+'.F','familiedorp');
 })();
 </script>

@@ -814,11 +814,10 @@ function sendChat() {
   if (S.adminMode) return;
   window.CommLayer?.sendBoardChat(text);
 }
-function onChatMsg(player, text) {
-  if (player !== S.player) appendChat('them', text);
-}
 // Ontvang via CommLayer
-window.CommLayer?.onChatMessage(({ player, text }) => onChatMsg(player, text));
+window.CommLayer?.onChatMessage(({ text, side }) => {
+  if (side === 'them') appendChat('them', text);
+});
 
 function appendChat(side, text) {
   const wrap = document.getElementById('chat-messages');
