@@ -68,9 +68,7 @@ function WorldPage() {
   });
   const completedGames = progress.data?.completedGames ?? 0;
   const unlockedWorlds = progress.data?.unlockedWorlds ?? [1];
-  const nextMilestone = WORLD_MILESTONES.find(
-    (milestone) => milestone > completedGames,
-  );
+  const progressPosition = getProgressPosition(completedGames);
 
   useEffect(() => {
     const showFirstWorld = () => {
@@ -98,20 +96,16 @@ function WorldPage() {
         />
         <img
           className={styles.progressFigure}
-          src="/assets/figuur.webp"
+          src="/assets/figuur_t.webp"
           alt=""
-          style={{ left: `${getProgressPosition(completedGames)}%` }}
+          style={{ left: `${progressPosition}%` }}
         />
         <img
           className={styles.partnerFigure}
-          src="/assets/figuur2.webp"
+          src="/assets/figuur2_t.webp"
           alt=""
+          style={{ right: `${progressPosition}%` }}
         />
-        <span className={styles.progressCopy}>
-          {nextMilestone
-            ? `${completedGames} / ${nextMilestone} ontdekkingen`
-            : `${completedGames} ontdekkingen - alle werelden vrij`}
-        </span>
       </div>
 
       <div className={styles.worldScroller} ref={scrollerRef}>

@@ -13,9 +13,7 @@ test("loads the world map without console errors", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Slow Dating" })).toHaveCount(0);
   await expect(page.getByAltText("Kaart van wereld 1")).toBeVisible();
   await expect(page.getByAltText("Kaart van wereld 2")).toBeAttached();
-  await expect(page.getByLabel("Voortgang wereldkaart")).toContainText(
-    "ontdekkingen",
-  );
+  await expect(page.getByLabel("Voortgang wereldkaart")).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Je waarden", exact: true }),
   ).toBeVisible();
