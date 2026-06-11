@@ -39,6 +39,38 @@ describe("Slow Dating API", () => {
     });
   });
 
+  it("completes a game run idempotently and never reopens it", async () => {
+    const app = await createTestApp();
+    const session = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "z".repeat(64) });
+    const auth = { authorization: `Bearer ${session.body.accessToken}` };
+    const created = await request(app)
+      .post("/api/game-runs")
+      .set(auth)
+      .send({ gameId: "waarden", mode: "solo", version: 1 });
+
+    const completed = await request(app)
+      .patch(`/api/game-runs/${created.body.id}`)
+      .set(auth)
+      .send({ status: "completed", result: { answer: 1 } });
+    const repeated = await request(app)
+      .patch(`/api/game-runs/${created.body.id}`)
+      .set(auth)
+      .send({ status: "completed", result: { answer: 2 } });
+    const reopened = await request(app)
+      .patch(`/api/game-runs/${created.body.id}`)
+      .set(auth)
+      .send({ status: "active" });
+    const progress = await request(app).get("/api/progress").set(auth);
+
+    expect(completed.status).toBe(200);
+    expect(repeated.status).toBe(200);
+    expect(repeated.body.result).toEqual({ answer: 1 });
+    expect(reopened.status).toBe(409);
+    expect(progress.body.completedGames).toBe(1);
+  });
+
   it("creates a guest session and only updates its own profile", async () => {
     const app = await createTestApp();
     const session = await request(app)

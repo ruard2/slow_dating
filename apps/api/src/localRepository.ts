@@ -467,6 +467,15 @@ export class LocalRepository implements AppRepository {
     if (!run || run.installationId !== installationId) {
       throw new DomainError("Spelsessie niet gevonden.", 404);
     }
+    if (run.status === "completed") {
+      if (changes.status === "completed") {
+        return structuredClone(run);
+      }
+      throw new DomainError("Een afgeronde spelsessie kan niet worden gewijzigd.", 409);
+    }
+    if (run.status !== "active") {
+      throw new DomainError("Deze spelsessie is niet meer actief.", 409);
+    }
     Object.assign(run, changes);
     if (changes.status === "completed") {
       run.completedAt = now();

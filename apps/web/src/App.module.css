@@ -6,26 +6,50 @@
 .worldScroller { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; overflow-x:hidden; overflow-y:auto; scroll-snap-type:y mandatory; scrollbar-width:none; background:#0a0a0a; }
 .worldScroller::-webkit-scrollbar { display:none; }
 .worldCard { position:relative; flex:0 0 auto; width:max(100vw,calc(100dvh * 941 / 1672)); height:max(100dvh,calc(100vw * 1672 / 941)); overflow:hidden; scroll-snap-align:start; background:#111b0c; }
+.mapInner { position:absolute; inset:0; transform-origin:0 0; will-change:transform; }
 .worldImage,.lockedWorldImage { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center top; }
 .lockedWorldImage { filter:blur(4px) brightness(.55) saturate(.75); scale:1.03; }
 .worldLockOverlay { position:absolute; inset:0; display:grid; place-content:center; gap:.45rem; padding:2rem; text-align:center; text-shadow:0 2px 18px #000; pointer-events:none; }
 .worldLockOverlay strong { font:500 clamp(1.7rem,5vw,3rem) Georgia,serif; }
 .worldLockOverlay span { color:rgba(255,255,255,.8); font-size:.82rem; }
-.worldPurchaseButton { position:absolute; z-index:3; inset:0; width:100%; border:0; background:transparent; cursor:pointer; }
+.worldPortalButton { position:absolute; z-index:3; inset:0; width:100%; border:0; background:transparent; cursor:pointer; }
 .mapHotspot { position:absolute; z-index:2; display:block; border:0; outline:0; background:transparent; text-decoration:none; cursor:pointer; }
 .mapHotspot:focus-visible { outline:3px solid rgba(255,247,197,.9); outline-offset:2px; border-radius:.5rem; background:rgba(255,247,197,.08); }
+.zoomControls { position:absolute; z-index:6; right:1rem; bottom:5.4rem; display:flex; gap:.3rem; }
+.zoomControls button,.worldNavigator button { display:grid; place-items:center; border:1px solid rgba(255,255,255,.16); color:#f4f1e8; background:rgba(5,12,8,.82); box-shadow:0 .4rem 1.5rem rgba(0,0,0,.3); backdrop-filter:blur(10px); cursor:pointer; }
+.zoomControls button { min-width:2.35rem; height:2.35rem; padding:.25rem; border-radius:.7rem; font:700 1rem/1 inherit; }
+.worldNavigator { position:fixed; z-index:22; top:50%; right:max(.55rem,env(safe-area-inset-right)); translate:0 -50%; display:grid; gap:.35rem; }
+.worldNavigator button { width:2rem; height:2rem; padding:0; border-radius:50%; font-size:.72rem; opacity:.62; }
+.worldNavigator button[data-unlocked="true"] { border-color:rgba(188,224,112,.6); color:#dff3ad; opacity:1; }
+.unlockToast { position:fixed; z-index:35; top:4rem; left:50%; translate:-50% 0; display:grid; gap:.15rem; width:min(24rem,calc(100% - 2rem)); padding:.8rem 1rem; border:1px solid rgba(190,219,116,.45); border-radius:1rem; color:#eff9d5; background:rgba(16,32,21,.95); box-shadow:0 1rem 3rem rgba(0,0,0,.42); text-align:left; cursor:pointer; }
+.unlockToast span { color:#b7c6aa; font-size:.75rem; }
+.unlockBackdrop { position:fixed; z-index:60; inset:0; display:grid; place-items:center; padding:1rem; background:rgba(2,7,4,.75); backdrop-filter:blur(12px); }
+.unlockCard { width:min(27rem,100%); display:grid; gap:.8rem; padding:1.5rem; border:1px solid rgba(212,185,101,.3); border-radius:1.3rem; background:#102016; box-shadow:0 2rem 6rem rgba(0,0,0,.62); }
+.unlockCard h2 { margin:0; font:500 2.2rem Georgia,serif; }
+.unlockCard p { margin:0 0 .3rem; color:#aebca6; line-height:1.5; }
+.unlockRequirement { display:flex; justify-content:space-between; gap:1rem; padding:.7rem 0; border-top:1px solid rgba(255,255,255,.08); color:#afbbab; font-size:.82rem; }
+.unlockRequirement strong { color:#eef4e8; }
+.unlockPrice { padding:.75rem; border-radius:.7rem; color:#d8e7b1; background:rgba(190,219,116,.08); text-align:center; font-size:.8rem; }
+.unlockClose { border:0; color:#9eab98; background:transparent; cursor:pointer; }
 .progressBar { position:fixed; z-index:20; top:0; left:50%; width:max(100vw,calc(100dvh * 941 / 1672)); translate:-50% 0; line-height:0; pointer-events:none; }
 .progressTrack { display:block; width:100%; height:auto; filter:invert(1); mix-blend-mode:screen; opacity:.45; -webkit-mask-image:linear-gradient(to right,transparent 0%,black 6%,black 94%,transparent 100%),linear-gradient(to bottom,black 0%,black 45%,transparent 100%); -webkit-mask-composite:destination-in; mask-image:linear-gradient(to right,transparent 0%,black 6%,black 94%,transparent 100%),linear-gradient(to bottom,black 0%,black 45%,transparent 100%); mask-composite:intersect; }
 .progressFigure,.partnerFigure { position:absolute; z-index:21; bottom:52%; height:28px; width:auto; pointer-events:none; filter:brightness(1.2) drop-shadow(0 1px 3px rgba(0,0,0,.45)); }
 .progressFigure { translate:-50% 0; transition:left 1.2s cubic-bezier(.4,0,.2,1); }
 .partnerFigure { left:auto; translate:50% 0; transition:right 1.2s cubic-bezier(.4,0,.2,1); }
-.dock { position:fixed; z-index:30; left:50%; bottom:max(.8rem,env(safe-area-inset-bottom)); translate:-50% 0; display:flex; align-items:center; gap:.25rem; padding:.45rem; border:1px solid rgba(255,255,255,.12); border-radius:1.2rem; background:rgba(5,12,8,.88); box-shadow:0 1rem 4rem rgba(0,0,0,.45); backdrop-filter:blur(18px); }
-.dock a,.dock button { min-width:3.8rem; padding:.7rem .75rem; border:0; border-radius:.8rem; color:rgba(255,255,255,.72); background:transparent; font:inherit; font-size:.76rem; text-align:center; text-decoration:none; cursor:pointer; }
+.dock { position:fixed; z-index:30; left:50%; bottom:max(.55rem,env(safe-area-inset-bottom)); translate:-50% 0; display:flex; align-items:stretch; gap:.15rem; padding:.28rem; border:1px solid rgba(255,255,255,.12); border-radius:1rem; background:rgba(5,12,8,.86); box-shadow:0 .8rem 3rem rgba(0,0,0,.42); backdrop-filter:blur(18px); }
+.dock a,.dock button { min-width:4rem; display:grid; place-content:center; gap:.08rem; padding:.48rem .7rem; border:0; border-radius:.72rem; color:rgba(255,255,255,.76); background:transparent; font:inherit; font-size:.75rem; text-align:center; text-decoration:none; cursor:pointer; }
 .dock a:hover,.dock button:hover { color:#fff; background:rgba(255,255,255,.08); }
-.onlineDot,.offlineDot { width:.55rem; height:.55rem; margin:0 .4rem; border-radius:50%; }
-.onlineDot { background:#8fd069; box-shadow:0 0 .7rem #8fd069; }
-.offlineDot { background:#a96666; }
+.dock small { color:#899286; font-size:.56rem; line-height:1; }
+.dock small[data-ready="true"] { color:#9bd36f; }
+.settingsButton { position:fixed; z-index:31; top:max(.65rem,env(safe-area-inset-top)); right:max(.65rem,env(safe-area-inset-right)); width:2.75rem; height:2.35rem; display:grid; place-items:center; padding:0 0 .45rem; border:1px solid rgba(255,255,255,.15); border-radius:.75rem; color:#fff; background:rgba(5,12,8,.72); box-shadow:0 .5rem 2rem rgba(0,0,0,.32); backdrop-filter:blur(14px); font-size:1.35rem; letter-spacing:.05em; cursor:pointer; }
 .drawer { position:fixed; z-index:25; right:1rem; bottom:6rem; width:min(25rem,calc(100% - 2rem)); max-height:calc(100dvh - 8rem); overflow:auto; padding:1.35rem; border:1px solid rgba(212,185,101,.25); border-radius:1.25rem; background:rgba(10,23,15,.97); box-shadow:0 1.5rem 5rem rgba(0,0,0,.6); }
+.settingsPanel { display:grid; gap:.65rem; }
+.settingsPanel h2 { margin:.2rem 0 .5rem; }
+.settingsPanel a,.settingsPanel button { display:block; padding:.8rem; border:1px solid rgba(255,255,255,.1); border-radius:.75rem; color:#eef4e8; background:rgba(255,255,255,.05); text-align:left; text-decoration:none; }
+.partnerStatus { display:flex; align-items:center; gap:.55rem; margin:0 0 .5rem; color:#9da899; font-size:.78rem; }
+.partnerStatus span { width:.55rem; height:.55rem; border-radius:50%; background:#747b71; }
+.partnerStatus[data-online="true"] { color:#a9dc83; }
+.partnerStatus[data-online="true"] span { background:#8fd069; box-shadow:0 0 .7rem rgba(143,208,105,.8); }
 .accountGate { position:fixed; z-index:100; inset:0; display:grid; place-items:center; overflow:auto; padding:1rem; background:rgba(3,8,5,.84); backdrop-filter:blur(14px); }
 .accountCard { width:min(30rem,100%); display:grid; gap:.8rem; padding:clamp(1.4rem,5vw,2.5rem); border:1px solid rgba(212,185,101,.3); border-radius:1.4rem; background:#102016; box-shadow:0 2rem 7rem rgba(0,0,0,.65); }
 .accountCard>span { color:#d4b965; font-size:.7rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
@@ -84,7 +108,8 @@ button:disabled { cursor:not-allowed; opacity:.45; }
 .gameFrame { width:100%; height:100%; border:0; background:#fff; }
 @keyframes pulse { 50%{box-shadow:0 0 0 1rem rgba(131,169,81,0)} 0%,100%{box-shadow:0 0 0 0 rgba(131,169,81,.35)} }
 @media (max-width:650px) {
-  .dock { width:calc(100% - 1rem); justify-content:space-around; }
-  .dock a,.dock button { min-width:auto; padding-inline:.45rem; }
+  .dock { justify-content:space-around; }
+  .dock a,.dock button { min-width:4.2rem; padding-inline:.55rem; }
   .drawer { right:.5rem; bottom:5.7rem; width:calc(100% - 1rem); }
+  .worldNavigator { right:.35rem; }
 }

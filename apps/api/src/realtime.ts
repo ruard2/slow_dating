@@ -58,6 +58,19 @@ export function registerRealtime(
     if (pairId) {
       await repository.markPresence(installationId, true);
       await socket.join(`pair:${pairId}`);
+      const pairSockets = await io.in(`pair:${pairId}`).fetchSockets();
+      io.to(`pair:${pairId}`).emit("event", {
+        id: `presence-snapshot:${pairId}:${Date.now()}`,
+        type: "pair.presence.snapshot",
+        version: 1,
+        pairId,
+        sentAt: new Date().toISOString(),
+        payload: {
+          installationIds: [
+            ...new Set(pairSockets.map((pairSocket) => pairSocket.data.installationId)),
+          ],
+        },
+      });
       socket.to(`pair:${pairId}`).emit("event", {
         id: `presence:${installationId}:${Date.now()}`,
         type: "pair.presence",

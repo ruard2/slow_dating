@@ -31,6 +31,39 @@ test("loads the world map without console errors", async ({ page }) => {
   await expect(
     page.getByRole("link", { name: "Je waarden", exact: true }),
   ).toBeVisible();
+  const geometry = await page.getByLabel("Wereld 1 met spellen").evaluate((card) => {
+    const image = card.querySelector("img");
+    const hotspot = card.querySelector("a");
+    const cardBox = card.getBoundingClientRect();
+    const imageBox = image?.getBoundingClientRect();
+    const hotspotBox = hotspot?.getBoundingClientRect();
+    return {
+      cardRatio: cardBox.width / cardBox.height,
+      imageRatio: imageBox ? imageBox.width / imageBox.height : 0,
+      hotspotInside:
+        Boolean(hotspotBox) &&
+        (hotspotBox?.left ?? 0) >= cardBox.left &&
+        (hotspotBox?.right ?? 0) <= cardBox.right &&
+        (hotspotBox?.top ?? 0) >= cardBox.top &&
+        (hotspotBox?.bottom ?? 0) <= cardBox.bottom,
+    };
+  });
+  expect(Math.abs(geometry.cardRatio - geometry.imageRatio)).toBeLessThan(0.001);
+  expect(geometry.hotspotInside).toBe(true);
+  await page.getByRole("button", { name: "Inzoomen" }).click();
+  await expect(page.getByTestId("world-one-map-inner")).toHaveAttribute(
+    "style",
+    /scale\(1\.25\)/,
+  );
+  await page.getByRole("button", { name: "Zoom herstellen" }).click();
+  await page.getByRole("button", { name: "Bekijk wereld 2: Verdieping" }).click();
+  const unlockDialog = page.getByRole("dialog", {
+    name: "Wereld 2 vrijschakelen",
+  });
+  await expect(unlockDialog).toBeVisible();
+  await expect(unlockDialog.getByText("0 / 5", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Misschien later" }).click();
+  await page.getByRole("button", { name: "Ga naar wereld 1: Het Beginland" }).click();
   await page.getByRole("link", { name: "Je waarden", exact: true }).click();
   await expect(page).toHaveURL(/\/games\/waarden$/);
   expect(consoleErrors).toEqual([]);
@@ -76,12 +109,14 @@ test("pairs two browsers and delivers chat exactly once", async ({
   const second = await secondContext.newPage();
 
   await first.goto("/");
-  await first.getByRole("button", { name: "Koppel" }).click();
+  await first.getByRole("button", { name: "Instellingen openen" }).click();
+  await first.getByRole("button", { name: "Partner koppelen" }).click();
   await first.getByRole("button", { name: "Maak een code" }).click();
   const code = (await first.locator("[class*='pairCode']").innerText()).trim();
 
   await second.goto("/");
-  await second.getByRole("button", { name: "Koppel" }).click();
+  await second.getByRole("button", { name: "Instellingen openen" }).click();
+  await second.getByRole("button", { name: "Partner koppelen" }).click();
   await second.getByPlaceholder("ABC234").fill(code);
   await second.getByRole("button", { name: "Code gebruiken" }).click();
   await createAccount(
@@ -96,6 +131,12 @@ test("pairs two browsers and delivers chat exactly once", async ({
     "Browser Een",
     `een-${Date.now()}@example.test`,
   );
+  await expect(
+    first.getByRole("button", { name: "Chat Online", exact: true }),
+  ).toBeVisible();
+  await expect(
+    second.getByRole("button", { name: "Chat Online", exact: true }),
+  ).toBeVisible();
   await first.getByRole("button", { name: "Chat" }).click();
   await second.getByRole("button", { name: "Chat" }).click();
   await second.getByPlaceholder("Schrijf iets...").fill("Hallo vanuit browser twee");
@@ -103,11 +144,13 @@ test("pairs two browsers and delivers chat exactly once", async ({
 
   await expect(first.getByText("Hallo vanuit browser twee")).toHaveCount(1);
   await first.getByRole("button", { name: "Sluiten" }).click();
-  await first.getByRole("button", { name: "Koppel" }).click();
+  await first.getByRole("button", { name: "Instellingen openen" }).click();
+  await first.getByRole("button", { name: "Koppeling beheren" }).click();
   await first.getByRole("button", { name: "Ontkoppelen" }).click();
-  await first.getByRole("link", { name: "Profiel" }).click();
+  await first.getByRole("button", { name: "Instellingen openen" }).click();
+  await first.getByRole("link", { name: "Profiel beheren" }).click();
   await expect(first.getByRole("heading", { name: "Relatiearchieven" })).toBeVisible();
-  await expect(first.getByText("1 berichten · 0 ontdekkingen")).toBeVisible();
+  await expect(first.getByText(/1 berichten.*0 ontdekkingen/)).toBeVisible();
 
   await firstContext.close();
   await secondContext.close();

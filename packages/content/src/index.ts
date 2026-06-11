@@ -19,6 +19,23 @@ export const gameMetadataSchema = z.object({
 
 export type GameMetadata = z.infer<typeof gameMetadataSchema>;
 
+export interface WorldDefinition {
+  id: number;
+  name: string;
+  description: string;
+  requiredDiscoveries: number;
+  priceCents: number;
+  image: string;
+}
+
+export const worlds: WorldDefinition[] = [
+  { id: 1, name: "Het Beginland", description: "De eerste ontdekkingen over wie jullie zijn.", requiredDiscoveries: 0, priceCents: 0, image: "/assets/kaart1.webp" },
+  { id: 2, name: "Verdieping", description: "Jullie ontdekken elkaar steeds dieper.", requiredDiscoveries: 5, priceCents: 200, image: "/assets/kaart2.webp" },
+  { id: 3, name: "Verbinding", description: "Herken patronen en bouw bewuster aan verbinding.", requiredDiscoveries: 10, priceCents: 300, image: "/assets/kaart3.webp" },
+  { id: 4, name: "Intimiteit", description: "Maak ruimte voor nabijheid, grenzen en vertrouwen.", requiredDiscoveries: 15, priceCents: 400, image: "/assets/kaart4.webp" },
+  { id: 5, name: "Ziel", description: "Onderzoek wat jullie ten diepste samenbrengt.", requiredDiscoveries: 20, priceCents: 500, image: "/assets/kaart5.webp" },
+];
+
 export const games = [
   {
     id: "waarden",

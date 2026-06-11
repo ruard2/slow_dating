@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type Drawer = "chat" | "pair" | "call" | null;
+type Drawer = "chat" | "pair" | "call" | "settings" | null;
 
 interface AppState {
   drawer: Drawer;

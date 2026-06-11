@@ -20,35 +20,15 @@ import {
 } from "@tanstack/react-query";
 
 import type { Message, Pair } from "@slow-dating/contracts";
-import { findGame, games } from "@slow-dating/content";
+import { findGame } from "@slow-dating/content";
 
 import styles from "./App.module.css";
+import { WorldMap } from "./components/WorldMap";
 import { api } from "./lib/api";
 import { useCall } from "./providers/CallProvider";
 import { useRealtime } from "./providers/RealtimeProvider";
 import { useSession } from "./providers/SessionProvider";
 import { useAppStore } from "./store/appStore";
-
-const WORLD_MILESTONES = [0, 5, 10, 15, 20];
-const WORLD_WAYPOINTS = [7.4, 14.5, 24.9, 35.2, 48.5];
-const LOCKED_WORLDS = [
-  { id: 5, required: 20 },
-  { id: 4, required: 15 },
-  { id: 3, required: 10 },
-  { id: 2, required: 5 },
-];
-
-function getProgressPosition(completedGames: number) {
-  const completed = Math.max(0, Math.min(completedGames, 20));
-  const segment = Math.min(Math.floor(completed / 5), 3);
-  const milestone = WORLD_MILESTONES[segment] ?? 0;
-  const start = WORLD_WAYPOINTS[segment] ?? 7.4;
-  const end = WORLD_WAYPOINTS[segment + 1] ?? 48.5;
-  const progressInSegment = (completed - milestone) / 5;
-  return (
-    start + (end - start) * progressInSegment
-  );
-}
 
 function LoadingScreen() {
   const { error } = useSession();
@@ -321,127 +301,25 @@ function ResetPasswordPage() {
 }
 
 function WorldPage() {
+  const { worldId } = useParams();
   const queryClient = useQueryClient();
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const firstWorldRef = useRef<HTMLElement | null>(null);
   const progress = useQuery({
     queryKey: ["progress"],
     queryFn: api.getProgress,
   });
-  const completedGames = progress.data?.completedGames ?? 0;
-  const unlockedWorlds = progress.data?.unlockedWorlds ?? [1];
-  const progressPosition = getProgressPosition(completedGames);
   const purchase = useMutation({
     mutationFn: api.purchaseWorld,
     onSuccess: (value) => queryClient.setQueryData(["progress"], value),
   });
-
-  useEffect(() => {
-    const showFirstWorld = () => {
-      if (scrollerRef.current && firstWorldRef.current) {
-        scrollerRef.current.scrollTop = firstWorldRef.current.offsetTop;
-      }
-    };
-    const frame = window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(showFirstWorld);
-    });
-    const timeout = window.setTimeout(showFirstWorld, 250);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.clearTimeout(timeout);
-    };
-  }, []);
-
+  const focusWorld = Number(worldId ?? 1);
+  if (!progress.data) return <LoadingScreen />;
   return (
-    <main className={styles.worldPage}>
-      <div className={styles.progressBar} aria-label="Voortgang wereldkaart">
-        <img
-          className={styles.progressTrack}
-          src="/assets/nabijheid_balk2.webp"
-          alt=""
-        />
-        <img
-          className={styles.progressFigure}
-          src="/assets/figuur_t.webp"
-          alt=""
-          style={{ left: `${progressPosition}%` }}
-        />
-        <img
-          className={styles.partnerFigure}
-          src="/assets/figuur2_t.webp"
-          alt=""
-          style={{ right: `${progressPosition}%` }}
-        />
-      </div>
-
-      <div className={styles.worldScroller} ref={scrollerRef}>
-        {LOCKED_WORLDS.map((world) => {
-          const unlocked = unlockedWorlds.includes(world.id);
-          const eligible = progress.data?.eligibleWorlds.includes(world.id) ?? false;
-          const previousUnlocked = unlockedWorlds.includes(world.id - 1);
-          return (
-            <section
-              aria-label={`Wereld ${world.id}`}
-              className={styles.worldCard}
-              key={world.id}
-            >
-              <img
-                className={unlocked ? styles.worldImage : styles.lockedWorldImage}
-                src={`/assets/kaart${world.id}.webp`}
-                alt={`Kaart van wereld ${world.id}`}
-              />
-              <div className={styles.worldLockOverlay}>
-                <strong>Wereld {world.id}</strong>
-                <span>
-                  {unlocked
-                    ? "Deze wereld is vrijgespeeld"
-                    : eligible && previousUnlocked
-                      ? `Klaar om vrij te schakelen - EUR ${world.id}`
-                      : previousUnlocked
-                        ? `Nog ${Math.max(0, world.required - completedGames)} ontdekkingen nodig`
-                        : `Open eerst wereld ${world.id - 1}`}
-                </span>
-              </div>
-              {eligible && previousUnlocked && !unlocked && (
-                <button
-                  aria-label={`Wereld ${world.id} vrijschakelen voor EUR ${world.id}`}
-                  className={styles.worldPurchaseButton}
-                  disabled={purchase.isPending}
-                  onClick={() => purchase.mutate(world.id)}
-                  type="button"
-                />
-              )}
-            </section>
-          );
-        })}
-
-        <section
-          aria-label="Wereld 1 met spellen"
-          className={styles.worldCard}
-          ref={firstWorldRef}
-        >
-          <img
-            className={styles.worldImage}
-            src="/assets/kaart1.webp"
-            alt="Kaart van wereld 1"
-          />
-          {games.slice(0, 7).map((game) => (
-            <NavLink
-              aria-label={game.title}
-              className={styles.mapHotspot ?? ""}
-              key={game.id}
-              style={{
-                left: `${game.position.left}%`,
-                top: `${game.position.top}%`,
-                width: `${game.position.width}%`,
-                height: `${game.position.height}%`,
-              }}
-              to={`/games/${game.id}`}
-            />
-          ))}
-        </section>
-      </div>
-    </main>
+    <WorldMap
+      focusWorld={Number.isInteger(focusWorld) && focusWorld >= 1 && focusWorld <= 5 ? focusWorld : 1}
+      progress={progress.data}
+      purchaseWorld={(world) => purchase.mutate(world)}
+      purchasing={purchase.isPending}
+    />
   );
 }
 
@@ -892,17 +770,50 @@ function CallPanel({ pair }: { pair: Pair | null | undefined }) {
   );
 }
 
+function SettingsPanel({
+  pair,
+  partnerOnline,
+}: {
+  pair: Pair | null | undefined;
+  partnerOnline: boolean;
+}) {
+  const setDrawer = useAppStore((state) => state.setDrawer);
+  return (
+    <div className={styles.settingsPanel}>
+      <span className={styles.panelKicker}>Instellingen</span>
+      <h2>Jouw omgeving</h2>
+      <p className={styles.partnerStatus} data-online={partnerOnline}>
+        <span />
+        {partnerOnline ? "Partner is online" : "Partner is offline"}
+      </p>
+      <NavLink onClick={() => setDrawer(null)} to="/profile">Profiel beheren</NavLink>
+      <NavLink onClick={() => setDrawer(null)} to="/account">Account en herstel</NavLink>
+      <button onClick={() => setDrawer("pair")} type="button">
+        {pair ? "Koppeling beheren" : "Partner koppelen"}
+      </button>
+    </div>
+  );
+}
+
 function AppShell() {
   const { session } = useSession();
-  const { connected } = useRealtime();
+  const { partnerOnline } = useRealtime();
   const drawer = useAppStore((state) => state.drawer);
   const setDrawer = useAppStore((state) => state.setDrawer);
   const pair = useQuery({ queryKey: ["pair"], queryFn: api.getPair });
+  const callAccess = useQuery({
+    queryKey: ["call-access", pair.data?.id],
+    queryFn: api.getCallAccess,
+    enabled: Boolean(pair.data && pair.data.members.length === 2),
+  });
+  const chatReady = Boolean(pair.data?.members.length === 2 && partnerOnline);
+  const callReady = Boolean(callAccess.data?.unlocked && partnerOnline);
 
   return (
     <div className={styles.app}>
       <Routes>
         <Route path="/" element={<WorldPage />} />
+        <Route path="/worlds/:worldId" element={<WorldPage />} />
         <Route path="/games/:gameId" element={<GamePage pair={pair.data} />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/account" element={<AccountPage />} />
@@ -911,14 +822,27 @@ function AppShell() {
         <Route path="*" element={<Navigate replace to="/" />} />
       </Routes>
 
+      <button
+        aria-label="Instellingen openen"
+        className={styles.settingsButton}
+        onClick={() => setDrawer(drawer === "settings" ? null : "settings")}
+        type="button"
+      >
+        <span aria-hidden="true">•••</span>
+      </button>
+
       <nav className={styles.dock}>
         <NavLink to="/">Kaart</NavLink>
-        <button onClick={() => setDrawer(drawer === "pair" ? null : "pair")}>Koppel</button>
-        <button onClick={() => setDrawer(drawer === "chat" ? null : "chat")}>Chat</button>
-        <button onClick={() => setDrawer(drawer === "call" ? null : "call")}>Bel</button>
-        <NavLink to="/profile">Profiel</NavLink>
-        <NavLink to="/account">{session?.account ? "Account" : "Inloggen"}</NavLink>
-        <span className={connected ? styles.onlineDot : styles.offlineDot} title={connected ? "Online" : "Offline"} />
+        <button onClick={() => setDrawer(drawer === "chat" ? null : "chat")}>
+          <span>Chat</span>
+          <small data-ready={chatReady}>{chatReady ? "Online" : "Offline"}</small>
+        </button>
+        <button onClick={() => setDrawer(drawer === "call" ? null : "call")}>
+          <span>Bel</span>
+          <small data-ready={callReady}>
+            {callReady ? "Beschikbaar" : callAccess.data?.unlocked ? "Offline" : "Gesloten"}
+          </small>
+        </button>
       </nav>
 
       {drawer && (
@@ -927,6 +851,9 @@ function AppShell() {
           {drawer === "pair" && <PairPanel pair={pair.data} />}
           {drawer === "chat" && <ChatPanel pair={pair.data} />}
           {drawer === "call" && <CallPanel pair={pair.data} />}
+          {drawer === "settings" && (
+            <SettingsPanel pair={pair.data} partnerOnline={partnerOnline} />
+          )}
         </aside>
       )}
       {pair.data?.members.length === 2 && !session?.account && <AccountGate />}

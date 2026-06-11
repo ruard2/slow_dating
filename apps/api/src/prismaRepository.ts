@@ -475,6 +475,15 @@ export class PrismaRepository implements AppRepository {
     if (!run || run.installationId !== installationId) {
       throw new DomainError("Spelsessie niet gevonden.", 404);
     }
+    if (run.status === "completed") {
+      if (changes.status === "completed") {
+        return this.toGameRun(run);
+      }
+      throw new DomainError("Een afgeronde spelsessie kan niet worden gewijzigd.", 409);
+    }
+    if (run.status !== "active") {
+      throw new DomainError("Deze spelsessie is niet meer actief.", 409);
+    }
     const updated = await this.prisma.gameRun.update({
       where: { id: runId },
       data: {
