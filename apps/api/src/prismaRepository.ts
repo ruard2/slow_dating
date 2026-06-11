@@ -1,10 +1,20 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 
-import type { GameRun, Message, Pair, Profile } from "@slow-dating/contracts";
+import type {
+  CallAccess,
+  GameRun,
+  Message,
+  Pair,
+  Profile,
+  RelationshipArchive,
+  WorldProgress,
+} from "@slow-dating/contracts";
 
 import { PrismaClient, type Prisma } from "./generated/prisma/client.js";
 import {
+  type AccountRecord,
   type AppRepository,
+  type AuthTokenRecord,
   DomainError,
   type InstallationRecord,
 } from "./domain.js";
@@ -29,6 +39,7 @@ function toProfile(profile: {
 
 export class PrismaRepository implements AppRepository {
   private readonly prisma: PrismaClient;
+  private readonly onlineMembers = new Map<string, Set<string>>();
 
   constructor(databaseUrl: string) {
     this.prisma = new PrismaClient({
@@ -54,9 +65,187 @@ export class PrismaRepository implements AppRepository {
     return {
       id: installation.id,
       secretHash: installation.secretHash,
+      accountId: installation.accountId,
       createdAt: installation.createdAt.toISOString(),
       lastSeenAt: installation.lastSeenAt.toISOString(),
     };
+  }
+
+  async getInstallation(installationId: string) {
+    const installation = await this.prisma.installation.findUnique({
+      where: { id: installationId },
+    });
+    if (!installation) {
+      throw new DomainError("Installatie niet gevonden.", 404);
+    }
+    return {
+      id: installation.id,
+      secretHash: installation.secretHash,
+      accountId: installation.accountId,
+      createdAt: installation.createdAt.toISOString(),
+      lastSeenAt: installation.lastSeenAt.toISOString(),
+    };
+  }
+
+  async createAccount(
+    installationId: string,
+    email: string,
+    passwordHash: string,
+    displayName: string,
+  ): Promise<AccountRecord> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = await this.prisma.account.findUnique({
+      where: { email: normalizedEmail },
+    });
+    if (existing) {
+      throw new DomainError("Dit e-mailadres is al in gebruik.", 409);
+    }
+    let account;
+    try {
+      account = await this.prisma.$transaction(async (transaction) => {
+        const created = await transaction.account.create({
+          data: {
+            email: normalizedEmail,
+            passwordHash,
+            primaryInstallationId: installationId,
+          },
+        });
+        await transaction.installation.update({
+          where: { id: installationId },
+          data: { accountId: created.id },
+        });
+        await transaction.profile.update({
+          where: { installationId },
+          data: { displayName },
+        });
+        return created;
+      });
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "P2002"
+      ) {
+        throw new DomainError("Dit e-mailadres is al in gebruik.", 409);
+      }
+      throw error;
+    }
+    return this.toAccount(account);
+  }
+
+  async getAccount(accountId: string) {
+    const account = await this.prisma.account.findUnique({
+      where: { id: accountId },
+    });
+    if (!account) {
+      throw new DomainError("Account niet gevonden.", 404);
+    }
+    return this.toAccount(account);
+  }
+
+  async findAccountByEmail(email: string) {
+    const account = await this.prisma.account.findUnique({
+      where: { email: email.trim().toLowerCase() },
+    });
+    return account ? this.toAccount(account) : null;
+  }
+
+  async getAccountForInstallation(installationId: string) {
+    const installation = await this.prisma.installation.findUnique({
+      where: { id: installationId },
+    });
+    return installation?.accountId
+      ? this.getAccount(installation.accountId)
+      : null;
+  }
+
+  async markEmailVerified(accountId: string) {
+    await this.prisma.account.update({
+      where: { id: accountId },
+      data: { emailVerified: true },
+    });
+  }
+
+  async updateAccountPassword(accountId: string, passwordHash: string) {
+    await this.prisma.$transaction([
+      this.prisma.account.update({
+        where: { id: accountId },
+        data: { passwordHash },
+      }),
+      this.prisma.authToken.updateMany({
+        where: { accountId, type: "refresh", usedAt: null },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+  }
+
+  async createAuthToken(
+    accountId: string,
+    type: AuthTokenRecord["type"],
+    tokenHash: string,
+    expiresAt: string,
+  ) {
+    const token = await this.prisma.authToken.create({
+      data: {
+        accountId,
+        type,
+        tokenHash,
+        expiresAt: new Date(expiresAt),
+      },
+    });
+    return this.toAuthToken(token);
+  }
+
+  async consumeAuthToken(type: AuthTokenRecord["type"], tokenHash: string) {
+    return this.prisma.$transaction(async (transaction) => {
+      const token = await transaction.authToken.findFirst({
+        where: {
+          type,
+          tokenHash,
+          usedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+      });
+      if (!token) {
+        return null;
+      }
+      const consumed = await transaction.authToken.update({
+        where: { id: token.id },
+        data: { usedAt: new Date() },
+      });
+      return this.toAuthToken(consumed);
+    });
+  }
+
+  async revokeRefreshTokens(accountId: string) {
+    await this.prisma.authToken.updateMany({
+      where: { accountId, type: "refresh", usedAt: null },
+      data: { usedAt: new Date() },
+    });
+  }
+
+  async queueMail(
+    to: string,
+    type: "verify_email" | "password_reset",
+    token: string,
+  ) {
+    await this.prisma.mailOutbox.create({
+      data: { recipient: to, type, token },
+    });
+  }
+
+  async listDevelopmentMail() {
+    const messages = await this.prisma.mailOutbox.findMany({
+      orderBy: { createdAt: "asc" },
+    });
+    return messages.map((message) => ({
+      id: message.id,
+      to: message.recipient,
+      type: message.type as "verify_email" | "password_reset",
+      token: message.token,
+      createdAt: message.createdAt.toISOString(),
+    }));
   }
 
   async getProfile(installationId: string) {
@@ -81,7 +270,9 @@ export class PrismaRepository implements AppRepository {
   }
 
   async createPair(installationId: string) {
-    await this.disconnectPair(installationId);
+    if (await this.getPairForInstallation(installationId)) {
+      throw new DomainError("Je hebt al een actieve koppeling.", 409);
+    }
     const pair = await this.prisma.pair.create({
       data: {
         code: await this.createUniqueCode(),
@@ -104,6 +295,9 @@ export class PrismaRepository implements AppRepository {
     if (!target) {
       throw new DomainError("Koppelcode niet gevonden.", 404);
     }
+    if (target.disconnectedAt) {
+      throw new DomainError("Deze koppelcode is niet meer actief.", 410);
+    }
     if (
       target.members.length >= 2 &&
       !target.members.some((member) => member.installationId === installationId)
@@ -111,7 +305,9 @@ export class PrismaRepository implements AppRepository {
       throw new DomainError("Dit koppel is al compleet.", 409);
     }
     if (!target.members.some((member) => member.installationId === installationId)) {
-      await this.disconnectPair(installationId);
+      if (await this.getPairForInstallation(installationId)) {
+        throw new DomainError("Ontkoppel eerst je huidige partner.", 409);
+      }
       await this.prisma.pairMember.create({
         data: {
           pairId: target.id,
@@ -124,23 +320,82 @@ export class PrismaRepository implements AppRepository {
   }
 
   async getPairForInstallation(installationId: string) {
-    const membership = await this.prisma.pairMember.findUnique({
-      where: { installationId },
+    const membership = await this.prisma.pairMember.findFirst({
+      where: { installationId, pair: { disconnectedAt: null } },
     });
     return membership ? this.getPair(membership.pairId) : null;
   }
 
   async disconnectPair(installationId: string) {
-    const membership = await this.prisma.pairMember.findUnique({
-      where: { installationId },
+    const membership = await this.prisma.pairMember.findFirst({
+      where: { installationId, pair: { disconnectedAt: null } },
     });
     if (membership) {
-      await this.prisma.pair.delete({ where: { id: membership.pairId } });
+      await this.prisma.pair.update({
+        where: { id: membership.pairId },
+        data: { disconnectedAt: new Date(), bothOnlineSince: null },
+      });
     }
   }
 
+  async listRelationshipArchives(
+    installationId: string,
+  ): Promise<RelationshipArchive[]> {
+    const memberships = await this.prisma.pairMember.findMany({
+      where: {
+        installationId,
+        pair: { disconnectedAt: { not: null } },
+      },
+      include: {
+        pair: {
+          include: {
+            _count: { select: { messages: true } },
+            gameRuns: {
+              where: { status: "completed" },
+              select: { gameId: true },
+            },
+          },
+        },
+      },
+    });
+    return Promise.all(
+      memberships.map(async ({ pair }) => ({
+        ...(await this.getPair(pair.id)),
+        messageCount: pair._count.messages,
+        completedGames: new Set(pair.gameRuns.map((run) => run.gameId)).size,
+      })),
+    );
+  }
+
+  async listRelationshipMessages(installationId: string, pairId: string) {
+    const membership = await this.prisma.pairMember.findFirst({
+      where: {
+        installationId,
+        pairId,
+        pair: { disconnectedAt: { not: null } },
+      },
+    });
+    if (!membership) {
+      throw new DomainError("Relatiearchief niet gevonden.", 404);
+    }
+    const messages = await this.prisma.message.findMany({
+      where: { pairId },
+      orderBy: { sentAt: "asc" },
+      include: { sender: { include: { profile: true } } },
+    });
+    return messages.map((message) => ({
+      id: message.id,
+      clientId: message.clientId,
+      pairId: message.pairId,
+      senderInstallationId: message.senderInstallationId,
+      senderName: message.sender.profile?.displayName ?? "Onbekend",
+      text: message.text,
+      sentAt: message.sentAt.toISOString(),
+    }));
+  }
+
   async listMessages(installationId: string) {
-    const pair = await this.requirePair(installationId);
+    const pair = await this.requireCompletePair(installationId);
     const messages = await this.prisma.message.findMany({
       where: { pairId: pair.id },
       orderBy: { sentAt: "asc" },
@@ -162,7 +417,7 @@ export class PrismaRepository implements AppRepository {
     clientId: string,
     text: string,
   ): Promise<Message> {
-    const pair = await this.requirePair(installationId);
+    const pair = await this.requireCompletePair(installationId);
     const message = await this.prisma.message.upsert({
       where: {
         pairId_clientId: {
@@ -236,14 +491,19 @@ export class PrismaRepository implements AppRepository {
     return this.toGameRun(updated);
   }
 
-  async getWorldProgress(installationId: string) {
-    const pair = await this.getPairForInstallation(installationId);
+  async getWorldProgress(installationId: string): Promise<WorldProgress> {
+    const memberships = await this.prisma.pairMember.findMany({
+      where: { installationId },
+      select: { pairId: true },
+    });
     const completedRuns = await this.prisma.gameRun.findMany({
       where: {
         status: "completed",
         OR: [
           { installationId },
-          ...(pair ? [{ pairId: pair.id }] : []),
+          ...(memberships.length
+            ? [{ pairId: { in: memberships.map(({ pairId }) => pairId) } }]
+            : []),
         ],
       },
       select: { gameId: true },
@@ -251,12 +511,228 @@ export class PrismaRepository implements AppRepository {
     const completedGames = new Set(
       completedRuns.map((run) => run.gameId),
     ).size;
+    const account = await this.getAccountForInstallation(installationId);
+    const purchases = account
+      ? await this.prisma.worldPurchase.findMany({
+          where: { accountId: account.id },
+          select: { world: true },
+        })
+      : [];
+    const purchasedWorlds = [
+      1,
+      ...purchases.map((purchase) => purchase.world),
+    ];
+    const eligibleWorlds = [1, 2, 3, 4, 5].filter(
+      (world) => world === 1 || completedGames >= (world - 1) * 5,
+    );
     return {
       completedGames,
-      unlockedWorlds: [1, 2, 3, 4, 5].filter(
-        (world) => world === 1 || completedGames >= (world - 1) * 5,
+      eligibleWorlds,
+      purchasedWorlds,
+      unlockedWorlds: eligibleWorlds.filter((world) =>
+        purchasedWorlds.includes(world),
       ),
     };
+  }
+
+  async purchaseWorld(installationId: string, world: number) {
+    if (world < 2 || world > 5) {
+      throw new DomainError("Ongeldige wereld.", 400);
+    }
+    const account = await this.getAccountForInstallation(installationId);
+    if (!account) {
+      throw new DomainError("Maak eerst een account om een wereld te kopen.", 403);
+    }
+    const progress = await this.getWorldProgress(installationId);
+    if (!progress.eligibleWorlds.includes(world)) {
+      throw new DomainError("Je hebt nog niet genoeg ontdekkingen.", 409);
+    }
+    if (!progress.unlockedWorlds.includes(world - 1)) {
+      throw new DomainError("Open eerst de vorige wereld.", 409);
+    }
+    await this.prisma.worldPurchase.upsert({
+      where: { accountId_world: { accountId: account.id, world } },
+      update: {},
+      create: { accountId: account.id, world },
+    });
+    return this.getWorldProgress(installationId);
+  }
+
+  async getCallAccess(installationId: string): Promise<CallAccess> {
+    const pair = await this.requireCompletePair(installationId);
+    const record = await this.prisma.pair.findUnique({
+      where: { id: pair.id },
+      include: {
+        members: true,
+        messages: { select: { senderInstallationId: true } },
+        gameRuns: {
+          where: { status: "completed" },
+          select: { gameId: true },
+        },
+      },
+    });
+    if (!record) {
+      throw new DomainError("Koppeling niet gevonden.", 404);
+    }
+    const messagesByMember = Object.fromEntries(
+      record.members.map((member) => [
+        member.installationId,
+        record.messages.filter(
+          (message) =>
+            message.senderInstallationId === member.installationId,
+        ).length,
+      ]),
+    );
+    const sharedSeconds =
+      record.sharedSeconds +
+      (record.bothOnlineSince
+        ? Math.floor(
+            (Date.now() - record.bothOnlineSince.getTime()) / 1_000,
+          )
+        : 0);
+    const completedGames = new Set(
+      record.gameRuns.map((run) => run.gameId),
+    ).size;
+    const consent =
+      (record.callConsent as Record<string, "yes" | "no" | null> | null) ?? {};
+    return {
+      sharedSeconds,
+      messagesByMember,
+      completedGames,
+      conditionsMet:
+        sharedSeconds >= 1_800 &&
+        record.members.every(
+          (member) => (messagesByMember[member.installationId] ?? 0) >= 10,
+        ) &&
+        completedGames >= 5,
+      unlocked: record.callUnlocked,
+      consentByMember: Object.fromEntries(
+        record.members.map((member) => [
+          member.installationId,
+          consent[member.installationId] ?? null,
+        ]),
+      ),
+      requestedBy: record.callRequestedBy,
+      cooldownUntil: record.callCooldownUntil?.toISOString() ?? null,
+    };
+  }
+
+  async requestCallAccess(installationId: string) {
+    const pair = await this.requireCompletePair(installationId);
+    const access = await this.getCallAccess(installationId);
+    if (!access.conditionsMet) {
+      throw new DomainError("De belvoorwaarden zijn nog niet behaald.", 409);
+    }
+    if (
+      access.cooldownUntil &&
+      new Date(access.cooldownUntil).getTime() > Date.now()
+    ) {
+      throw new DomainError("De bedenktijd is nog actief.", 429);
+    }
+    await this.prisma.pair.update({
+      where: { id: pair.id },
+      data: {
+        callRequestedBy: installationId,
+        callConsent: Object.fromEntries(
+          pair.members.map((member) => [
+            member.installationId,
+            member.installationId === installationId ? "yes" : null,
+          ]),
+        ),
+      },
+    });
+    return this.getCallAccess(installationId);
+  }
+
+  async answerCallAccess(installationId: string, answer: "yes" | "no") {
+    const pair = await this.requireCompletePair(installationId);
+    const record = await this.prisma.pair.findUnique({
+      where: { id: pair.id },
+    });
+    if (!record?.callRequestedBy) {
+      throw new DomainError("Er is geen toestemmingsverzoek.", 409);
+    }
+    const consent =
+      (record.callConsent as Record<string, "yes" | "no" | null> | null) ?? {};
+    consent[installationId] = answer;
+    const allYes = pair.members.every(
+      (member) => consent[member.installationId] === "yes",
+    );
+    await this.prisma.pair.update({
+      where: { id: pair.id },
+      data:
+        answer === "no"
+          ? {
+              callUnlocked: false,
+              callRequestedBy: null,
+              callConsent: {},
+              callCooldownUntil: new Date(Date.now() + 30 * 60 * 1_000),
+            }
+          : {
+              callConsent: consent,
+              ...(allYes
+                ? {
+                    callUnlocked: true,
+                    callRequestedBy: null,
+                    callCooldownUntil: null,
+                  }
+                : {}),
+            },
+    });
+    return this.getCallAccess(installationId);
+  }
+
+  async relockCalls(installationId: string) {
+    const pair = await this.requireCompletePair(installationId);
+    await this.prisma.pair.update({
+      where: { id: pair.id },
+      data: {
+        callUnlocked: false,
+        callRequestedBy: null,
+        callConsent: {},
+        callCooldownUntil: null,
+      },
+    });
+    return this.getCallAccess(installationId);
+  }
+
+  async markPresence(installationId: string, online: boolean) {
+    const pair = await this.getPairForInstallation(installationId);
+    if (!pair || pair.members.length !== 2) {
+      return;
+    }
+    const members = this.onlineMembers.get(pair.id) ?? new Set<string>();
+    if (online) {
+      members.add(installationId);
+    } else {
+      members.delete(installationId);
+    }
+    this.onlineMembers.set(pair.id, members);
+    const record = await this.prisma.pair.findUnique({ where: { id: pair.id } });
+    if (!record) {
+      return;
+    }
+    if (members.size === 2 && !record.bothOnlineSince) {
+      await this.prisma.pair.update({
+        where: { id: pair.id },
+        data: { bothOnlineSince: new Date() },
+      });
+    } else if (members.size < 2 && record.bothOnlineSince) {
+      await this.prisma.pair.update({
+        where: { id: pair.id },
+        data: {
+          sharedSeconds: {
+            increment: Math.max(
+              0,
+              Math.floor(
+                (Date.now() - record.bothOnlineSince.getTime()) / 1_000,
+              ),
+            ),
+          },
+          bothOnlineSince: null,
+        },
+      });
+    }
   }
 
   async hasProcessedEvent(eventId: string) {
@@ -281,6 +757,14 @@ export class PrismaRepository implements AppRepository {
     return pair;
   }
 
+  private async requireCompletePair(installationId: string) {
+    const pair = await this.requirePair(installationId);
+    if (pair.members.length !== 2) {
+      throw new DomainError("Chat en bellen vereisen twee gekoppelde accounts.", 409);
+    }
+    return pair;
+  }
+
   private async getPair(pairId: string): Promise<Pair> {
     const pair = await this.prisma.pair.findUnique({
       where: { id: pairId },
@@ -298,6 +782,7 @@ export class PrismaRepository implements AppRepository {
       id: pair.id,
       code: pair.code,
       createdAt: pair.createdAt.toISOString(),
+      disconnectedAt: pair.disconnectedAt?.toISOString() ?? null,
       members: pair.members.map((member) => ({
         installationId: member.installationId,
         displayName:
@@ -305,6 +790,44 @@ export class PrismaRepository implements AppRepository {
         role: member.role,
         online: false,
       })),
+    };
+  }
+
+  private toAccount(account: {
+    id: string;
+    email: string;
+    emailVerified: boolean;
+    passwordHash: string;
+    primaryInstallationId: string;
+    createdAt: Date;
+  }): AccountRecord {
+    return {
+      id: account.id,
+      email: account.email,
+      emailVerified: account.emailVerified,
+      passwordHash: account.passwordHash,
+      primaryInstallationId: account.primaryInstallationId,
+      createdAt: account.createdAt.toISOString(),
+    };
+  }
+
+  private toAuthToken(token: {
+    id: string;
+    accountId: string;
+    type: "refresh" | "verify_email" | "password_reset";
+    tokenHash: string;
+    expiresAt: Date;
+    usedAt: Date | null;
+    createdAt: Date;
+  }): AuthTokenRecord {
+    return {
+      id: token.id,
+      accountId: token.accountId,
+      type: token.type,
+      tokenHash: token.tokenHash,
+      expiresAt: token.expiresAt.toISOString(),
+      usedAt: token.usedAt?.toISOString() ?? null,
+      createdAt: token.createdAt.toISOString(),
     };
   }
 

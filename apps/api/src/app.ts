@@ -10,12 +10,18 @@ import helmet from "helmet";
 import { ZodError } from "zod";
 
 import {
+  callConsentRequestSchema,
+  completePasswordResetSchema,
   createGameRunSchema,
   guestSessionRequestSchema,
   joinPairSchema,
+  loginSchema,
+  registerAccountSchema,
+  requestPasswordResetSchema,
   sendMessageSchema,
   updateGameRunSchema,
   updateProfileSchema,
+  verifyEmailSchema,
 } from "@slow-dating/contracts";
 
 import type { AuthenticatedRequest } from "./auth.js";
@@ -42,6 +48,53 @@ function installationId(request: Request) {
   return (request as AuthenticatedRequest).installationId;
 }
 
+const REFRESH_COOKIE = "slow_dating_refresh";
+
+function readCookie(request: Request, name: string) {
+  const cookies = request.header("cookie")?.split(";") ?? [];
+  for (const cookie of cookies) {
+    const [key, ...value] = cookie.trim().split("=");
+    if (key === name) {
+      return decodeURIComponent(value.join("="));
+    }
+  }
+  return undefined;
+}
+
+function setRefreshCookie(response: Response, token: string) {
+  response.cookie(REFRESH_COOKIE, token, {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 30 * 24 * 60 * 60 * 1_000,
+    path: "/api/auth",
+  });
+}
+
+function createRateLimiter(limit: number, windowMs: number) {
+  const attempts = new Map<string, { count: number; resetAt: number }>();
+  return (request: Request, response: Response, next: NextFunction) => {
+    const key = `${request.ip}:${request.path}`;
+    const timestamp = Date.now();
+    const current = attempts.get(key);
+    if (!current || current.resetAt <= timestamp) {
+      attempts.set(key, { count: 1, resetAt: timestamp + windowMs });
+      next();
+      return;
+    }
+    if (current.count >= limit) {
+      response.setHeader(
+        "retry-after",
+        Math.ceil((current.resetAt - timestamp) / 1_000),
+      );
+      response.status(429).json({ error: "Te veel pogingen. Probeer later opnieuw." });
+      return;
+    }
+    current.count += 1;
+    next();
+  };
+}
+
 export function createApp({
   auth,
   repository,
@@ -49,6 +102,7 @@ export function createApp({
   webOrigin,
 }: CreateAppOptions) {
   const app = express();
+  const authRateLimit = createRateLimiter(10, 15 * 60 * 1_000);
 
   app.disable("x-powered-by");
   app.get("/legacy/sd-client.js", (_request, response) => {
@@ -64,7 +118,7 @@ export function createApp({
       contentSecurityPolicy: false,
     }),
   );
-  app.use(cors({ origin: webOrigin }));
+  app.use(cors({ origin: webOrigin, credentials: true }));
   app.use(express.json({ limit: "250kb" }));
 
   app.get("/api/health", (_request, response) => {
@@ -82,6 +136,60 @@ export function createApp({
       .status(201)
       .json(await auth.createGuestSession(input.installationSecret));
   });
+
+  app.post("/api/auth/register", authRateLimit, auth.requireAuth, async (request, response) => {
+    const input = registerAccountSchema.parse(request.body);
+    const result = await auth.register(installationId(request), input);
+    setRefreshCookie(response, result.refreshToken);
+    response.status(201).json(result.session);
+  });
+
+  app.post("/api/auth/login", authRateLimit, async (request, response) => {
+    const input = loginSchema.parse(request.body);
+    const result = await auth.login(input.email, input.password);
+    setRefreshCookie(response, result.refreshToken);
+    response.json(result.session);
+  });
+
+  app.post("/api/auth/refresh", async (request, response) => {
+    const refreshToken = readCookie(request, REFRESH_COOKIE);
+    if (!refreshToken) {
+      response.status(204).end();
+      return;
+    }
+    const result = await auth.refresh(refreshToken);
+    setRefreshCookie(response, result.refreshToken);
+    response.json(result.session);
+  });
+
+  app.post("/api/auth/logout", async (request, response) => {
+    await auth.logout(readCookie(request, REFRESH_COOKIE));
+    response.clearCookie(REFRESH_COOKIE, { path: "/api/auth" });
+    response.status(204).end();
+  });
+
+  app.post("/api/auth/verify-email", async (request, response) => {
+    const input = verifyEmailSchema.parse(request.body);
+    response.json(await auth.verifyEmail(input.token));
+  });
+
+  app.post("/api/auth/password-reset/request", authRateLimit, async (request, response) => {
+    const input = requestPasswordResetSchema.parse(request.body);
+    await auth.requestPasswordReset(input.email);
+    response.status(202).json({ accepted: true });
+  });
+
+  app.post("/api/auth/password-reset/complete", authRateLimit, async (request, response) => {
+    const input = completePasswordResetSchema.parse(request.body);
+    await auth.resetPassword(input.token, input.password);
+    response.status(204).end();
+  });
+
+  if (storageDriver === "local" && process.env.NODE_ENV !== "production") {
+    app.get("/api/dev/mail-outbox", async (_request, response) => {
+      response.json(await repository.listDevelopmentMail());
+    });
+  }
 
   app.get("/api/profile", auth.requireAuth, async (request, response) => {
     response.json(await repository.getProfile(installationId(request)));
@@ -125,6 +233,29 @@ export function createApp({
     response.status(204).end();
   });
 
+  app.get("/api/relationships/archives", auth.requireAuth, async (request, response) => {
+    response.json(
+      await repository.listRelationshipArchives(installationId(request)),
+    );
+  });
+
+  app.get(
+    "/api/relationships/:pairId/messages",
+    auth.requireAuth,
+    async (request, response) => {
+      const pairId = request.params.pairId;
+      if (typeof pairId !== "string") {
+        throw new DomainError("Ongeldig relatiearchief.", 400);
+      }
+      response.json(
+        await repository.listRelationshipMessages(
+          installationId(request),
+          pairId,
+        ),
+      );
+    },
+  );
+
   app.get("/api/messages", auth.requireAuth, async (request, response) => {
     response.json(await repository.listMessages(installationId(request)));
   });
@@ -155,6 +286,45 @@ export function createApp({
     response.json(
       await repository.getWorldProgress(installationId(request)),
     );
+  });
+
+  app.post(
+    "/api/worlds/:world/purchase",
+    auth.requireAuth,
+    async (request, response) => {
+      if (process.env.NODE_ENV === "production") {
+        throw new DomainError(
+          "Aankopen worden in productie uitsluitend via de betaalprovider bevestigd.",
+          501,
+        );
+      }
+      const world = Number(request.params.world);
+      response.json(
+        await repository.purchaseWorld(installationId(request), world),
+      );
+    },
+  );
+
+  app.get("/api/calls/access", auth.requireAuth, async (request, response) => {
+    response.json(await repository.getCallAccess(installationId(request)));
+  });
+
+  app.post("/api/calls/access/request", auth.requireAuth, async (request, response) => {
+    response.json(await repository.requestCallAccess(installationId(request)));
+  });
+
+  app.post("/api/calls/access/answer", auth.requireAuth, async (request, response) => {
+    const input = callConsentRequestSchema.parse(request.body);
+    response.json(
+      await repository.answerCallAccess(
+        installationId(request),
+        input.answer,
+      ),
+    );
+  });
+
+  app.delete("/api/calls/access", auth.requireAuth, async (request, response) => {
+    response.json(await repository.relockCalls(installationId(request)));
   });
 
   app.patch(

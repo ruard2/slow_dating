@@ -26,12 +26,43 @@ enum GameRunStatus {
 model Installation {
   id         String       @id @default(uuid())
   secretHash String       @unique
+  accountId  String?
   createdAt  DateTime     @default(now())
   lastSeenAt DateTime     @updatedAt
   profile    Profile?
   memberships PairMember[]
   gameRuns   GameRun[]
   messages   Message[]
+}
+
+model Account {
+  id                    String          @id @default(uuid())
+  email                 String          @unique
+  emailVerified         Boolean         @default(false)
+  passwordHash          String
+  primaryInstallationId String          @unique
+  createdAt             DateTime        @default(now())
+  authTokens            AuthToken[]
+  worldPurchases        WorldPurchase[]
+}
+
+enum AuthTokenType {
+  refresh
+  verify_email
+  password_reset
+}
+
+model AuthToken {
+  id        String        @id @default(uuid())
+  accountId String
+  type      AuthTokenType
+  tokenHash String        @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+  account   Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, type])
 }
 
 model Profile {
@@ -51,11 +82,16 @@ model Pair {
   code         String        @unique
   createdAt    DateTime      @default(now())
   disconnectedAt DateTime?
+  sharedSeconds Int           @default(0)
+  bothOnlineSince DateTime?
+  callUnlocked Boolean        @default(false)
+  callRequestedBy String?
+  callConsent Json?
+  callCooldownUntil DateTime?
   members      PairMember[]
   gameRuns     GameRun[]
   progress     Progress[]
   messages     Message[]
-  callConsent  CallConsent?
 }
 
 model PairMember {
@@ -68,7 +104,25 @@ model PairMember {
   installation   Installation @relation(fields: [installationId], references: [id], onDelete: Cascade)
 
   @@unique([pairId, installationId])
-  @@unique([installationId])
+  @@index([installationId])
+}
+
+model WorldPurchase {
+  id          String   @id @default(uuid())
+  accountId   String
+  world       Int
+  purchasedAt DateTime @default(now())
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, world])
+}
+
+model MailOutbox {
+  id        String   @id @default(uuid())
+  recipient String
+  type      String
+  token     String
+  createdAt DateTime @default(now())
 }
 
 model GameRun {
@@ -114,16 +168,6 @@ model Message {
 
   @@unique([pairId, clientId])
   @@index([pairId, sentAt])
-}
-
-model CallConsent {
-  id          String   @id @default(uuid())
-  pairId      String   @unique
-  requestedBy String?
-  creator     Boolean?
-  partner     Boolean?
-  updatedAt   DateTime @updatedAt
-  pair        Pair     @relation(fields: [pairId], references: [id], onDelete: Cascade)
 }
 
 model ProcessedEvent {

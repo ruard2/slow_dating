@@ -93,6 +93,10 @@ interface RealtimeEvent<T> {
 
 - Alle actieve `koppel-*` onderdelen horen bij het nieuwe product.
 - De oude Slangen & Ladders-app blijft alleen referentiemateriaal.
+- Accounts zijn duurzaam; koppelcodes bevestigen alleen een nieuwe relatie.
+- Ontkoppelde relaties blijven als privé, read-only archief voor beide leden
+  bewaard.
+- Wereldtoegang die betaald is, hoort bij het persoonlijke account.
 - Vormgeving, illustraties en inhoud blijven zo veel mogelijk behouden.
 - Er is voorlopig geen productie-uitrol of betalingsimplementatie.
 - Gastidentiteiten zijn voorbereid op latere accounts.

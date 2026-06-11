@@ -56,6 +56,7 @@ export function registerRealtime(
   io.on("connection", async (socket) => {
     const { installationId, pairId } = socket.data;
     if (pairId) {
+      await repository.markPresence(installationId, true);
       await socket.join(`pair:${pairId}`);
       socket.to(`pair:${pairId}`).emit("event", {
         id: `presence:${installationId}:${Date.now()}`,
@@ -84,6 +85,10 @@ export function registerRealtime(
           reply({ ok: false, error: "pair_required" });
           return;
         }
+        if (currentPair.members.length !== 2) {
+          reply({ ok: false, error: "complete_pair_required" });
+          return;
+        }
         if (await repository.hasProcessedEvent(event.id)) {
           reply({ ok: true, duplicate: true });
           return;
@@ -104,6 +109,13 @@ export function registerRealtime(
             payload: message,
           });
         } else {
+          if (event.type === "call.signal") {
+            const callAccess = await repository.getCallAccess(installationId);
+            if (!callAccess.unlocked) {
+              reply({ ok: false, error: "call_locked" });
+              return;
+            }
+          }
           socket.to(`pair:${currentPair.id}`).emit("event", {
             ...event,
             pairId: currentPair.id,
@@ -120,6 +132,7 @@ export function registerRealtime(
     });
 
     socket.on("disconnect", () => {
+      void repository.markPresence(installationId, false);
       if (!pairId) {
         return;
       }
