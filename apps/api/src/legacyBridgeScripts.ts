@@ -74,6 +74,9 @@ export const legacySdClientBridge = String.raw`
         action.includes("solo") ||
         /^(solo verkennen|alleen spelen|speel alleen|toch alleen spelen|alleen ontdekken)$/.test(text) ||
         /^(begin samen|doe mee met koppelcode|maak koppelcode|ik heb een koppelcode)$/.test(text.replace(/^[^a-z]+/, "")) ||
+        /^(kaart|← kaart|terug naar de kaart)$/.test(text) ||
+        (element.getAttribute("href") || "").endsWith("world.html") ||
+        action.includes("world.html") ||
         action.includes("togglechat") ||
         action.includes("openchat") ||
         action.includes("sendchat") ||
@@ -109,6 +112,17 @@ export const legacySdClientBridge = String.raw`
   } else {
     enforceCoupleOnly();
   }
+
+  addEventListener("load", function () {
+    if (!location.pathname.endsWith("/kennismaking.html")) return;
+    setTimeout(function () {
+      if (!window._kmState || !window._kmGoNiveau) return;
+      window._kmState.code = code;
+      window._kmState.player = player;
+      window._kmState.solo = false;
+      window._kmGoNiveau();
+    }, 0);
+  }, { once: true });
 })();
 `;
 

@@ -9,6 +9,7 @@ import {
   NavLink,
   Route,
   Routes,
+  useLocation,
   useNavigate,
   useParams,
   useSearchParams,
@@ -38,6 +39,36 @@ function LoadingScreen() {
       <span className={styles.logoMark}>SD</span>
       <h1>{error ?? "Jouw omgeving wordt klaargezet"}</h1>
     </main>
+  );
+}
+
+function ShellIcon({
+  name,
+}: {
+  name: "back" | "call" | "callLocked" | "chat" | "settings";
+}) {
+  const paths = {
+    back: <path d="M15 18l-6-6 6-6M9 12h11" />,
+    call: <path d="M7.2 3.8l2.1 4.6-2.2 1.8a15 15 0 0 0 6.7 6.7l1.8-2.2 4.6 2.1-.8 3.1c-.3 1.1-1.4 1.8-2.5 1.6C9.3 20.2 3.8 14.7 2.5 7.1c-.2-1.1.5-2.2 1.6-2.5l3.1-.8Z" />,
+    callLocked: (
+      <>
+        <path d="M7.2 3.8l2.1 4.6-2.2 1.8a15 15 0 0 0 6.7 6.7l1.8-2.2 4.6 2.1-.8 3.1c-.3 1.1-1.4 1.8-2.5 1.6C9.3 20.2 3.8 14.7 2.5 7.1c-.2-1.1.5-2.2 1.6-2.5l3.1-.8Z" />
+        <path d="M4 20 20 4" />
+      </>
+    ),
+    chat: <path d="M4 5h16v11H9l-5 4V5Z" />,
+    settings: (
+      <>
+        <circle cx="5" cy="12" r="1.4" />
+        <circle cx="12" cy="12" r="1.4" />
+        <circle cx="19" cy="12" r="1.4" />
+      </>
+    ),
+  };
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      {paths[name]}
+    </svg>
   );
 }
 
@@ -504,11 +535,6 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
 
   return (
     <main className={styles.gameFramePage}>
-      <div className={styles.gameFrameHeader}>
-        <button onClick={() => navigate("/")} type="button">Kaart</button>
-        <strong>{game.title}</strong>
-        <span>Samen</span>
-      </div>
       <iframe
         className={styles.gameFrame}
         ref={frameRef}
@@ -866,17 +892,67 @@ function SettingsPanel({
 
 function AppShell() {
   const { session } = useSession();
-  const { partnerOnline } = useRealtime();
+  const location = useLocation();
+  const call = useCall();
+  const { lastEvent, partnerOnline } = useRealtime();
+  const queryClient = useQueryClient();
   const drawer = useAppStore((state) => state.drawer);
   const setDrawer = useAppStore((state) => state.setDrawer);
   const pair = useQuery({ queryKey: ["pair"], queryFn: api.getPair });
+  const messages = useQuery<Message[]>({
+    queryKey: ["messages", pair.data?.id],
+    queryFn: api.getMessages,
+    enabled: Boolean(pair.data?.members.length === 2),
+  });
   const callAccess = useQuery({
     queryKey: ["call-access", pair.data?.id],
     queryFn: api.getCallAccess,
     enabled: Boolean(pair.data && pair.data.members.length === 2),
   });
-  const chatReady = Boolean(pair.data?.members.length === 2 && partnerOnline);
-  const callReady = Boolean(callAccess.data?.unlocked && partnerOnline);
+  const readStorageKey = pair.data?.id
+    ? `slow-dating:last-chat-read:${pair.data.id}`
+    : "";
+  const lastChatReadAt = readStorageKey
+    ? localStorage.getItem(readStorageKey) ?? ""
+    : "";
+  const unreadCount = drawer === "chat"
+    ? 0
+    : messages.data?.filter(
+        (message) =>
+          message.senderInstallationId !== session?.installationId &&
+          (!lastChatReadAt || message.sentAt > lastChatReadAt),
+      ).length ?? 0;
+  const callAllowed = Boolean(callAccess.data?.unlocked);
+  const callActive = call.status !== "idle";
+  const inGame = location.pathname.startsWith("/games/");
+
+  useEffect(() => {
+    if (lastEvent?.type !== "chat.message") return;
+    const message = lastEvent.payload as Message;
+    queryClient.setQueryData<Message[]>(
+      ["messages", pair.data?.id],
+      (current = []) =>
+        current.some((item) => item.id === message.id)
+          ? current
+          : [...current, message],
+    );
+  }, [lastEvent, pair.data?.id, queryClient]);
+
+  useEffect(() => {
+    if (drawer !== "chat" || !messages.data?.length || !readStorageKey) return;
+    const latest = messages.data.at(-1)?.sentAt ?? new Date().toISOString();
+    localStorage.setItem(readStorageKey, latest);
+  }, [drawer, messages.data, readStorageKey]);
+
+  function toggleChat() {
+    if (drawer === "chat") {
+      setDrawer(null);
+      return;
+    }
+    const latest = messages.data?.at(-1)?.sentAt ?? new Date().toISOString();
+    if (readStorageKey) localStorage.setItem(readStorageKey, latest);
+    setDrawer("chat");
+  }
 
   return (
     <div className={styles.app}>
@@ -891,26 +967,56 @@ function AppShell() {
         <Route path="*" element={<Navigate replace to="/" />} />
       </Routes>
 
-      <button
-        aria-label="Instellingen openen"
-        className={styles.settingsButton}
-        onClick={() => setDrawer(drawer === "settings" ? null : "settings")}
-        type="button"
-      >
-        <span aria-hidden="true">•••</span>
-      </button>
+      {inGame && (
+        <NavLink
+          aria-label="Terug naar de kaart"
+          className={styles.gameBackButton!}
+          onClick={() => setDrawer(null)}
+          to="/"
+        >
+          <ShellIcon name="back" />
+        </NavLink>
+      )}
 
-      <nav className={styles.dock}>
-        <NavLink to="/">Kaart</NavLink>
-        <button onClick={() => setDrawer(drawer === "chat" ? null : "chat")}>
-          <span>Chat</span>
-          <small data-ready={chatReady}>{chatReady ? "Online" : "Offline"}</small>
+      <nav aria-label="Vaste appbediening" className={styles.dock}>
+        <button
+          aria-label={`Chat openen${unreadCount ? `, ${unreadCount} ongelezen` : ""}`}
+          data-active={drawer === "chat"}
+          onClick={toggleChat}
+          type="button"
+        >
+          <ShellIcon name="chat" />
+          {unreadCount > 0 && (
+            <span className={styles.unreadBadge}>
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
         </button>
-        <button onClick={() => setDrawer(drawer === "call" ? null : "call")}>
-          <span>Bel</span>
-          <small data-ready={callReady}>
-            {callReady ? "Beschikbaar" : callAccess.data?.unlocked ? "Offline" : "Gesloten"}
-          </small>
+        <button
+          aria-label={
+            callActive
+              ? "Gesprek actief"
+              : callAllowed
+                ? partnerOnline
+                  ? "Partner bellen"
+                  : "Bellen toegestaan, partner offline"
+                : "Bellen nog niet toegestaan"
+          }
+          data-active={drawer === "call"}
+          data-call-state={callActive ? "active" : callAllowed ? "ready" : "locked"}
+          onClick={() => setDrawer(drawer === "call" ? null : "call")}
+          type="button"
+        >
+          <ShellIcon name={callAllowed ? "call" : "callLocked"} />
+          {callActive && <span className={styles.callStatusDot} />}
+        </button>
+        <button
+          aria-label="Opties openen"
+          data-active={drawer === "settings" || drawer === "pair"}
+          onClick={() => setDrawer(drawer === "settings" ? null : "settings")}
+          type="button"
+        >
+          <ShellIcon name="settings" />
         </button>
       </nav>
 

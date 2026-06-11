@@ -108,10 +108,21 @@ export function createApp({
 
   app.disable("x-powered-by");
   app.get("/legacy/sd-client.js", (_request, response) => {
-    response.type("application/javascript").send(legacySdClientBridge);
+    response
+      .set("Cache-Control", "no-store")
+      .type("application/javascript")
+      .send(legacySdClientBridge);
   });
   app.get("/legacy/comm.js", (_request, response) => {
-    response.type("application/javascript").send(legacyCommBridge);
+    response
+      .set("Cache-Control", "no-store")
+      .type("application/javascript")
+      .send(legacyCommBridge);
+  });
+  app.get("/legacy/world.html", (_request, response) => {
+    response
+      .type("html")
+      .send("<!doctype html><script>top.location.replace('/')</script>");
   });
 
   app.use(
