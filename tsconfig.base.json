@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@slow-dating/config": [
+        "./packages/config/src/index.ts"
+      ],
+      "@slow-dating/content": [
+        "./packages/content/src/index.ts"
+      ],
+      "@slow-dating/contracts": [
+        "./packages/contracts/src/index.ts"
+      ],
+      "@slow-dating/game-kit": [
+        "./packages/game-kit/src/index.ts"
+      ],
+      "@slow-dating/realtime": [
+        "./packages/realtime/src/index.ts"
+      ],
+      "@slow-dating/ui": [
+        "./packages/ui/src/index.tsx"
+      ],
+      "@slow-dating/ui/*": [
+        "./packages/ui/src/*"
+      ]
+    }
+  }
+}

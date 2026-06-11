@@ -1,0 +1,7 @@
+.surface {
+  background: rgb(36 27 23 / 88%);
+  border: 1px solid var(--sd-color-surface-border);
+  border-radius: var(--sd-radius-large);
+  box-shadow: var(--sd-shadow-surface);
+  padding: 1.25rem;
+}

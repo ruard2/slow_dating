@@ -1,0 +1,26 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--sd-color-background);
+  color-scheme: dark;
+  font-family: var(--sd-font-body);
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-width: 20rem;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}

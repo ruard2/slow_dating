@@ -1,0 +1,29 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/api"
+    },
+    {
+      "path": "./apps/web"
+    },
+    {
+      "path": "./packages/config"
+    },
+    {
+      "path": "./packages/content"
+    },
+    {
+      "path": "./packages/contracts"
+    },
+    {
+      "path": "./packages/game-kit"
+    },
+    {
+      "path": "./packages/realtime"
+    },
+    {
+      "path": "./packages/ui"
+    }
+  ]
+}

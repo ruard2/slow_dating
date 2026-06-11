@@ -1,7 +1,43 @@
 {
   "name": "slow-dating",
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "start": "node koppel-backend/server.js"
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w @slow-dating/api\" \"npm run dev -w @slow-dating/web\"",
+    "dev:api": "npm run dev -w @slow-dating/api",
+    "dev:web": "npm run dev -w @slow-dating/web",
+    "build": "npm run build:packages && npm run build -w @slow-dating/api && npm run build -w @slow-dating/web",
+    "build:packages": "npm run build -w @slow-dating/contracts && npm run build -w @slow-dating/config && npm run build -w @slow-dating/realtime && npm run build -w @slow-dating/game-kit && npm run build -w @slow-dating/content && npm run build -w @slow-dating/ui",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint apps packages tests *.config.ts",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run typecheck && npm run test:unit && npm run build",
+    "start": "npm run start -w @slow-dating/api",
+    "preview": "npm run preview -w @slow-dating/web",
+    "legacy:start": "node koppel-backend/server.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^22.19.21",
+    "@vitest/coverage-v8": "^4.1.8",
+    "concurrently": "^10.0.3",
+    "eslint": "^10.4.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.0",
+    "vitest": "^4.1.8"
   }
 }

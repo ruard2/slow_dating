@@ -1,0 +1,16 @@
+:root {
+  --sd-color-background: #17120f;
+  --sd-color-surface: #241b17;
+  --sd-color-surface-border: rgb(225 190 143 / 18%);
+  --sd-color-text: #f7eee2;
+  --sd-color-text-muted: #c2afa0;
+  --sd-color-accent: #d2a96f;
+  --sd-color-accent-strong: #e8c690;
+  --sd-color-success: #62ab78;
+  --sd-color-warning: #d5a74f;
+  --sd-font-body: Inter, ui-sans-serif, system-ui, sans-serif;
+  --sd-font-display: Georgia, "Times New Roman", serif;
+  --sd-radius-medium: 1rem;
+  --sd-radius-large: 1.5rem;
+  --sd-shadow-surface: 0 1.5rem 4rem rgb(0 0 0 / 22%);
+}
