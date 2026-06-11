@@ -38,6 +38,7 @@ export interface PairRecord {
   createdAt: string;
   disconnectedAt: string | null;
   memberIds: string[];
+  developerMode?: boolean;
   sharedSeconds?: number;
   bothOnlineSince?: string | null;
   callUnlocked?: boolean;
@@ -114,6 +115,7 @@ export interface AppRepository {
     changes: Partial<Pick<Profile, "avatarColor" | "bio" | "displayName">>,
   ): Promise<Profile>;
   createPair(installationId: string): Promise<Pair>;
+  activateDeveloperPair(installationId: string): Promise<Pair>;
   joinPair(installationId: string, code: string): Promise<Pair>;
   getPairForInstallation(installationId: string): Promise<Pair | null>;
   listRelationshipArchives(
@@ -134,6 +136,10 @@ export interface AppRepository {
     installationId: string,
     input: Pick<GameRun, "gameId" | "mode" | "version">,
   ): Promise<GameRun>;
+  getActiveGameRun(
+    installationId: string,
+    gameId: string,
+  ): Promise<GameRun | null>;
   updateGameRun(
     installationId: string,
     runId: string,

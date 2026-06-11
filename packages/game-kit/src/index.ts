@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 
-export type GameMode = "solo" | "couple";
+export type GameMode = "couple";
 
 export interface GameComponentProps<TState> {
   state: TState;

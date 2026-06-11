@@ -313,6 +313,61 @@ export class LocalRepository implements AppRepository {
     return this.requirePair(installationId);
   }
 
+  async activateDeveloperPair(installationId: string) {
+    const current = await this.getPairForInstallation(installationId);
+    if (current) {
+      if (current.developerMode) return current;
+      throw new DomainError("Ontkoppel eerst je huidige partner.", 409);
+    }
+    const secretHash = createHash("sha256")
+      .update(`developer-partner:${installationId}`)
+      .digest("hex");
+    let developer = this.state.installations.find(
+      (candidate) => candidate.secretHash === secretHash,
+    );
+    if (!developer) {
+      developer = {
+        id: randomUUID(),
+        secretHash,
+        accountId: null,
+        createdAt: now(),
+        lastSeenAt: now(),
+      };
+      this.state.installations.push(developer);
+      this.state.profiles.push({
+        id: developer.id,
+        displayName: "Testpartner",
+        bio: "Lokale computerpartner voor ontwikkeling.",
+        avatarColor: "#8FD069",
+        createdAt: now(),
+        updatedAt: now(),
+      });
+    }
+    let code = createCode();
+    while (this.state.pairs.some((pair) => pair.code === code)) {
+      code = createCode();
+    }
+    this.state.pairs.push({
+      id: randomUUID(),
+      code,
+      developerMode: true,
+      createdAt: now(),
+      disconnectedAt: null,
+      memberIds: [installationId, developer.id],
+      sharedSeconds: 0,
+      bothOnlineSince: now(),
+      callUnlocked: true,
+      callRequestedBy: null,
+      callConsent: {
+        [installationId]: "yes",
+        [developer.id]: "yes",
+      },
+      callCooldownUntil: null,
+    });
+    await this.persist();
+    return this.requirePair(installationId);
+  }
+
   async joinPair(installationId: string, code: string) {
     const pair = this.state.pairs.find((candidate) => candidate.code === code);
     if (!pair || pair.disconnectedAt) {
@@ -437,18 +492,49 @@ export class LocalRepository implements AppRepository {
     input: Pick<GameRun, "gameId" | "mode" | "version">,
   ) {
     const pair = await this.getPairForInstallation(installationId);
-    if (input.mode === "couple" && (!pair || pair.members.length < 2)) {
+    if (!pair || pair.members.length < 2) {
       throw new DomainError("Koppelmodus vereist twee gekoppelde spelers.", 409);
+    }
+    const active = this.state.gameRuns.find(
+      (run) =>
+        run.pairId === pair.id &&
+        run.gameId === input.gameId &&
+        run.status === "active",
+    );
+    if (active) {
+      const readyInstallationIds = new Set(
+        Array.isArray(active.state.readyInstallationIds)
+          ? active.state.readyInstallationIds.filter(
+              (value): value is string => typeof value === "string",
+            )
+          : [],
+      );
+      readyInstallationIds.add(installationId);
+      if (pair.developerMode) {
+        pair.members.forEach((member) =>
+          readyInstallationIds.add(member.installationId),
+        );
+      }
+      active.state = {
+        ...active.state,
+        readyInstallationIds: [...readyInstallationIds],
+      };
+      await this.persist();
+      return structuredClone(active);
     }
     const run: GameRun = {
       id: randomUUID(),
       installationId,
-      pairId: input.mode === "couple" ? (pair?.id ?? null) : null,
+      pairId: pair.id,
       gameId: input.gameId,
-      mode: input.mode,
+      mode: "couple",
       version: input.version,
       status: "active",
-      state: {},
+      state: {
+        readyInstallationIds: pair.developerMode
+          ? pair.members.map((member) => member.installationId)
+          : [installationId],
+      },
       result: null,
       startedAt: now(),
       completedAt: null,
@@ -458,13 +544,32 @@ export class LocalRepository implements AppRepository {
     return structuredClone(run);
   }
 
+  async getActiveGameRun(installationId: string, gameId: string) {
+    const pair = await this.getPairForInstallation(installationId);
+    if (!pair) return null;
+    const run = this.state.gameRuns.find(
+      (candidate) =>
+        candidate.pairId === pair.id &&
+        candidate.gameId === gameId &&
+        candidate.status === "active",
+    );
+    return run ? structuredClone(run) : null;
+  }
+
   async updateGameRun(
     installationId: string,
     runId: string,
     changes: Partial<Pick<GameRun, "result" | "state" | "status">>,
   ) {
     const run = this.state.gameRuns.find((candidate) => candidate.id === runId);
-    if (!run || run.installationId !== installationId) {
+    const pair = run?.pairId
+      ? this.state.pairs.find(
+          (candidate) =>
+            candidate.id === run.pairId &&
+            candidate.memberIds.includes(installationId),
+        )
+      : null;
+    if (!run || (!pair && run.installationId !== installationId)) {
       throw new DomainError("Spelsessie niet gevonden.", 404);
     }
     if (run.status === "completed") {
@@ -755,6 +860,7 @@ export class LocalRepository implements AppRepository {
     return {
       id: pair.id,
       code: pair.code,
+      developerMode: pair.developerMode ?? false,
       createdAt: pair.createdAt,
       disconnectedAt: pair.disconnectedAt,
       members: pair.memberIds.map((installationId, index) => ({

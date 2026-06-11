@@ -63,6 +63,33 @@ export const legacySdClientBridge = String.raw`
 
   window.SDClient = client;
   window.KoppelClient = client;
+
+  function removeSoloControls() {
+    document.querySelectorAll("button, a, [role='button'], .modus-card").forEach(function (element) {
+      const text = (element.textContent || "").trim().toLowerCase();
+      const action = (element.getAttribute("onclick") || "").toLowerCase();
+      if (
+        action.includes("solo") ||
+        /^(solo verkennen|alleen spelen|speel alleen|toch alleen spelen|alleen ontdekken)$/.test(text)
+      ) {
+        element.remove();
+      }
+    });
+  }
+
+  function enforceCoupleOnly() {
+    removeSoloControls();
+    new MutationObserver(removeSoloControls).observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", enforceCoupleOnly, { once: true });
+  } else {
+    enforceCoupleOnly();
+  }
 })();
 `;
 

@@ -98,6 +98,7 @@ export const pairMemberSchema = z.object({
 export const pairSchema = z.object({
   id: idSchema,
   code: z.string().regex(/^[A-HJ-KM-NP-Z2-9]{6}$/),
+  developerMode: z.boolean().default(false),
   createdAt: z.string().datetime(),
   disconnectedAt: z.string().datetime().nullable().default(null),
   members: z.array(pairMemberSchema).max(2),
@@ -133,7 +134,7 @@ export const sendMessageSchema = messageSchema.pick({
 
 export type Message = z.infer<typeof messageSchema>;
 
-export const gameModeSchema = z.enum(["solo", "couple"]);
+export const gameModeSchema = z.literal("couple");
 
 export const gameRunSchema = z.object({
   id: idSchema,
@@ -230,6 +231,15 @@ export const realtimeClientEventSchema = z.discriminatedUnion("type", [
     payload: z.object({
       gameRunId: idSchema,
       state: z.record(z.string(), z.unknown()),
+    }),
+  }),
+  z.object({
+    id: z.string().min(1),
+    type: z.literal("game.lobby.enter"),
+    version: z.literal(1),
+    payload: z.object({
+      gameId: z.string().min(1),
+      gameRunId: idSchema,
     }),
   }),
   z.object({

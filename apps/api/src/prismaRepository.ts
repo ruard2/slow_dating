@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import type {
@@ -287,6 +289,50 @@ export class PrismaRepository implements AppRepository {
     return this.getPair(pair.id);
   }
 
+  async activateDeveloperPair(installationId: string) {
+    const current = await this.getPairForInstallation(installationId);
+    if (current) {
+      if (current.developerMode) return current;
+      throw new DomainError("Ontkoppel eerst je huidige partner.", 409);
+    }
+    const secretHash = createHash("sha256")
+      .update(`developer-partner:${installationId}`)
+      .digest("hex");
+    const developer = await this.prisma.installation.upsert({
+      where: { secretHash },
+      update: {},
+      create: {
+        secretHash,
+        profile: {
+          create: {
+            displayName: "Testpartner",
+            bio: "Lokale computerpartner voor ontwikkeling.",
+            avatarColor: "#8FD069",
+          },
+        },
+      },
+    });
+    const pair = await this.prisma.pair.create({
+      data: {
+        code: await this.createUniqueCode(),
+        developerMode: true,
+        callUnlocked: true,
+        bothOnlineSince: new Date(),
+        callConsent: {
+          [installationId]: "yes",
+          [developer.id]: "yes",
+        },
+        members: {
+          create: [
+            { installationId, role: "creator" },
+            { installationId: developer.id, role: "partner" },
+          ],
+        },
+      },
+    });
+    return this.getPair(pair.id);
+  }
+
   async joinPair(installationId: string, code: string) {
     const target = await this.prisma.pair.findUnique({
       where: { code },
@@ -448,22 +494,76 @@ export class PrismaRepository implements AppRepository {
   async createGameRun(
     installationId: string,
     input: Pick<GameRun, "gameId" | "mode" | "version">,
-  ) {
+  ): Promise<GameRun> {
     const pair = await this.getPairForInstallation(installationId);
-    if (input.mode === "couple" && (!pair || pair.members.length < 2)) {
+    if (!pair || pair.members.length < 2) {
       throw new DomainError("Koppelmodus vereist twee gekoppelde spelers.", 409);
     }
-    const run = await this.prisma.gameRun.create({
-      data: {
-        installationId,
-        pairId: input.mode === "couple" ? (pair?.id ?? null) : null,
-        gameId: input.gameId,
-        version: input.version,
-        mode: input.mode,
-        state: {},
-      },
+    const lobbyKey = `${pair.id}:${input.gameId}`;
+    const active = await this.prisma.gameRun.findUnique({
+      where: { lobbyKey },
     });
-    return this.toGameRun(run);
+    if (active) {
+      const state = (active.state ?? {}) as Record<string, unknown>;
+      const readyInstallationIds = new Set(
+        Array.isArray(state.readyInstallationIds)
+          ? state.readyInstallationIds.filter(
+              (value): value is string => typeof value === "string",
+            )
+          : [],
+      );
+      readyInstallationIds.add(installationId);
+      if (pair.developerMode) {
+        pair.members.forEach((member) =>
+          readyInstallationIds.add(member.installationId),
+        );
+      }
+      const updated = await this.prisma.gameRun.update({
+        where: { id: active.id },
+        data: {
+          state: {
+            ...state,
+            readyInstallationIds: [...readyInstallationIds],
+          } as Prisma.InputJsonValue,
+        },
+      });
+      return this.toGameRun(updated);
+    }
+    try {
+      const run = await this.prisma.gameRun.create({
+        data: {
+          installationId,
+          lobbyKey,
+          pairId: pair.id,
+          gameId: input.gameId,
+          version: input.version,
+          mode: "couple",
+          state: {
+            readyInstallationIds: pair.developerMode
+              ? pair.members.map((member) => member.installationId)
+              : [installationId],
+          },
+        },
+      });
+      return this.toGameRun(run);
+    } catch (error) {
+      const concurrentRun = await this.prisma.gameRun.findUnique({
+        where: { lobbyKey },
+      });
+      if (concurrentRun) {
+        return this.createGameRun(installationId, input);
+      }
+      throw error;
+    }
+  }
+
+  async getActiveGameRun(installationId: string, gameId: string) {
+    const pair = await this.getPairForInstallation(installationId);
+    if (!pair) return null;
+    const run = await this.prisma.gameRun.findUnique({
+      where: { lobbyKey: `${pair.id}:${gameId}` },
+    });
+    return run ? this.toGameRun(run) : null;
   }
 
   async updateGameRun(
@@ -472,7 +572,17 @@ export class PrismaRepository implements AppRepository {
     changes: Partial<Pick<GameRun, "result" | "state" | "status">>,
   ) {
     const run = await this.prisma.gameRun.findUnique({ where: { id: runId } });
-    if (!run || run.installationId !== installationId) {
+    const membership = run?.pairId
+      ? await this.prisma.pairMember.findUnique({
+          where: {
+            pairId_installationId: {
+              pairId: run.pairId,
+              installationId,
+            },
+          },
+        })
+      : null;
+    if (!run || (!membership && run.installationId !== installationId)) {
       throw new DomainError("Spelsessie niet gevonden.", 404);
     }
     if (run.status === "completed") {
@@ -494,7 +604,11 @@ export class PrismaRepository implements AppRepository {
           ? {}
           : { result: changes.result as Prisma.InputJsonValue }),
         ...(changes.status === undefined ? {} : { status: changes.status }),
-        ...(changes.status === "completed" ? { completedAt: new Date() } : {}),
+        ...(changes.status === "completed"
+          ? { completedAt: new Date(), lobbyKey: null }
+          : changes.status === "abandoned"
+            ? { lobbyKey: null }
+            : {}),
       },
     });
     return this.toGameRun(updated);
@@ -790,6 +904,7 @@ export class PrismaRepository implements AppRepository {
     return {
       id: pair.id,
       code: pair.code,
+      developerMode: pair.developerMode,
       createdAt: pair.createdAt.toISOString(),
       disconnectedAt: pair.disconnectedAt?.toISOString() ?? null,
       members: pair.members.map((member) => ({
@@ -842,9 +957,10 @@ export class PrismaRepository implements AppRepository {
 
   private toGameRun(run: {
     id: string;
+    lobbyKey: string | null;
     gameId: string;
     version: number;
-    mode: "solo" | "couple";
+    mode: "couple";
     pairId: string | null;
     installationId: string;
     status: "active" | "completed" | "abandoned";

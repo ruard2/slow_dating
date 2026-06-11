@@ -87,9 +87,12 @@ test("persists the guest profile after refresh", async ({ page }) => {
 test("starts an adapted legacy game inside the permanent shell", async ({
   page,
 }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Instellingen openen" }).click();
+  await page.getByRole("button", { name: "Partner koppelen" }).click();
+  await page.getByPlaceholder("ABC234 of 1111").fill("1111");
+  await page.getByRole("button", { name: "Open beheerdersmodus" }).click();
   await page.goto("/games/waarden");
-  await page.getByRole("button", { name: "Alleen" }).click();
-  await page.getByRole("button", { name: "Begin" }).click();
 
   const game = page.frameLocator("iframe[title='Je waarden']");
   await expect(
@@ -137,6 +140,14 @@ test("pairs two browsers and delivers chat exactly once", async ({
   await expect(
     second.getByRole("button", { name: "Chat Online", exact: true }),
   ).toBeVisible();
+  await first.goto("/games/waarden");
+  await expect(first.getByRole("heading", { name: "Wachten op Browser Twee" })).toBeVisible();
+  await first.getByRole("button", { name: "Chat" }).click();
+  await expect(first.getByText("Chatten en bellen blijven tijdens het wachten beschikbaar.")).toBeVisible();
+  await first.getByRole("button", { name: "Chat" }).click();
+  await second.goto("/games/waarden");
+  await expect(first.locator("iframe[title='Je waarden']")).toBeVisible();
+  await expect(second.locator("iframe[title='Je waarden']")).toBeVisible();
   await first.getByRole("button", { name: "Chat" }).click();
   await second.getByRole("button", { name: "Chat" }).click();
   await second.getByPlaceholder("Schrijf iets...").fill("Hallo vanuit browser twee");

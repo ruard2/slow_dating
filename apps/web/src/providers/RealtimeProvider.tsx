@@ -92,6 +92,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   );
 
   const partnerOnline = Boolean(
+    pair.data?.developerMode ||
     pair.data?.members.some(
       (member) =>
         member.installationId !== session?.installationId &&

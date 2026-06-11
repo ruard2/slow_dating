@@ -324,24 +324,64 @@ function WorldPage() {
 }
 
 function GamePage({ pair }: { pair: Pair | null | undefined }) {
+  const { session } = useSession();
   const { gameId = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const frameRef = useRef<HTMLIFrameElement | null>(null);
+  const enteredRef = useRef<string | null>(null);
   const completedRunRef = useRef<string | null>(null);
   const { lastEvent, send } = useRealtime();
   const setDrawer = useAppStore((state) => state.setDrawer);
   const game = findGame(gameId);
-  const [started, setStarted] = useState(false);
-  const [mode, setMode] = useState<"solo" | "couple">(
-    game?.modes.includes("couple") ? "couple" : "solo",
-  );
-  const createRun = useMutation({
-    mutationFn: () => api.createGameRun(gameId, mode, game?.version ?? 1),
-    onSuccess: () => setStarted(true),
+  const activeRun = useQuery({
+    queryKey: ["active-game-run", pair?.id, gameId],
+    queryFn: () => api.getActiveGameRun(gameId),
+    enabled: Boolean(game && pair?.members.length === 2),
+    refetchInterval: 1_500,
   });
+  const enterRun = useMutation({
+    mutationFn: () => api.createGameRun(gameId, game?.version ?? 1),
+    onSuccess: (run) => {
+      queryClient.setQueryData(["active-game-run", pair?.id, gameId], run);
+      send("game.lobby.enter", { gameId, gameRunId: run.id });
+    },
+  });
+  const run = activeRun.data ?? enterRun.data;
+  const readyInstallationIds = Array.isArray(run?.state.readyInstallationIds)
+    ? run.state.readyInstallationIds.filter(
+        (value): value is string => typeof value === "string",
+      )
+    : [];
+  const started = Boolean(
+    pair &&
+      readyInstallationIds.filter((id) =>
+        pair.members.some((member) => member.installationId === id),
+      ).length >= 2,
+  );
 
   useEffect(() => {
+    if (
+      !game ||
+      pair?.members.length !== 2 ||
+      enteredRef.current === `${pair.id}:${gameId}`
+    ) {
+      return;
+    }
+    enteredRef.current = `${pair.id}:${gameId}`;
+    enterRun.mutate();
+  }, [enterRun, game, gameId, pair]);
+
+  useEffect(() => {
+    if (lastEvent?.type === "game.lobby.enter") {
+      const payload = lastEvent.payload as { gameId?: string };
+      if (payload.gameId === gameId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["active-game-run", pair?.id, gameId],
+        });
+      }
+      return;
+    }
     if (lastEvent?.type !== "game.sync") {
       return;
     }
@@ -353,7 +393,7 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
       { type: "slow-dating:legacy-event", payload: payload.state },
       window.location.origin,
     );
-  }, [lastEvent]);
+  }, [gameId, lastEvent, pair?.id, queryClient]);
 
   useEffect(() => {
     function receiveLegacyMessage(event: MessageEvent) {
@@ -379,20 +419,20 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
       }
       if (
         legacyEvent === "session_complete" &&
-        createRun.data &&
-        completedRunRef.current !== createRun.data.id
+        run &&
+        completedRunRef.current !== run.id
       ) {
-        completedRunRef.current = createRun.data.id;
+        completedRunRef.current = run.id;
         void api
-          .completeGameRun(createRun.data.id, event.data.data ?? {})
+          .completeGameRun(run.id, event.data.data ?? {})
           .then(() => queryClient.invalidateQueries({ queryKey: ["progress"] }))
           .catch(() => {
             completedRunRef.current = null;
           });
       }
-      if (createRun.data) {
+      if (run) {
         send("game.sync", {
-          gameRunId: createRun.data.id,
+          gameRunId: run.id,
           state: {
             legacyEvent,
             data: event.data.data ?? {},
@@ -402,14 +442,13 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
     }
     window.addEventListener("message", receiveLegacyMessage);
     return () => window.removeEventListener("message", receiveLegacyMessage);
-  }, [createRun.data, queryClient, send, setDrawer]);
+  }, [queryClient, run, send, setDrawer]);
 
   if (!game) {
     return <Navigate replace to="/" />;
   }
 
-  if (!started) {
-    const coupleUnavailable = mode === "couple" && pair?.members.length !== 2;
+  if (!pair || pair.members.length !== 2) {
     return (
       <main className={styles.gameWelcome}>
         <button className={styles.backButton} onClick={() => navigate("/")} type="button">
@@ -418,31 +457,36 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
         <div className={styles.gameWelcomeCard}>
           <span>Ontdekking</span>
           <h1>{game.title}</h1>
-          <p>{game.description}</p>
-          <div className={styles.modeSwitch}>
-            {game.modes.map((availableMode) => (
-              <button
-                className={mode === availableMode ? styles.selectedMode : ""}
-                key={availableMode}
-                onClick={() => setMode(availableMode)}
-                type="button"
-              >
-                {availableMode === "solo" ? "Alleen" : "Samen"}
-              </button>
-            ))}
-          </div>
-          {coupleUnavailable && (
-            <p className={styles.notice}>Koppel eerst met je partner om samen te spelen.</p>
-          )}
-          <button
-            className={styles.primaryButton}
-            disabled={coupleUnavailable || createRun.isPending}
-            onClick={() => createRun.mutate()}
-            type="button"
-          >
-            {createRun.isPending ? "Spel starten..." : "Begin"}
+          <p>Dit spel speel je uitsluitend samen. Koppel eerst met je partner.</p>
+          <button className={styles.primaryButton} onClick={() => setDrawer("pair")} type="button">
+            Partner koppelen
           </button>
-          {createRun.error && <p className={styles.error}>{createRun.error.message}</p>}
+        </div>
+      </main>
+    );
+  }
+
+  if (!started) {
+    const partner = pair.members.find(
+      (member) => !readyInstallationIds.includes(member.installationId),
+    );
+    return (
+      <main className={styles.gameWelcome}>
+        <button className={styles.backButton} onClick={() => navigate("/")} type="button">
+          Terug naar de kaart
+        </button>
+        <div className={styles.gameWelcomeCard}>
+          <span>Samen starten</span>
+          <h1>Wachten op {partner?.displayName ?? "je partner"}</h1>
+          <p>
+            Open allebei <strong>{game.title}</strong>. Zodra je partner dit bord
+            betreedt, begint het spel automatisch.
+          </p>
+          <div className={styles.waitingPulse} aria-label="Wachten op partner" />
+          <p className={styles.notice}>
+            Chatten en bellen blijven tijdens het wachten beschikbaar.
+          </p>
+          {enterRun.error && <p className={styles.error}>{enterRun.error.message}</p>}
         </div>
       </main>
     );
@@ -453,21 +497,16 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
       <div className={styles.gameFrameHeader}>
         <button onClick={() => navigate("/")} type="button">Kaart</button>
         <strong>{game.title}</strong>
-        <span>{mode === "couple" ? "Samen" : "Solo"}</span>
+        <span>Samen</span>
       </div>
       <iframe
         className={styles.gameFrame}
         ref={frameRef}
-        src={`/legacy/${
-          mode === "solo" && game.soloLegacyPath
-            ? game.soloLegacyPath
-            : game.legacyPath
-        }?embedded=1&role=${
-          pair?.members[0]?.installationId ===
-          createRun.data?.installationId
+        src={`/legacy/${game.legacyPath}?embedded=1&role=${
+          session?.installationId === run?.installationId
             ? "creator"
             : "partner"
-        }&code=${pair?.code ?? "SOLO"}`}
+        }&code=${pair.developerMode ? "1111" : pair.code}`}
         title={game.title}
       />
     </main>
@@ -593,6 +632,10 @@ function PairPanel({ pair }: { pair: Pair | null | undefined }) {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["pair"] });
   const create = useMutation({ mutationFn: api.createPair, onSuccess: refresh });
   const join = useMutation({ mutationFn: () => api.joinPair(code), onSuccess: refresh });
+  const developer = useMutation({
+    mutationFn: api.activateDeveloperPair,
+    onSuccess: refresh,
+  });
   const disconnect = useMutation({
     mutationFn: api.disconnectPair,
     onSuccess: () => {
@@ -604,9 +647,17 @@ function PairPanel({ pair }: { pair: Pair | null | undefined }) {
   if (pair) {
     return (
       <>
-        <span className={styles.panelKicker}>Jullie code</span>
-        <div className={styles.pairCode}>{pair.code}</div>
-        <p>{pair.members.length === 2 ? "Jullie zijn gekoppeld." : "Deel deze code met je partner."}</p>
+        <span className={styles.panelKicker}>
+          {pair.developerMode ? "Lokale beheerdersmodus" : "Jullie code"}
+        </span>
+        <div className={styles.pairCode}>{pair.developerMode ? "1111" : pair.code}</div>
+        <p>
+          {pair.developerMode
+            ? "De computer is gekoppeld als Testpartner."
+            : pair.members.length === 2
+              ? "Jullie zijn gekoppeld."
+              : "Deel deze code met je partner."}
+        </p>
         <ul className={styles.memberList}>
           {pair.members.map((member) => <li key={member.installationId}>{member.displayName}</li>)}
         </ul>
@@ -628,15 +679,23 @@ function PairPanel({ pair }: { pair: Pair | null | undefined }) {
       <input
         className={styles.codeInput}
         maxLength={6}
-        onChange={(event) => setCode(event.target.value.toUpperCase())}
-        placeholder="ABC234"
+        onChange={(event) =>
+          setCode(event.target.value.toUpperCase().replace(/\s/g, ""))
+        }
+        placeholder="ABC234 of 1111"
         value={code}
       />
-      <button disabled={code.length !== 6} onClick={() => join.mutate()} type="button">
-        Code gebruiken
+      <button
+        disabled={code !== "1111" && code.length !== 6}
+        onClick={() => code === "1111" ? developer.mutate() : join.mutate()}
+        type="button"
+      >
+        {code === "1111" ? "Open beheerdersmodus" : "Code gebruiken"}
       </button>
-      {(create.error || join.error) && (
-        <p className={styles.error}>{(create.error ?? join.error)?.message}</p>
+      {(create.error || join.error || developer.error) && (
+        <p className={styles.error}>
+          {(create.error ?? join.error ?? developer.error)?.message}
+        </p>
       )}
     </>
   );
@@ -856,7 +915,9 @@ function AppShell() {
           )}
         </aside>
       )}
-      {pair.data?.members.length === 2 && !session?.account && <AccountGate />}
+      {pair.data?.members.length === 2 &&
+        !pair.data.developerMode &&
+        !session?.account && <AccountGate />}
     </div>
   );
 }

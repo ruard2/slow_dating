@@ -44,11 +44,22 @@ describe("Slow Dating API", () => {
     const session = await request(app)
       .post("/api/auth/guest")
       .send({ installationSecret: "z".repeat(64) });
+    const partner = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "y".repeat(64) });
     const auth = { authorization: `Bearer ${session.body.accessToken}` };
+    const partnerAuth = {
+      authorization: `Bearer ${partner.body.accessToken}`,
+    };
+    const pair = await request(app).post("/api/pairs").set(auth).send({});
+    await request(app)
+      .post("/api/pairs/join")
+      .set(partnerAuth)
+      .send({ code: pair.body.code });
     const created = await request(app)
       .post("/api/game-runs")
       .set(auth)
-      .send({ gameId: "waarden", mode: "solo", version: 1 });
+      .send({ gameId: "waarden", mode: "couple", version: 1 });
 
     const completed = await request(app)
       .patch(`/api/game-runs/${created.body.id}`)
@@ -69,6 +80,29 @@ describe("Slow Dating API", () => {
     expect(repeated.body.result).toEqual({ answer: 1 });
     expect(reopened.status).toBe(409);
     expect(progress.body.completedGames).toBe(1);
+  });
+
+  it("activates the local 1111 developer pair outside production", async () => {
+    const app = await createTestApp();
+    const session = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "x".repeat(64) });
+    const auth = { authorization: `Bearer ${session.body.accessToken}` };
+
+    const pair = await request(app)
+      .post("/api/pairs/developer")
+      .set(auth)
+      .send({});
+    const run = await request(app)
+      .post("/api/game-runs")
+      .set(auth)
+      .send({ gameId: "waarden", mode: "couple", version: 1 });
+
+    expect(pair.status).toBe(201);
+    expect(pair.body.developerMode).toBe(true);
+    expect(pair.body.members.map((member: { displayName: string }) => member.displayName))
+      .toContain("Testpartner");
+    expect(run.body.state.readyInstallationIds).toHaveLength(2);
   });
 
   it("creates a guest session and only updates its own profile", async () => {

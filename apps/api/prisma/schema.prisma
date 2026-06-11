@@ -13,7 +13,6 @@ enum PairRole {
 }
 
 enum GameMode {
-  solo
   couple
 }
 
@@ -88,6 +87,7 @@ model Pair {
   callRequestedBy String?
   callConsent Json?
   callCooldownUntil DateTime?
+  developerMode Boolean       @default(false)
   members      PairMember[]
   gameRuns     GameRun[]
   progress     Progress[]
@@ -127,6 +127,7 @@ model MailOutbox {
 
 model GameRun {
   id             String        @id @default(uuid())
+  lobbyKey       String?       @unique
   gameId         String
   version        Int
   mode           GameMode

@@ -122,6 +122,11 @@ export const api = {
   getPair: () => request("/api/pairs/current", pairSchema.nullable()),
   createPair: () =>
     request("/api/pairs", pairSchema, { method: "POST", body: "{}" }),
+  activateDeveloperPair: () =>
+    request("/api/pairs/developer", pairSchema, {
+      method: "POST",
+      body: "{}",
+    }),
   joinPair: (code: string) =>
     request("/api/pairs/join", pairSchema, {
       method: "POST",
@@ -139,11 +144,13 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ clientId, text }),
     }),
-  createGameRun: (gameId: string, mode: "solo" | "couple", version: number) =>
+  createGameRun: (gameId: string, version: number) =>
     request("/api/game-runs", gameRunSchema, {
       method: "POST",
-      body: JSON.stringify({ gameId, mode, version }),
+      body: JSON.stringify({ gameId, mode: "couple", version }),
     }),
+  getActiveGameRun: (gameId: string) =>
+    request(`/api/game-runs/active/${encodeURIComponent(gameId)}`, gameRunSchema.nullable()),
   completeGameRun: (runId: string, result: Record<string, unknown> = {}) =>
     request(`/api/game-runs/${runId}`, gameRunSchema, {
       method: "PATCH",

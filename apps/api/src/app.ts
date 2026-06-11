@@ -223,6 +223,15 @@ export function createApp({
       .json(await repository.createPair(installationId(request)));
   });
 
+  app.post("/api/pairs/developer", auth.requireAuth, async (request, response) => {
+    if (process.env.NODE_ENV === "production") {
+      throw new DomainError("Beheerdersmodus is lokaal niet beschikbaar.", 404);
+    }
+    response
+      .status(201)
+      .json(await repository.activateDeveloperPair(installationId(request)));
+  });
+
   app.post("/api/pairs/join", auth.requireAuth, async (request, response) => {
     const { code } = joinPairSchema.parse(request.body);
     response.json(await repository.joinPair(installationId(request), code));
@@ -281,6 +290,20 @@ export function createApp({
         await repository.createGameRun(installationId(request), input),
       );
   });
+
+  app.get(
+    "/api/game-runs/active/:gameId",
+    auth.requireAuth,
+    async (request, response) => {
+      const gameId = request.params.gameId;
+      if (typeof gameId !== "string" || !gameId) {
+        throw new DomainError("Ongeldig spel.", 400);
+      }
+      response.json(
+        await repository.getActiveGameRun(installationId(request), gameId),
+      );
+    },
+  );
 
   app.get("/api/progress", auth.requireAuth, async (request, response) => {
     response.json(
