@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PairRole {
+  creator
+  partner
+}
+
+enum GameMode {
+  solo
+  couple
+}
+
+enum GameRunStatus {
+  active
+  completed
+  abandoned
+}
+
+model Installation {
+  id         String       @id @default(uuid())
+  secretHash String       @unique
+  createdAt  DateTime     @default(now())
+  lastSeenAt DateTime     @updatedAt
+  profile    Profile?
+  memberships PairMember[]
+  gameRuns   GameRun[]
+  messages   Message[]
+}
+
+model Profile {
+  id             String       @id @default(uuid())
+  installationId String       @unique
+  displayName    String       @default("Nieuwe bezoeker")
+  bio            String       @default("")
+  avatarColor    String       @default("#B9D67A")
+  legacyData     Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  installation   Installation @relation(fields: [installationId], references: [id], onDelete: Cascade)
+}
+
+model Pair {
+  id           String        @id @default(uuid())
+  code         String        @unique
+  createdAt    DateTime      @default(now())
+  disconnectedAt DateTime?
+  members      PairMember[]
+  gameRuns     GameRun[]
+  progress     Progress[]
+  messages     Message[]
+  callConsent  CallConsent?
+}
+
+model PairMember {
+  id             String       @id @default(uuid())
+  pairId         String
+  installationId String
+  role           PairRole
+  joinedAt       DateTime     @default(now())
+  pair           Pair         @relation(fields: [pairId], references: [id], onDelete: Cascade)
+  installation   Installation @relation(fields: [installationId], references: [id], onDelete: Cascade)
+
+  @@unique([pairId, installationId])
+  @@unique([installationId])
+}
+
+model GameRun {
+  id             String        @id @default(uuid())
+  gameId         String
+  version        Int
+  mode           GameMode
+  status         GameRunStatus @default(active)
+  state          Json
+  result         Json?
+  installationId String
+  pairId         String?
+  startedAt      DateTime      @default(now())
+  completedAt    DateTime?
+  installation   Installation  @relation(fields: [installationId], references: [id], onDelete: Cascade)
+  pair           Pair?         @relation(fields: [pairId], references: [id], onDelete: Cascade)
+  progress       Progress[]
+}
+
+model Progress {
+  id             String       @id @default(uuid())
+  pairId         String?
+  installationId String
+  gameRunId      String
+  gameId         String
+  payload        Json
+  updatedAt      DateTime     @updatedAt
+  pair           Pair?        @relation(fields: [pairId], references: [id], onDelete: Cascade)
+  gameRun        GameRun      @relation(fields: [gameRunId], references: [id], onDelete: Cascade)
+
+  @@unique([installationId, gameId])
+}
+
+model Message {
+  id                   String       @id @default(uuid())
+  clientId             String
+  pairId               String
+  senderInstallationId String
+  text                 String
+  sentAt               DateTime     @default(now())
+  pair                 Pair         @relation(fields: [pairId], references: [id], onDelete: Cascade)
+  sender               Installation @relation(fields: [senderInstallationId], references: [id], onDelete: Cascade)
+
+  @@unique([pairId, clientId])
+  @@index([pairId, sentAt])
+}
+
+model CallConsent {
+  id          String   @id @default(uuid())
+  pairId      String   @unique
+  requestedBy String?
+  creator     Boolean?
+  partner     Boolean?
+  updatedAt   DateTime @updatedAt
+  pair        Pair     @relation(fields: [pairId], references: [id], onDelete: Cascade)
+}
+
+model ProcessedEvent {
+  id        String   @id
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

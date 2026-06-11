@@ -1,19 +1,148 @@
 import { z } from "zod";
 
-export const contentPackMetadataSchema = z.object({
-  gameId: z.string().min(1),
+export const gameMetadataSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  legacyPath: z.string().min(1),
+  soloLegacyPath: z.string().min(1).optional(),
+  modes: z.array(z.enum(["solo", "couple"])).min(1),
   version: z.number().int().positive(),
-  locale: z.string().min(2),
+  position: z.object({
+    left: z.number().min(0).max(100),
+    top: z.number().min(0).max(100),
+  }),
+  status: z.enum(["native", "adapted"]),
 });
 
-export type ContentPackMetadata = z.infer<typeof contentPackMetadataSchema>;
+export type GameMetadata = z.infer<typeof gameMetadataSchema>;
 
-export function defineContentPack<TContent>(
-  metadata: ContentPackMetadata,
-  content: TContent,
-) {
-  return {
-    metadata: contentPackMetadataSchema.parse(metadata),
-    content,
-  } as const;
+export const games = [
+  {
+    id: "waarden",
+    title: "Je waarden",
+    description: "Ontdek wat voor jou echt telt en waar waarden kunnen botsen.",
+    legacyPath: "waarden.html",
+    soloLegacyPath: "waarden_volledig.html",
+    modes: ["solo", "couple"],
+    version: 1,
+    position: { left: 86, top: 23 },
+    status: "adapted",
+  },
+  {
+    id: "lach-samen",
+    title: "Lach samen",
+    description: "Speelse keuzes om elkaar met luchtigheid beter te leren kennen.",
+    legacyPath: "lach_samen.html",
+    modes: ["couple"],
+    version: 1,
+    position: { left: 24, top: 37 },
+    status: "adapted",
+  },
+  {
+    id: "kennismaking",
+    title: "Leer elkaar kennen",
+    description: "Vragen en voorspellingen van licht naar persoonlijk.",
+    legacyPath: "kennismaking.html",
+    modes: ["solo", "couple"],
+    version: 1,
+    position: { left: 20, top: 49 },
+    status: "adapted",
+  },
+  {
+    id: "familiedorp",
+    title: "Familiedorp",
+    description: "Breng rollen, gewoonten en familieverhalen samen in beeld.",
+    legacyPath: "familiedorp.html",
+    modes: ["couple"],
+    version: 1,
+    position: { left: 86, top: 49 },
+    status: "adapted",
+  },
+  {
+    id: "kwaliteiten",
+    title: "Jullie kwaliteiten",
+    description: "Zie kracht, allergie en waardering door elkaars ogen.",
+    legacyPath: "kwaliteiten.html",
+    modes: ["couple"],
+    version: 1,
+    position: { left: 86, top: 61 },
+    status: "adapted",
+  },
+  {
+    id: "stille-vijver",
+    title: "Stille vijver",
+    description: "Vertraag, kijk en voer een aandachtig gesprek.",
+    legacyPath: "stille_vijver.html",
+    modes: ["couple"],
+    version: 1,
+    position: { left: 23, top: 74 },
+    status: "adapted",
+  },
+  {
+    id: "brug-ontdekking",
+    title: "Brug van ontdekking",
+    description: "Vertel persoonlijke verhalen aan de hand van herinneringsstenen.",
+    legacyPath: "brug_ontdekking.html",
+    modes: ["couple"],
+    version: 1,
+    position: { left: 82, top: 77 },
+    status: "adapted",
+  },
+  {
+    id: "grot",
+    title: "De grot",
+    description: "Verdiep relationele patronen met begeleide casussen.",
+    legacyPath: "grot.html",
+    modes: ["solo", "couple"],
+    version: 1,
+    position: { left: 50, top: 86 },
+    status: "adapted",
+  },
+  {
+    id: "kleurkompas",
+    title: "Kleurkompas",
+    description: "Onderzoek communicatie, stress en samenwerking.",
+    legacyPath: "kleurkompas.html",
+    modes: ["solo", "couple"],
+    version: 1,
+    position: { left: 42, top: 60 },
+    status: "adapted",
+  },
+  {
+    id: "kernkwadranten",
+    title: "Kernkwadranten",
+    description: "Ontdek kwaliteit, valkuil, uitdaging en allergie.",
+    legacyPath: "kernkwadranten.html",
+    modes: ["solo", "couple"],
+    version: 1,
+    position: { left: 61, top: 38 },
+    status: "adapted",
+  },
+  {
+    id: "profiel",
+    title: "Jouw profiel",
+    description: "Bekijk de inzichten die over spellen heen zijn opgebouwd.",
+    legacyPath: "profiel.html",
+    modes: ["solo"],
+    version: 1,
+    position: { left: 50, top: 18 },
+    status: "adapted",
+  },
+  {
+    id: "relatiekaart",
+    title: "Relatiekaart",
+    description: "Breng gezamenlijke patronen, krachten en groeipunten samen.",
+    legacyPath: "relatiekaart.html",
+    modes: ["couple"],
+    version: 1,
+    position: { left: 50, top: 48 },
+    status: "adapted",
+  },
+] satisfies GameMetadata[];
+
+games.forEach((game) => gameMetadataSchema.parse(game));
+
+export function findGame(gameId: string) {
+  return games.find((game) => game.id === gameId);
 }

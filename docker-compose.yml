@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: slowdating
+      POSTGRES_USER: slowdating
+      POSTGRES_PASSWORD: slowdating
+    ports:
+      - "5432:5432"
+    volumes:
+      - slowdating-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U slowdating"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  slowdating-postgres:

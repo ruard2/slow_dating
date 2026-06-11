@@ -1,26 +1,6 @@
-* {
-  box-sizing: border-box;
-}
-
-html {
-  background: var(--sd-color-background);
-  color-scheme: dark;
-  font-family: var(--sd-font-body);
-}
-
-html,
-body,
-#root {
-  margin: 0;
-  min-height: 100%;
-}
-
-body {
-  min-width: 20rem;
-}
-
-button,
-input,
-textarea {
-  font: inherit;
-}
+:root { color:#f4f1e8; background:#07100c; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-synthesis:none; text-rendering:optimizeLegibility; }
+* { box-sizing:border-box; }
+html,body { min-width:320px; min-height:100%; background:#07100c; }
+body { margin:0; }
+button,input,textarea { font:inherit; }
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible { outline:2px solid #d5e99b; outline-offset:2px; }

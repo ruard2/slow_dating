@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@slow-dating/content": "^0.1.0",
     "@slow-dating/contracts": "*",
+    "@slow-dating/realtime": "^0.1.0",
     "@slow-dating/ui": "*",
     "@tanstack/react-query": "^5.101.0",
     "react": "^19.2.7",

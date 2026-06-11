@@ -6,6 +6,9 @@ import { BrowserRouter } from "react-router-dom";
 import "@slow-dating/ui/tokens.css";
 
 import { App } from "./App";
+import { CallProvider } from "./providers/CallProvider";
+import { RealtimeProvider } from "./providers/RealtimeProvider";
+import { SessionProvider } from "./providers/SessionProvider";
 import "./styles/global.css";
 
 const queryClient = new QueryClient({
@@ -28,7 +31,13 @@ createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <App />
+        <SessionProvider>
+          <RealtimeProvider>
+            <CallProvider>
+              <App />
+            </CallProvider>
+          </RealtimeProvider>
+        </SessionProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </StrictMode>,
