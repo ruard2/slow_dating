@@ -11,6 +11,7 @@
 .worldLockOverlay { position:absolute; inset:0; display:grid; place-content:center; gap:.45rem; padding:2rem; text-align:center; text-shadow:0 2px 18px #000; pointer-events:none; }
 .worldLockOverlay strong { font:500 clamp(1.7rem,5vw,3rem) Georgia,serif; }
 .worldLockOverlay span { color:rgba(255,255,255,.8); font-size:.82rem; }
+.worldPurchaseButton { position:absolute; z-index:3; inset:0; width:100%; border:0; background:transparent; cursor:pointer; }
 .mapHotspot { position:absolute; z-index:2; display:block; border:0; outline:0; background:transparent; text-decoration:none; cursor:pointer; }
 .mapHotspot:focus-visible { outline:3px solid rgba(255,247,197,.9); outline-offset:2px; border-radius:.5rem; background:rgba(255,247,197,.08); }
 .progressBar { position:fixed; z-index:20; top:0; left:50%; width:max(100vw,calc(100dvh * 941 / 1672)); translate:-50% 0; line-height:0; pointer-events:none; }
@@ -25,6 +26,16 @@
 .onlineDot { background:#8fd069; box-shadow:0 0 .7rem #8fd069; }
 .offlineDot { background:#a96666; }
 .drawer { position:fixed; z-index:25; right:1rem; bottom:6rem; width:min(25rem,calc(100% - 2rem)); max-height:calc(100dvh - 8rem); overflow:auto; padding:1.35rem; border:1px solid rgba(212,185,101,.25); border-radius:1.25rem; background:rgba(10,23,15,.97); box-shadow:0 1.5rem 5rem rgba(0,0,0,.6); }
+.accountGate { position:fixed; z-index:100; inset:0; display:grid; place-items:center; overflow:auto; padding:1rem; background:rgba(3,8,5,.84); backdrop-filter:blur(14px); }
+.accountCard { width:min(30rem,100%); display:grid; gap:.8rem; padding:clamp(1.4rem,5vw,2.5rem); border:1px solid rgba(212,185,101,.3); border-radius:1.4rem; background:#102016; box-shadow:0 2rem 7rem rgba(0,0,0,.65); }
+.accountCard>span { color:#d4b965; font-size:.7rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+.accountCard h2 { margin:0; font:500 2rem Georgia,serif; }
+.accountCard p { margin:.1rem 0; color:rgba(255,255,255,.68); line-height:1.5; }
+.accountCard label { display:grid; gap:.35rem; color:#c6d1bd; font-size:.82rem; }
+.accountCard input { width:100%; padding:.8rem; border:1px solid rgba(255,255,255,.15); border-radius:.7rem; color:#fff; background:rgba(255,255,255,.06); font:inherit; }
+.accountCard small { color:#8fa083; }
+.accountSwitch { display:flex; flex-wrap:wrap; justify-content:center; gap:.35rem; }
+.accountSwitch button { border:0; color:#aabc9e; background:transparent; font-size:.72rem; text-decoration:underline; cursor:pointer; }
 .closeButton { float:right; border:0; color:#9ca994; background:transparent; cursor:pointer; }
 .primaryButton,.drawer button,.formCard button,.gameWelcomeCard button,.gameFrameHeader button,.backButton { padding:.75rem 1rem; border:1px solid rgba(255,255,255,.12); border-radius:.75rem; color:#eef4e8; background:rgba(255,255,255,.07); cursor:pointer; }
 .primaryButton { border:0; color:#17200e; background:linear-gradient(135deg,#b7d467,#d5e99b); font-weight:800; }
@@ -49,6 +60,15 @@ button:disabled { cursor:not-allowed; opacity:.45; }
 .callActions { display:flex; justify-content:center; gap:.5rem; }
 .gameWelcome,.formPage { min-height:100dvh; display:grid; place-items:center; padding:2rem 1rem 8rem; background:radial-gradient(circle at 50% 20%,rgba(132,169,79,.2),transparent 30rem),#07100c; }
 .gameWelcomeCard,.formCard { width:min(32rem,100%); padding:clamp(1.5rem,5vw,3rem); border:1px solid rgba(212,185,101,.22); border-radius:1.5rem; background:rgba(16,32,21,.94); box-shadow:0 2rem 6rem rgba(0,0,0,.4); }
+.formPage { align-content:center; gap:1rem; }
+.archiveCard { width:min(32rem,100%); padding:1.5rem; border:1px solid rgba(212,185,101,.18); border-radius:1.25rem; background:rgba(16,32,21,.9); }
+.archiveCard>span { color:#d4b965; font-size:.7rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+.archiveCard h2 { margin:.4rem 0; font:500 1.35rem Georgia,serif; }
+.archiveCard h3 { margin-top:1.4rem; }
+.archiveRow { width:100%; display:flex; justify-content:space-between; gap:1rem; padding:.7rem 0; border:0; border-top:1px solid rgba(255,255,255,.08); color:inherit; background:transparent; text-align:left; cursor:pointer; }
+.archiveRow span { color:#9baa92; font-size:.75rem; }
+.archiveMessages { max-height:14rem; overflow:auto; padding:.6rem; border-radius:.7rem; background:rgba(0,0,0,.2); }
+.archiveMessages p { margin:.35rem 0; font-size:.78rem; }
 .gameWelcomeCard h1,.formCard h1 { margin:.5rem 0; font:500 2.7rem Georgia,serif; }
 .gameWelcomeCard p { color:rgba(255,255,255,.68); line-height:1.55; }
 .formCard label { display:block; margin:1rem 0; color:#c6d1bd; }

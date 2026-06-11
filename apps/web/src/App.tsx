@@ -11,6 +11,7 @@ import {
   Routes,
   useNavigate,
   useParams,
+  useSearchParams,
 } from "react-router-dom";
 import {
   useMutation,
@@ -59,7 +60,268 @@ function LoadingScreen() {
   );
 }
 
+function AccountGate() {
+  const { session } = useSession();
+  const [mode, setMode] = useState<"register" | "login" | "reset">("register");
+  const accountAction = useMutation({
+    mutationFn: async (form: FormData) => {
+      if (mode === "reset") {
+        await api.requestPasswordReset(String(form.get("email") ?? ""));
+        return null;
+      }
+      if (mode === "login") {
+        return api.login(
+          String(form.get("email") ?? ""),
+          String(form.get("password") ?? ""),
+        );
+      }
+      return api.register({
+        displayName: String(form.get("displayName") ?? ""),
+        email: String(form.get("email") ?? ""),
+        password: String(form.get("password") ?? ""),
+      });
+    },
+    onSuccess: (nextSession) => {
+      if (nextSession) {
+        window.location.reload();
+      }
+    },
+  });
+
+  return (
+    <div className={styles.accountGate} role="dialog" aria-modal="true">
+      <form
+        className={styles.accountCard}
+        onSubmit={(event) => {
+          event.preventDefault();
+          accountAction.mutate(new FormData(event.currentTarget));
+        }}
+      >
+        <span>Bewaar jullie geschiedenis</span>
+        <h2>
+          {mode === "register"
+            ? "Maak je persoonlijke account"
+            : mode === "login"
+              ? "Log in op je account"
+              : "Herstel je wachtwoord"}
+        </h2>
+        <p>
+          Je profiel, aankopen en relatiearchieven blijven privé van jou.
+          Je kunt met maximaal één persoon tegelijk gekoppeld zijn.
+        </p>
+        {mode === "register" && (
+          <label>
+            Naam
+            <input
+              defaultValue={session?.profile.displayName}
+              maxLength={40}
+              name="displayName"
+              required
+            />
+          </label>
+        )}
+        <label>
+          E-mailadres
+          <input autoComplete="email" name="email" required type="email" />
+        </label>
+        {mode !== "reset" && (
+          <label>
+            Wachtwoord
+            <input
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              minLength={mode === "register" ? 12 : 1}
+              name="password"
+              required
+              type="password"
+            />
+          </label>
+        )}
+        {mode === "register" && (
+          <small>Minimaal 12 tekens, met hoofdletter, kleine letter en cijfer.</small>
+        )}
+        <button className={styles.primaryButton} disabled={accountAction.isPending}>
+          {mode === "register"
+            ? "Account maken"
+            : mode === "login"
+              ? "Inloggen"
+              : "Herstellink aanvragen"}
+        </button>
+        {accountAction.error && (
+          <p className={styles.error}>{accountAction.error.message}</p>
+        )}
+        {mode === "reset" && accountAction.isSuccess && (
+          <p className={styles.success}>
+            Als dit adres bestaat, staat de herstellink in de lokale mail-outbox.
+          </p>
+        )}
+        <div className={styles.accountSwitch}>
+          <button onClick={() => setMode("register")} type="button">Nieuw account</button>
+          <button onClick={() => setMode("login")} type="button">Inloggen</button>
+          <button onClick={() => setMode("reset")} type="button">Wachtwoord vergeten</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function AccountPage() {
+  const { session } = useSession();
+  const [mode, setMode] = useState<"login" | "register" | "reset">("login");
+  const action = useMutation({
+    mutationFn: async (form: FormData) => {
+      if (mode === "reset") {
+        await api.requestPasswordReset(String(form.get("email") ?? ""));
+        return;
+      }
+      if (mode === "register") {
+        await api.register({
+          displayName: String(form.get("displayName") ?? ""),
+          email: String(form.get("email") ?? ""),
+          password: String(form.get("password") ?? ""),
+        });
+      } else {
+        await api.login(
+          String(form.get("email") ?? ""),
+          String(form.get("password") ?? ""),
+        );
+      }
+      window.location.href = "/";
+    },
+  });
+  const logout = useMutation({
+    mutationFn: api.logout,
+    onSuccess: () => window.location.reload(),
+  });
+
+  if (session?.account) {
+    return (
+      <main className={styles.formPage}>
+        <section className={styles.accountCard}>
+          <span>Jouw account</span>
+          <h1>{session.account.email}</h1>
+          <p>
+            {session.account.emailVerified
+              ? "Je e-mailadres is geverifieerd."
+              : "Je e-mailadres wacht nog op verificatie."}
+          </p>
+          <button className={styles.dangerButton} onClick={() => logout.mutate()}>
+            Uitloggen
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className={styles.formPage}>
+      <form
+        className={styles.accountCard}
+        onSubmit={(event) => {
+          event.preventDefault();
+          action.mutate(new FormData(event.currentTarget));
+        }}
+      >
+        <span>Persoonlijke toegang</span>
+        <h1>
+          {mode === "login"
+            ? "Inloggen"
+            : mode === "register"
+              ? "Account maken"
+              : "Wachtwoord herstellen"}
+        </h1>
+        {mode === "register" && (
+          <label>
+            Naam
+            <input name="displayName" required />
+          </label>
+        )}
+        <label>
+          E-mailadres
+          <input autoComplete="email" name="email" required type="email" />
+        </label>
+        {mode !== "reset" && (
+          <label>
+            Wachtwoord
+            <input
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              minLength={mode === "register" ? 12 : 1}
+              name="password"
+              required
+              type="password"
+            />
+          </label>
+        )}
+        <button className={styles.primaryButton} disabled={action.isPending}>
+          Doorgaan
+        </button>
+        {action.error && <p className={styles.error}>{action.error.message}</p>}
+        {mode === "reset" && action.isSuccess && (
+          <p className={styles.success}>Controleer je e-mail voor de herstellink.</p>
+        )}
+        <div className={styles.accountSwitch}>
+          <button onClick={() => setMode("login")} type="button">Inloggen</button>
+          <button onClick={() => setMode("register")} type="button">Registreren</button>
+          <button onClick={() => setMode("reset")} type="button">Wachtwoord vergeten</button>
+        </div>
+      </form>
+    </main>
+  );
+}
+
+function VerifyEmailPage() {
+  const [searchParams] = useSearchParams();
+  const verification = useQuery({
+    queryKey: ["verify-email", searchParams.get("token")],
+    queryFn: () => api.verifyEmail(searchParams.get("token") ?? ""),
+    retry: false,
+  });
+  return (
+    <main className={styles.formPage}>
+      <section className={styles.accountCard}>
+        <h1>E-mailadres verifiëren</h1>
+        <p>
+          {verification.isPending
+            ? "Bezig met verifiëren..."
+            : verification.isSuccess
+              ? "Je e-mailadres is geverifieerd. Je kunt terug naar de app."
+              : verification.error?.message}
+        </p>
+        <NavLink to="/">Terug naar de app</NavLink>
+      </section>
+    </main>
+  );
+}
+
+function ResetPasswordPage() {
+  const [searchParams] = useSearchParams();
+  const reset = useMutation({
+    mutationFn: (password: string) =>
+      api.completePasswordReset(searchParams.get("token") ?? "", password),
+  });
+  return (
+    <main className={styles.formPage}>
+      <form
+        className={styles.accountCard}
+        onSubmit={(event) => {
+          event.preventDefault();
+          reset.mutate(String(new FormData(event.currentTarget).get("password") ?? ""));
+        }}
+      >
+        <h1>Nieuw wachtwoord</h1>
+        <label>
+          Wachtwoord
+          <input autoComplete="new-password" minLength={12} name="password" required type="password" />
+        </label>
+        <button className={styles.primaryButton}>Wachtwoord wijzigen</button>
+        {reset.isSuccess && <p className={styles.success}>Wachtwoord gewijzigd. Je kunt nu inloggen.</p>}
+        {reset.error && <p className={styles.error}>{reset.error.message}</p>}
+      </form>
+    </main>
+  );
+}
+
 function WorldPage() {
+  const queryClient = useQueryClient();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const firstWorldRef = useRef<HTMLElement | null>(null);
   const progress = useQuery({
@@ -69,6 +331,10 @@ function WorldPage() {
   const completedGames = progress.data?.completedGames ?? 0;
   const unlockedWorlds = progress.data?.unlockedWorlds ?? [1];
   const progressPosition = getProgressPosition(completedGames);
+  const purchase = useMutation({
+    mutationFn: api.purchaseWorld,
+    onSuccess: (value) => queryClient.setQueryData(["progress"], value),
+  });
 
   useEffect(() => {
     const showFirstWorld = () => {
@@ -111,6 +377,8 @@ function WorldPage() {
       <div className={styles.worldScroller} ref={scrollerRef}>
         {LOCKED_WORLDS.map((world) => {
           const unlocked = unlockedWorlds.includes(world.id);
+          const eligible = progress.data?.eligibleWorlds.includes(world.id) ?? false;
+          const previousUnlocked = unlockedWorlds.includes(world.id - 1);
           return (
             <section
               aria-label={`Wereld ${world.id}`}
@@ -127,9 +395,22 @@ function WorldPage() {
                 <span>
                   {unlocked
                     ? "Deze wereld is vrijgespeeld"
-                    : `Nog ${Math.max(0, world.required - completedGames)} ontdekkingen nodig`}
+                    : eligible && previousUnlocked
+                      ? `Klaar om vrij te schakelen - EUR ${world.id}`
+                      : previousUnlocked
+                        ? `Nog ${Math.max(0, world.required - completedGames)} ontdekkingen nodig`
+                        : `Open eerst wereld ${world.id - 1}`}
                 </span>
               </div>
+              {eligible && previousUnlocked && !unlocked && (
+                <button
+                  aria-label={`Wereld ${world.id} vrijschakelen voor EUR ${world.id}`}
+                  className={styles.worldPurchaseButton}
+                  disabled={purchase.isPending}
+                  onClick={() => purchase.mutate(world.id)}
+                  type="button"
+                />
+              )}
             </section>
           );
         })}
@@ -316,8 +597,20 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
 }
 
 function ProfilePage() {
+  const { session } = useSession();
   const queryClient = useQueryClient();
+  const [openArchiveId, setOpenArchiveId] = useState<string | null>(null);
   const profile = useQuery({ queryKey: ["profile"], queryFn: api.getProfile });
+  const archives = useQuery({
+    queryKey: ["relationship-archives"],
+    queryFn: api.getRelationshipArchives,
+    enabled: Boolean(session?.account),
+  });
+  const archivedMessages = useQuery({
+    queryKey: ["relationship-archive-messages", openArchiveId],
+    queryFn: () => api.getRelationshipMessages(openArchiveId ?? ""),
+    enabled: Boolean(openArchiveId),
+  });
   const update = useMutation({
     mutationFn: (changes: Record<string, string>) => api.updateProfile(changes),
     onSuccess: (value) => {
@@ -367,6 +660,51 @@ function ProfilePage() {
         </button>
         {update.isSuccess && <p className={styles.success}>Profiel opgeslagen.</p>}
       </form>
+      {session?.account && (
+        <section className={styles.archiveCard}>
+          <span>Account</span>
+          <h2>{session.account.email}</h2>
+          <p>
+            {session.account.emailVerified
+              ? "E-mailadres geverifieerd"
+              : "Controleer de lokale mail-outbox om je e-mailadres te verifiëren."}
+          </p>
+          <h3>Relatiearchieven</h3>
+          {archives.data?.length ? (
+            archives.data.map((archive) => (
+              <div key={archive.id}>
+                <button
+                  className={styles.archiveRow}
+                  onClick={() =>
+                    setOpenArchiveId(
+                      openArchiveId === archive.id ? null : archive.id,
+                    )
+                  }
+                  type="button"
+                >
+                  <strong>
+                    {archive.members.map((member) => member.displayName).join(" & ")}
+                  </strong>
+                  <span>
+                    {archive.messageCount} berichten · {archive.completedGames} ontdekkingen
+                  </span>
+                </button>
+                {openArchiveId === archive.id && (
+                  <div className={styles.archiveMessages}>
+                    {archivedMessages.data?.map((message) => (
+                      <p key={message.id}>
+                        <strong>{message.senderName}:</strong> {message.text}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <p>Nog geen afgesloten relaties.</p>
+          )}
+        </section>
+      )}
     </main>
   );
 }
@@ -377,7 +715,13 @@ function PairPanel({ pair }: { pair: Pair | null | undefined }) {
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["pair"] });
   const create = useMutation({ mutationFn: api.createPair, onSuccess: refresh });
   const join = useMutation({ mutationFn: () => api.joinPair(code), onSuccess: refresh });
-  const disconnect = useMutation({ mutationFn: api.disconnectPair, onSuccess: refresh });
+  const disconnect = useMutation({
+    mutationFn: api.disconnectPair,
+    onSuccess: () => {
+      refresh();
+      void queryClient.invalidateQueries({ queryKey: ["relationship-archives"] });
+    },
+  });
 
   if (pair) {
     return (
@@ -476,8 +820,61 @@ function ChatPanel({ pair }: { pair: Pair | null | undefined }) {
 
 function CallPanel({ pair }: { pair: Pair | null | undefined }) {
   const call = useCall();
+  const { session } = useSession();
+  const queryClient = useQueryClient();
+  const access = useQuery({
+    queryKey: ["call-access", pair?.id],
+    queryFn: api.getCallAccess,
+    enabled: Boolean(pair && pair.members.length === 2),
+  });
+  const requestAccess = useMutation({
+    mutationFn: api.requestCallAccess,
+    onSuccess: (value) => queryClient.setQueryData(["call-access", pair?.id], value),
+  });
+  const answerAccess = useMutation({
+    mutationFn: api.answerCallAccess,
+    onSuccess: (value) => queryClient.setQueryData(["call-access", pair?.id], value),
+  });
   if (!pair || pair.members.length < 2) {
     return <p>Koppel eerst met je partner om te bellen.</p>;
+  }
+  if (!access.data) {
+    return <p>Beltoegang wordt gecontroleerd...</p>;
+  }
+  if (!access.data.unlocked) {
+    const requestFromPartner =
+      access.data.requestedBy &&
+      access.data.requestedBy !== session?.installationId;
+    return (
+      <div className={styles.callPanel}>
+        <h2>Bellen samen vrijspelen</h2>
+        <p>{Math.min(30, Math.floor(access.data.sharedSeconds / 60))} / 30 minuten samen</p>
+        <p>{access.data.completedGames} / 5 ontdekkingen</p>
+        <p>
+          Minimaal 10 berichten per persoon:{" "}
+          {Object.values(access.data.messagesByMember).join(" en ")}
+        </p>
+        {requestFromPartner ? (
+          <div className={styles.callActions}>
+            <button
+              className={styles.primaryButton}
+              onClick={() => answerAccess.mutate("yes")}
+            >
+              Bellen toestaan
+            </button>
+            <button onClick={() => answerAccess.mutate("no")}>Nog niet</button>
+          </div>
+        ) : (
+          <button
+            className={styles.primaryButton}
+            disabled={!access.data.conditionsMet || requestAccess.isPending}
+            onClick={() => requestAccess.mutate()}
+          >
+            Vraag toestemming
+          </button>
+        )}
+      </div>
+    );
   }
   return (
     <div className={styles.callPanel}>
@@ -496,6 +893,7 @@ function CallPanel({ pair }: { pair: Pair | null | undefined }) {
 }
 
 function AppShell() {
+  const { session } = useSession();
   const { connected } = useRealtime();
   const drawer = useAppStore((state) => state.drawer);
   const setDrawer = useAppStore((state) => state.setDrawer);
@@ -507,6 +905,9 @@ function AppShell() {
         <Route path="/" element={<WorldPage />} />
         <Route path="/games/:gameId" element={<GamePage pair={pair.data} />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="*" element={<Navigate replace to="/" />} />
       </Routes>
 
@@ -516,6 +917,7 @@ function AppShell() {
         <button onClick={() => setDrawer(drawer === "chat" ? null : "chat")}>Chat</button>
         <button onClick={() => setDrawer(drawer === "call" ? null : "call")}>Bel</button>
         <NavLink to="/profile">Profiel</NavLink>
+        <NavLink to="/account">{session?.account ? "Account" : "Inloggen"}</NavLink>
         <span className={connected ? styles.onlineDot : styles.offlineDot} title={connected ? "Online" : "Offline"} />
       </nav>
 
@@ -527,6 +929,7 @@ function AppShell() {
           {drawer === "call" && <CallPanel pair={pair.data} />}
         </aside>
       )}
+      {pair.data?.members.length === 2 && !session?.account && <AccountGate />}
     </div>
   );
 }

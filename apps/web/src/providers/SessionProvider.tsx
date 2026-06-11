@@ -8,7 +8,10 @@ import {
 
 import type { GuestSession } from "@slow-dating/contracts";
 
-import { startGuestSession } from "../lib/api";
+import {
+  refreshAccountSession,
+  startGuestSession,
+} from "../lib/api";
 
 interface SessionContextValue {
   session: GuestSession | null;
@@ -22,9 +25,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void startGuestSession().then(setSession).catch((cause: unknown) => {
-      setError(cause instanceof Error ? cause.message : "Starten is mislukt.");
-    });
+    void refreshAccountSession()
+      .catch(() => startGuestSession())
+      .then(setSession)
+      .catch((cause: unknown) => {
+        setError(cause instanceof Error ? cause.message : "Starten is mislukt.");
+      });
   }, []);
 
   return (

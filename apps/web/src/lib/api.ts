@@ -1,11 +1,13 @@
 import { z } from "zod";
 
 import {
+  callAccessSchema,
   gameRunSchema,
   guestSessionSchema,
   messageSchema,
   pairSchema,
   profileSchema,
+  relationshipArchiveSchema,
   worldProgressSchema,
   type GuestSession,
 } from "@slow-dating/contracts";
@@ -23,6 +25,7 @@ async function request<T>(
 ) {
   const response = await fetch(path, {
     ...options,
+    credentials: "include",
     headers: {
       "content-type": "application/json",
       ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
@@ -62,7 +65,54 @@ export async function startGuestSession(): Promise<GuestSession> {
   return session;
 }
 
+export async function refreshAccountSession(): Promise<GuestSession> {
+  const session = await request(
+    "/api/auth/refresh",
+    guestSessionSchema.optional(),
+    { method: "POST", body: "{}" },
+  );
+  if (!session) {
+    throw new Error("Geen bestaande accountsessie.");
+  }
+  setAccessToken(session.accessToken);
+  return session;
+}
+
 export const api = {
+  register: (input: {
+    email: string;
+    password: string;
+    displayName: string;
+  }) =>
+    request("/api/auth/register", guestSessionSchema, {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  login: (email: string, password: string) =>
+    request("/api/auth/login", guestSessionSchema, {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+  logout: () =>
+    request("/api/auth/logout", z.undefined(), {
+      method: "POST",
+      body: "{}",
+    }),
+  requestPasswordReset: (email: string) =>
+    request("/api/auth/password-reset/request", z.object({ accepted: z.literal(true) }), {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  completePasswordReset: (token: string, password: string) =>
+    request("/api/auth/password-reset/complete", z.undefined(), {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+    }),
+  verifyEmail: (token: string) =>
+    request("/api/auth/verify-email", guestSessionSchema, {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
   getProfile: () => request("/api/profile", profileSchema),
   updateProfile: (changes: Record<string, string>) =>
     request("/api/profile", profileSchema, {
@@ -79,6 +129,10 @@ export const api = {
     }),
   disconnectPair: () =>
     request("/api/pairs/current", z.undefined(), { method: "DELETE" }),
+  getRelationshipArchives: () =>
+    request("/api/relationships/archives", z.array(relationshipArchiveSchema)),
+  getRelationshipMessages: (pairId: string) =>
+    request(`/api/relationships/${pairId}/messages`, z.array(messageSchema)),
   getMessages: () => request("/api/messages", z.array(messageSchema)),
   sendMessage: (clientId: string, text: string) =>
     request("/api/messages", messageSchema, {
@@ -96,4 +150,22 @@ export const api = {
       body: JSON.stringify({ status: "completed", result }),
     }),
   getProgress: () => request("/api/progress", worldProgressSchema),
+  purchaseWorld: (world: number) =>
+    request(`/api/worlds/${world}/purchase`, worldProgressSchema, {
+      method: "POST",
+      body: "{}",
+    }),
+  getCallAccess: () => request("/api/calls/access", callAccessSchema),
+  requestCallAccess: () =>
+    request("/api/calls/access/request", callAccessSchema, {
+      method: "POST",
+      body: "{}",
+    }),
+  answerCallAccess: (answer: "yes" | "no") =>
+    request("/api/calls/access/answer", callAccessSchema, {
+      method: "POST",
+      body: JSON.stringify({ answer }),
+    }),
+  relockCalls: () =>
+    request("/api/calls/access", callAccessSchema, { method: "DELETE" }),
 };
