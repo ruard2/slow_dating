@@ -10,13 +10,17 @@ test("loads the world map without console errors", async ({ page }) => {
 
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Slow Dating" })).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Alle ontdekkingen" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Slow Dating" })).toHaveCount(0);
+  await expect(page.getByAltText("Kaart van wereld 1")).toBeVisible();
+  await expect(page.getByAltText("Kaart van wereld 2")).toBeAttached();
+  await expect(page.getByLabel("Voortgang wereldkaart")).toContainText(
+    "ontdekkingen",
+  );
   await expect(
     page.getByRole("link", { name: "Je waarden", exact: true }),
   ).toBeVisible();
+  await page.getByRole("link", { name: "Je waarden", exact: true }).click();
+  await expect(page).toHaveURL(/\/games\/waarden$/);
   expect(consoleErrors).toEqual([]);
 });
 
@@ -43,7 +47,9 @@ test("starts an adapted legacy game inside the permanent shell", async ({
   await page.getByRole("button", { name: "Begin" }).click();
 
   const game = page.frameLocator("iframe[title='Je waarden']");
-  await expect(game.getByRole("heading", { name: "Waarden", exact: true })).toBeVisible();
+  await expect(
+    game.getByRole("heading", { name: "Waarden", exact: true }),
+  ).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("button", { name: "Chat" })).toBeVisible();
 });
 

@@ -151,6 +151,12 @@ export function createApp({
       );
   });
 
+  app.get("/api/progress", auth.requireAuth, async (request, response) => {
+    response.json(
+      await repository.getWorldProgress(installationId(request)),
+    );
+  });
+
   app.patch(
     "/api/game-runs/:runId",
     auth.requireAuth,

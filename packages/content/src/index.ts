@@ -11,6 +11,8 @@ export const gameMetadataSchema = z.object({
   position: z.object({
     left: z.number().min(0).max(100),
     top: z.number().min(0).max(100),
+    width: z.number().positive().max(100),
+    height: z.number().positive().max(100),
   }),
   status: z.enum(["native", "adapted"]),
 });
@@ -26,7 +28,7 @@ export const games = [
     soloLegacyPath: "waarden_volledig.html",
     modes: ["solo", "couple"],
     version: 1,
-    position: { left: 86, top: 23 },
+    position: { left: 80, top: 19.6, width: 15.2, height: 7.3 },
     status: "adapted",
   },
   {
@@ -36,7 +38,7 @@ export const games = [
     legacyPath: "lach_samen.html",
     modes: ["couple"],
     version: 1,
-    position: { left: 24, top: 37 },
+    position: { left: 17.1, top: 33.8, width: 15.3, height: 7.8 },
     status: "adapted",
   },
   {
@@ -46,7 +48,7 @@ export const games = [
     legacyPath: "kennismaking.html",
     modes: ["solo", "couple"],
     version: 1,
-    position: { left: 20, top: 49 },
+    position: { left: 10.7, top: 44.9, width: 20, height: 6.7 },
     status: "adapted",
   },
   {
@@ -56,7 +58,7 @@ export const games = [
     legacyPath: "familiedorp.html",
     modes: ["couple"],
     version: 1,
-    position: { left: 86, top: 49 },
+    position: { left: 77.3, top: 44.2, width: 19.2, height: 7.5 },
     status: "adapted",
   },
   {
@@ -66,7 +68,7 @@ export const games = [
     legacyPath: "kwaliteiten.html",
     modes: ["couple"],
     version: 1,
-    position: { left: 86, top: 61 },
+    position: { left: 76.9, top: 57.7, width: 19.7, height: 6.8 },
     status: "adapted",
   },
   {
@@ -76,7 +78,7 @@ export const games = [
     legacyPath: "stille_vijver.html",
     modes: ["couple"],
     version: 1,
-    position: { left: 23, top: 74 },
+    position: { left: 14.6, top: 70.4, width: 18.3, height: 7.4 },
     status: "adapted",
   },
   {
@@ -86,7 +88,7 @@ export const games = [
     legacyPath: "brug_ontdekking.html",
     modes: ["couple"],
     version: 1,
-    position: { left: 82, top: 77 },
+    position: { left: 71.7, top: 72.8, width: 22, height: 7.3 },
     status: "adapted",
   },
   {
@@ -96,7 +98,7 @@ export const games = [
     legacyPath: "grot.html",
     modes: ["solo", "couple"],
     version: 1,
-    position: { left: 50, top: 86 },
+    position: { left: 43, top: 83, width: 14, height: 6 },
     status: "adapted",
   },
   {
@@ -106,7 +108,7 @@ export const games = [
     legacyPath: "kleurkompas.html",
     modes: ["solo", "couple"],
     version: 1,
-    position: { left: 42, top: 60 },
+    position: { left: 36, top: 57, width: 12, height: 6 },
     status: "adapted",
   },
   {
@@ -116,7 +118,7 @@ export const games = [
     legacyPath: "kernkwadranten.html",
     modes: ["solo", "couple"],
     version: 1,
-    position: { left: 61, top: 38 },
+    position: { left: 55, top: 35, width: 12, height: 6 },
     status: "adapted",
   },
   {
@@ -126,7 +128,7 @@ export const games = [
     legacyPath: "profiel.html",
     modes: ["solo"],
     version: 1,
-    position: { left: 50, top: 18 },
+    position: { left: 44, top: 15, width: 12, height: 6 },
     status: "adapted",
   },
   {
@@ -136,7 +138,7 @@ export const games = [
     legacyPath: "relatiekaart.html",
     modes: ["couple"],
     version: 1,
-    position: { left: 50, top: 48 },
+    position: { left: 44, top: 45, width: 12, height: 6 },
     status: "adapted",
   },
 ] satisfies GameMetadata[];

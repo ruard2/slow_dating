@@ -236,6 +236,29 @@ export class PrismaRepository implements AppRepository {
     return this.toGameRun(updated);
   }
 
+  async getWorldProgress(installationId: string) {
+    const pair = await this.getPairForInstallation(installationId);
+    const completedRuns = await this.prisma.gameRun.findMany({
+      where: {
+        status: "completed",
+        OR: [
+          { installationId },
+          ...(pair ? [{ pairId: pair.id }] : []),
+        ],
+      },
+      select: { gameId: true },
+    });
+    const completedGames = new Set(
+      completedRuns.map((run) => run.gameId),
+    ).size;
+    return {
+      completedGames,
+      unlockedWorlds: [1, 2, 3, 4, 5].filter(
+        (world) => world === 1 || completedGames >= (world - 1) * 5,
+      ),
+    };
+  }
+
   async hasProcessedEvent(eventId: string) {
     return Boolean(
       await this.prisma.processedEvent.findUnique({ where: { id: eventId } }),

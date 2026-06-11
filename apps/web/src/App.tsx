@@ -28,6 +28,27 @@ import { useRealtime } from "./providers/RealtimeProvider";
 import { useSession } from "./providers/SessionProvider";
 import { useAppStore } from "./store/appStore";
 
+const WORLD_MILESTONES = [0, 5, 10, 15, 20];
+const WORLD_WAYPOINTS = [7.4, 14.5, 24.9, 35.2, 48.5];
+const LOCKED_WORLDS = [
+  { id: 5, required: 20 },
+  { id: 4, required: 15 },
+  { id: 3, required: 10 },
+  { id: 2, required: 5 },
+];
+
+function getProgressPosition(completedGames: number) {
+  const completed = Math.max(0, Math.min(completedGames, 20));
+  const segment = Math.min(Math.floor(completed / 5), 3);
+  const milestone = WORLD_MILESTONES[segment] ?? 0;
+  const start = WORLD_WAYPOINTS[segment] ?? 7.4;
+  const end = WORLD_WAYPOINTS[segment + 1] ?? 48.5;
+  const progressInSegment = (completed - milestone) / 5;
+  return (
+    start + (end - start) * progressInSegment
+  );
+}
+
 function LoadingScreen() {
   const { error } = useSession();
   return (
@@ -39,42 +60,112 @@ function LoadingScreen() {
 }
 
 function WorldPage() {
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const firstWorldRef = useRef<HTMLElement | null>(null);
+  const progress = useQuery({
+    queryKey: ["progress"],
+    queryFn: api.getProgress,
+  });
+  const completedGames = progress.data?.completedGames ?? 0;
+  const unlockedWorlds = progress.data?.unlockedWorlds ?? [1];
+  const nextMilestone = WORLD_MILESTONES.find(
+    (milestone) => milestone > completedGames,
+  );
+
+  useEffect(() => {
+    const showFirstWorld = () => {
+      if (scrollerRef.current && firstWorldRef.current) {
+        scrollerRef.current.scrollTop = firstWorldRef.current.offsetTop;
+      }
+    };
+    const frame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(showFirstWorld);
+    });
+    const timeout = window.setTimeout(showFirstWorld, 250);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+    };
+  }, []);
+
   return (
     <main className={styles.worldPage}>
-      <header className={styles.worldIntro}>
-        <span>Jullie reis</span>
-        <h1>Slow Dating</h1>
-        <p>Kies een plek. Neem de tijd. Ontdek iets nieuws in elkaar.</p>
-      </header>
-      <section className={styles.map} aria-label="Wereldkaart met spellen">
-        <img src="/assets/kaart1.webp" alt="" />
-        {games.slice(0, 7).map((game) => (
-          <NavLink
-            aria-label={game.title}
-            className={styles.hotspot ?? ""}
-            key={game.id}
-            style={{
-              left: `${game.position.left}%`,
-              top: `${game.position.top}%`,
-            }}
-            to={`/games/${game.id}`}
-          >
-            <span>{game.title}</span>
-          </NavLink>
-        ))}
-      </section>
-      <section className={styles.library}>
-        <h2>Alle ontdekkingen</h2>
-        <div className={styles.gameGrid}>
-          {games.map((game) => (
-            <NavLink className={styles.gameCard ?? ""} key={game.id} to={`/games/${game.id}`}>
-              <small>{game.modes.join(" + ")}</small>
-              <strong>{game.title}</strong>
-              <span>{game.description}</span>
-            </NavLink>
+      <div className={styles.progressBar} aria-label="Voortgang wereldkaart">
+        <img
+          className={styles.progressTrack}
+          src="/assets/nabijheid_balk2.webp"
+          alt=""
+        />
+        <img
+          className={styles.progressFigure}
+          src="/assets/figuur.webp"
+          alt=""
+          style={{ left: `${getProgressPosition(completedGames)}%` }}
+        />
+        <img
+          className={styles.partnerFigure}
+          src="/assets/figuur2.webp"
+          alt=""
+        />
+        <span className={styles.progressCopy}>
+          {nextMilestone
+            ? `${completedGames} / ${nextMilestone} ontdekkingen`
+            : `${completedGames} ontdekkingen - alle werelden vrij`}
+        </span>
+      </div>
+
+      <div className={styles.worldScroller} ref={scrollerRef}>
+        {LOCKED_WORLDS.map((world) => {
+          const unlocked = unlockedWorlds.includes(world.id);
+          return (
+            <section
+              aria-label={`Wereld ${world.id}`}
+              className={styles.worldCard}
+              key={world.id}
+            >
+              <img
+                className={unlocked ? styles.worldImage : styles.lockedWorldImage}
+                src={`/assets/kaart${world.id}.webp`}
+                alt={`Kaart van wereld ${world.id}`}
+              />
+              <div className={styles.worldLockOverlay}>
+                <strong>Wereld {world.id}</strong>
+                <span>
+                  {unlocked
+                    ? "Deze wereld is vrijgespeeld"
+                    : `Nog ${Math.max(0, world.required - completedGames)} ontdekkingen nodig`}
+                </span>
+              </div>
+            </section>
+          );
+        })}
+
+        <section
+          aria-label="Wereld 1 met spellen"
+          className={styles.worldCard}
+          ref={firstWorldRef}
+        >
+          <img
+            className={styles.worldImage}
+            src="/assets/kaart1.webp"
+            alt="Kaart van wereld 1"
+          />
+          {games.slice(0, 7).map((game) => (
+            <NavLink
+              aria-label={game.title}
+              className={styles.mapHotspot ?? ""}
+              key={game.id}
+              style={{
+                left: `${game.position.left}%`,
+                top: `${game.position.top}%`,
+                width: `${game.position.width}%`,
+                height: `${game.position.height}%`,
+              }}
+              to={`/games/${game.id}`}
+            />
           ))}
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
   );
 }
@@ -82,7 +173,9 @@ function WorldPage() {
 function GamePage({ pair }: { pair: Pair | null | undefined }) {
   const { gameId = "" } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const frameRef = useRef<HTMLIFrameElement | null>(null);
+  const completedRunRef = useRef<string | null>(null);
   const { lastEvent, send } = useRealtime();
   const setDrawer = useAppStore((state) => state.setDrawer);
   const game = findGame(gameId);
@@ -131,6 +224,19 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
         setDrawer("pair");
         return;
       }
+      if (
+        legacyEvent === "session_complete" &&
+        createRun.data &&
+        completedRunRef.current !== createRun.data.id
+      ) {
+        completedRunRef.current = createRun.data.id;
+        void api
+          .completeGameRun(createRun.data.id, event.data.data ?? {})
+          .then(() => queryClient.invalidateQueries({ queryKey: ["progress"] }))
+          .catch(() => {
+            completedRunRef.current = null;
+          });
+      }
       if (createRun.data) {
         send("game.sync", {
           gameRunId: createRun.data.id,
@@ -143,7 +249,7 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
     }
     window.addEventListener("message", receiveLegacyMessage);
     return () => window.removeEventListener("message", receiveLegacyMessage);
-  }, [createRun.data, send, setDrawer]);
+  }, [createRun.data, queryClient, send, setDrawer]);
 
   if (!game) {
     return <Navigate replace to="/" />;

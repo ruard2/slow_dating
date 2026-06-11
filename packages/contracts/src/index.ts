@@ -113,6 +113,13 @@ export const updateGameRunSchema = z.object({
 
 export type GameRun = z.infer<typeof gameRunSchema>;
 
+export const worldProgressSchema = z.object({
+  completedGames: z.number().int().nonnegative(),
+  unlockedWorlds: z.array(z.number().int().min(1).max(5)),
+});
+
+export type WorldProgress = z.infer<typeof worldProgressSchema>;
+
 export const realtimeEventSchema = z.object({
   id: z.string().min(1),
   type: z.string().min(1),

@@ -1,4 +1,10 @@
-import type { GameRun, Message, Pair, Profile } from "@slow-dating/contracts";
+import type {
+  GameRun,
+  Message,
+  Pair,
+  Profile,
+  WorldProgress,
+} from "@slow-dating/contracts";
 
 export interface InstallationRecord {
   id: string;
@@ -56,6 +62,7 @@ export interface AppRepository {
     runId: string,
     changes: Partial<Pick<GameRun, "result" | "state" | "status">>,
   ): Promise<GameRun>;
+  getWorldProgress(installationId: string): Promise<WorldProgress>;
   hasProcessedEvent(eventId: string): Promise<boolean>;
   markEventProcessed(eventId: string): Promise<void>;
 }

@@ -258,6 +258,27 @@ export class LocalRepository implements AppRepository {
     return structuredClone(run);
   }
 
+  async getWorldProgress(installationId: string) {
+    const pair = await this.getPairForInstallation(installationId);
+    const completedGameIds = new Set(
+      this.state.gameRuns
+        .filter(
+          (run) =>
+            run.status === "completed" &&
+            (run.installationId === installationId ||
+              (pair && run.pairId === pair.id)),
+        )
+        .map((run) => run.gameId),
+    );
+    const completedGames = completedGameIds.size;
+    return {
+      completedGames,
+      unlockedWorlds: [1, 2, 3, 4, 5].filter(
+        (world) => world === 1 || completedGames >= (world - 1) * 5,
+      ),
+    };
+  }
+
   async hasProcessedEvent(eventId: string) {
     return this.state.processedEventIds.includes(eventId);
   }

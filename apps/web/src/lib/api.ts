@@ -6,6 +6,7 @@ import {
   messageSchema,
   pairSchema,
   profileSchema,
+  worldProgressSchema,
   type GuestSession,
 } from "@slow-dating/contracts";
 
@@ -89,4 +90,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ gameId, mode, version }),
     }),
+  completeGameRun: (runId: string, result: Record<string, unknown> = {}) =>
+    request(`/api/game-runs/${runId}`, gameRunSchema, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "completed", result }),
+    }),
+  getProgress: () => request("/api/progress", worldProgressSchema),
 };
