@@ -24,6 +24,7 @@ import { findGame } from "@slow-dating/content";
 
 import styles from "./App.module.css";
 import { WorldMap } from "./components/WorldMap";
+import { PartnerArrived, WaitingRoom } from "./components/WaitingRoom";
 import { api } from "./lib/api";
 import { useCall } from "./providers/CallProvider";
 import { useRealtime } from "./providers/RealtimeProvider";
@@ -331,6 +332,7 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const enteredRef = useRef<string | null>(null);
   const completedRunRef = useRef<string | null>(null);
+  const [arrivalComplete, setArrivalComplete] = useState(false);
   const { lastEvent, send } = useRealtime();
   const setDrawer = useAppStore((state) => state.setDrawer);
   const game = findGame(gameId);
@@ -359,6 +361,14 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
         pair.members.some((member) => member.installationId === id),
       ).length >= 2,
   );
+  const partner = pair?.members.find(
+    (member) => member.installationId !== session?.installationId,
+  );
+  const hasWaited = Boolean(
+    run &&
+      !pair?.developerMode &&
+      run.installationId === session?.installationId,
+  );
 
   useEffect(() => {
     if (
@@ -371,6 +381,18 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
     enteredRef.current = `${pair.id}:${gameId}`;
     enterRun.mutate();
   }, [enterRun, game, gameId, pair]);
+
+  useEffect(() => {
+    if (!run || started || pair?.developerMode) return;
+    void api.startWaitingSession(run.id);
+  }, [pair?.developerMode, run, started]);
+
+  useEffect(() => {
+    if (!started || !run || !hasWaited || arrivalComplete) return;
+    void api.endWaitingSession(run.id);
+    const timeout = window.setTimeout(() => setArrivalComplete(true), 1_400);
+    return () => clearTimeout(timeout);
+  }, [arrivalComplete, hasWaited, run, started]);
 
   useEffect(() => {
     if (lastEvent?.type === "game.lobby.enter") {
@@ -467,29 +489,17 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
   }
 
   if (!started) {
-    const partner = pair.members.find(
-      (member) => !readyInstallationIds.includes(member.installationId),
-    );
+    if (!run) return <LoadingScreen />;
     return (
-      <main className={styles.gameWelcome}>
-        <button className={styles.backButton} onClick={() => navigate("/")} type="button">
-          Terug naar de kaart
-        </button>
-        <div className={styles.gameWelcomeCard}>
-          <span>Samen starten</span>
-          <h1>Wachten op {partner?.displayName ?? "je partner"}</h1>
-          <p>
-            Open allebei <strong>{game.title}</strong>. Zodra je partner dit bord
-            betreedt, begint het spel automatisch.
-          </p>
-          <div className={styles.waitingPulse} aria-label="Wachten op partner" />
-          <p className={styles.notice}>
-            Chatten en bellen blijven tijdens het wachten beschikbaar.
-          </p>
-          {enterRun.error && <p className={styles.error}>{enterRun.error.message}</p>}
-        </div>
-      </main>
+      <WaitingRoom
+        gameRunId={run.id}
+        partnerName={partner?.displayName ?? "Je partner"}
+      />
     );
+  }
+
+  if (hasWaited && !arrivalComplete) {
+    return <PartnerArrived partnerName={partner?.displayName ?? "Je partner"} />;
   }
 
   return (

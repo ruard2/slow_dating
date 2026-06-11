@@ -141,12 +141,16 @@ test("pairs two browsers and delivers chat exactly once", async ({
     second.getByRole("button", { name: "Chat Online", exact: true }),
   ).toBeVisible();
   await first.goto("/games/waarden");
-  await expect(first.getByRole("heading", { name: "Wachten op Browser Twee" })).toBeVisible();
+  await expect(first.getByText("Wachten op je reisgenoot...")).toBeVisible();
+  await expect(first.getByText("Browser Twee", { exact: true })).toBeVisible();
+  await first.locator("[class*='waitingOptions'] button").first().click();
+  await expect(first.getByRole("button", { name: "Nog eentje" })).toBeEnabled();
   await first.getByRole("button", { name: "Chat" }).click();
-  await expect(first.getByText("Chatten en bellen blijven tijdens het wachten beschikbaar.")).toBeVisible();
+  await expect(first.getByPlaceholder("Schrijf iets...")).toBeVisible();
   await first.getByRole("button", { name: "Chat" }).click();
   await second.goto("/games/waarden");
-  await expect(first.locator("iframe[title='Je waarden']")).toBeVisible();
+  await expect(first.getByText("Browser Twee is er!")).toBeVisible();
+  await expect(first.locator("iframe[title='Je waarden']")).toBeVisible({ timeout: 8_000 });
   await expect(second.locator("iframe[title='Je waarden']")).toBeVisible();
   await first.getByRole("button", { name: "Chat" }).click();
   await second.getByRole("button", { name: "Chat" }).click();

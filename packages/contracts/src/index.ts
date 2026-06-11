@@ -173,6 +173,28 @@ export const worldProgressSchema = z.object({
 
 export type WorldProgress = z.infer<typeof worldProgressSchema>;
 
+export const waitingAnswerRequestSchema = z.object({
+  gameRunId: idSchema,
+  waitingGameId: z.string().min(1).max(100),
+  answerId: z.string().min(1).max(100),
+  answerLabel: z.string().min(1).max(200),
+  shareLevel: z.enum(["private", "soft_share", "direct_share"]),
+});
+
+export const waitingSessionRequestSchema = z.object({
+  gameRunId: idSchema,
+});
+
+export const waitingStatsSchema = z.object({
+  totalWaitCount: z.number().int().nonnegative(),
+  totalWaitSeconds: z.number().int().nonnegative(),
+  totalGamesPlayed: z.number().int().nonnegative(),
+  recentGameIds: z.array(z.string()),
+  badges: z.array(z.string()),
+});
+
+export type WaitingStats = z.infer<typeof waitingStatsSchema>;
+
 export const callAccessSchema = z.object({
   sharedSeconds: z.number().int().nonnegative(),
   messagesByMember: z.record(idSchema, z.number().int().nonnegative()),

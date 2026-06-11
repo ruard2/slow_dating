@@ -82,6 +82,63 @@ describe("Slow Dating API", () => {
     expect(progress.body.completedGames).toBe(1);
   });
 
+  it("stores central waiting-room activity and returns personal stats", async () => {
+    const app = await createTestApp();
+    const first = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "w".repeat(64) });
+    const second = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "v".repeat(64) });
+    const firstAuth = {
+      authorization: `Bearer ${first.body.accessToken}`,
+    };
+    const secondAuth = {
+      authorization: `Bearer ${second.body.accessToken}`,
+    };
+    const pair = await request(app).post("/api/pairs").set(firstAuth).send({});
+    await request(app)
+      .post("/api/pairs/join")
+      .set(secondAuth)
+      .send({ code: pair.body.code });
+    const run = await request(app)
+      .post("/api/game-runs")
+      .set(firstAuth)
+      .send({ gameId: "waarden", mode: "couple", version: 1 });
+
+    await request(app)
+      .post("/api/waiting/session/start")
+      .set(firstAuth)
+      .send({ gameRunId: run.body.id })
+      .expect(204);
+    await request(app)
+      .post("/api/waiting/answers")
+      .set(firstAuth)
+      .send({
+        gameRunId: run.body.id,
+        waitingGameId: "fluitvogel-test",
+        answerId: "merel",
+        answerLabel: "Merel",
+        shareLevel: "soft_share",
+      })
+      .expect(204);
+
+    const stats = await request(app)
+      .get("/api/waiting/stats")
+      .set(firstAuth)
+      .expect(200);
+
+    expect(stats.body.totalWaitCount).toBe(1);
+    expect(stats.body.totalGamesPlayed).toBe(1);
+    expect(stats.body.recentGameIds).toEqual(["fluitvogel-test"]);
+
+    await request(app)
+      .post("/api/waiting/session/end")
+      .set(firstAuth)
+      .send({ gameRunId: run.body.id })
+      .expect(204);
+  });
+
   it("activates the local 1111 developer pair outside production", async () => {
     const app = await createTestApp();
     const session = await request(app)

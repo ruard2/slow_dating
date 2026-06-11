@@ -5,6 +5,8 @@ export const legacySdClientBridge = String.raw`
   const params = new URLSearchParams(location.search);
   const player = params.get("role") === "partner" ? "2" : "1";
   const code = params.get("code") || "LOCAL";
+  localStorage.setItem("comm_code", code);
+  localStorage.setItem("comm_player", player);
 
   function fire(event, data) {
     (callbacks[event] || []).forEach(function (callback) {
@@ -64,13 +66,21 @@ export const legacySdClientBridge = String.raw`
   window.SDClient = client;
   window.KoppelClient = client;
 
-  function removeSoloControls() {
+  function removeLegacyShell() {
     document.querySelectorAll("button, a, [role='button'], .modus-card").forEach(function (element) {
       const text = (element.textContent || "").trim().toLowerCase();
       const action = (element.getAttribute("onclick") || "").toLowerCase();
       if (
         action.includes("solo") ||
-        /^(solo verkennen|alleen spelen|speel alleen|toch alleen spelen|alleen ontdekken)$/.test(text)
+        /^(solo verkennen|alleen spelen|speel alleen|toch alleen spelen|alleen ontdekken)$/.test(text) ||
+        /^(begin samen|doe mee met koppelcode|maak koppelcode|ik heb een koppelcode)$/.test(text.replace(/^[^a-z]+/, "")) ||
+        action.includes("togglechat") ||
+        action.includes("openchat") ||
+        action.includes("sendchat") ||
+        action.includes("togglecall") ||
+        action.includes("answercall") ||
+        element.hasAttribute("data-comm-call") ||
+        element.hasAttribute("data-comm-badge")
       ) {
         element.remove();
       }
@@ -78,8 +88,17 @@ export const legacySdClientBridge = String.raw`
   }
 
   function enforceCoupleOnly() {
-    removeSoloControls();
-    new MutationObserver(removeSoloControls).observe(document.body, {
+    const style = document.createElement("style");
+    style.textContent = [
+      "#comm-bar,#sd-chat-root,#sd-chat-toggle,#sd-chat-panel",
+      "#__cl_root,#__cl_chat_fab,#__cl_chat_panel,#__cl_call",
+      "#onth-chat,#onth-call",
+      "[id*='chat-panel'],[id='chat-screen'],[id='screen-chat']",
+      "[class*='chat-fab'],[class*='comm-bar']"
+    ].join(",") + "{display:none!important}";
+    document.head.appendChild(style);
+    removeLegacyShell();
+    new MutationObserver(removeLegacyShell).observe(document.body, {
       childList: true,
       subtree: true
     });

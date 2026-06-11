@@ -32,6 +32,8 @@ model Installation {
   memberships PairMember[]
   gameRuns   GameRun[]
   messages   Message[]
+  waitingSessions WaitingSession[]
+  waitingAnswers WaitingAnswer[]
 }
 
 model Account {
@@ -92,6 +94,7 @@ model Pair {
   gameRuns     GameRun[]
   progress     Progress[]
   messages     Message[]
+  waitingSessions WaitingSession[]
 }
 
 model PairMember {
@@ -141,6 +144,38 @@ model GameRun {
   installation   Installation  @relation(fields: [installationId], references: [id], onDelete: Cascade)
   pair           Pair?         @relation(fields: [pairId], references: [id], onDelete: Cascade)
   progress       Progress[]
+  waitingSessions WaitingSession[]
+}
+
+model WaitingSession {
+  id        String   @id @default(uuid())
+  pairId    String
+  gameRunId String
+  userId    String
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+  pair      Pair     @relation(fields: [pairId], references: [id], onDelete: Cascade)
+  gameRun   GameRun  @relation(fields: [gameRunId], references: [id], onDelete: Cascade)
+  user      Installation @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers   WaitingAnswer[]
+
+  @@unique([gameRunId, userId])
+  @@index([userId, startedAt])
+}
+
+model WaitingAnswer {
+  id               String   @id @default(uuid())
+  waitingSessionId String
+  userId           String
+  waitingGameId    String
+  answerId         String
+  answerLabel      String
+  shareLevel       String
+  createdAt        DateTime @default(now())
+  waitingSession   WaitingSession @relation(fields: [waitingSessionId], references: [id], onDelete: Cascade)
+  user             Installation @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model Progress {

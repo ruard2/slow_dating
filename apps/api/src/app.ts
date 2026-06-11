@@ -22,6 +22,8 @@ import {
   updateGameRunSchema,
   updateProfileSchema,
   verifyEmailSchema,
+  waitingAnswerRequestSchema,
+  waitingSessionRequestSchema,
 } from "@slow-dating/contracts";
 
 import type { AuthenticatedRequest } from "./auth.js";
@@ -309,6 +311,28 @@ export function createApp({
     response.json(
       await repository.getWorldProgress(installationId(request)),
     );
+  });
+
+  app.post("/api/waiting/session/start", auth.requireAuth, async (request, response) => {
+    const input = waitingSessionRequestSchema.parse(request.body);
+    await repository.startWaitingSession(installationId(request), input.gameRunId);
+    response.status(204).end();
+  });
+
+  app.post("/api/waiting/session/end", auth.requireAuth, async (request, response) => {
+    const input = waitingSessionRequestSchema.parse(request.body);
+    await repository.endWaitingSession(installationId(request), input.gameRunId);
+    response.status(204).end();
+  });
+
+  app.post("/api/waiting/answers", auth.requireAuth, async (request, response) => {
+    const input = waitingAnswerRequestSchema.parse(request.body);
+    await repository.saveWaitingAnswer(installationId(request), input);
+    response.status(204).end();
+  });
+
+  app.get("/api/waiting/stats", auth.requireAuth, async (request, response) => {
+    response.json(await repository.getWaitingStats(installationId(request)));
   });
 
   app.post(

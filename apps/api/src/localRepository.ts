@@ -34,6 +34,8 @@ const EMPTY_STATE: DataState = {
   worldPurchases: [],
   mailOutbox: [],
   processedEventIds: [],
+  waitingSessions: [],
+  waitingAnswers: [],
 };
 
 const CODE_CHARACTERS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -50,6 +52,16 @@ function createCode() {
     const index = Math.floor(Math.random() * CODE_CHARACTERS.length);
     return CODE_CHARACTERS[index];
   }).join("");
+}
+
+function waitingBadges(waits: number, seconds: number, games: number) {
+  return [
+    ...(waits >= 5 ? ["Geduldige vos"] : []),
+    ...(waits >= 10 ? ["Kampvuurwachter"] : []),
+    ...(waits >= 20 ? ["Brugbewaker"] : []),
+    ...(seconds >= 1_800 ? ["Theedrinker van het Beginland"] : []),
+    ...(games >= 10 ? ["Lachvonk"] : []),
+  ];
 }
 
 export function hashInstallationSecret(secret: string) {
@@ -624,6 +636,88 @@ export class LocalRepository implements AppRepository {
     };
   }
 
+  async startWaitingSession(installationId: string, gameRunId: string) {
+    const run = this.requirePairGameRun(installationId, gameRunId);
+    const existing = this.state.waitingSessions.find(
+      (session) =>
+        session.gameRunId === gameRunId && session.userId === installationId,
+    );
+    if (!existing) {
+      this.state.waitingSessions.push({
+        id: randomUUID(),
+        pairId: run.pairId as string,
+        gameRunId,
+        userId: installationId,
+        startedAt: now(),
+        endedAt: null,
+      });
+      await this.persist();
+    }
+  }
+
+  async endWaitingSession(installationId: string, gameRunId: string) {
+    const session = this.state.waitingSessions.find(
+      (candidate) =>
+        candidate.gameRunId === gameRunId &&
+        candidate.userId === installationId &&
+        !candidate.endedAt,
+    );
+    if (session) {
+      session.endedAt = now();
+      await this.persist();
+    }
+  }
+
+  async saveWaitingAnswer(
+    installationId: string,
+    input: {
+      gameRunId: string;
+      waitingGameId: string;
+      answerId: string;
+      answerLabel: string;
+      shareLevel: "private" | "soft_share" | "direct_share";
+    },
+  ) {
+    await this.startWaitingSession(installationId, input.gameRunId);
+    const session = this.state.waitingSessions.find(
+      (candidate) =>
+        candidate.gameRunId === input.gameRunId &&
+        candidate.userId === installationId,
+    );
+    if (!session) throw new DomainError("Wachtsessie niet gevonden.", 404);
+    this.state.waitingAnswers.push({
+      id: randomUUID(),
+      waitingSessionId: session.id,
+      userId: installationId,
+      waitingGameId: input.waitingGameId,
+      answerId: input.answerId,
+      answerLabel: input.answerLabel,
+      shareLevel: input.shareLevel,
+      createdAt: now(),
+    });
+    await this.persist();
+  }
+
+  async getWaitingStats(installationId: string) {
+    const sessions = this.state.waitingSessions.filter(
+      (session) => session.userId === installationId,
+    );
+    const answers = this.state.waitingAnswers.filter(
+      (answer) => answer.userId === installationId,
+    );
+    const totalWaitSeconds = sessions.reduce((total, session) => {
+      const end = session.endedAt ? new Date(session.endedAt).getTime() : Date.now();
+      return total + Math.max(0, Math.floor((end - new Date(session.startedAt).getTime()) / 1_000));
+    }, 0);
+    return {
+      totalWaitCount: sessions.length,
+      totalWaitSeconds,
+      totalGamesPlayed: answers.length,
+      recentGameIds: answers.slice(-5).reverse().map((answer) => answer.waitingGameId),
+      badges: waitingBadges(sessions.length, totalWaitSeconds, answers.length),
+    };
+  }
+
   async purchaseWorld(installationId: string, world: number) {
     if (world < 2 || world > 5) {
       throw new DomainError("Ongeldige wereld.", 400);
@@ -814,6 +908,15 @@ export class LocalRepository implements AppRepository {
       throw new DomainError("Je bent nog niet gekoppeld.", 409);
     }
     return pair;
+  }
+
+  private requirePairGameRun(installationId: string, gameRunId: string) {
+    const pair = this.requireCompletePairRecord(installationId);
+    const run = this.state.gameRuns.find(
+      (candidate) => candidate.id === gameRunId && candidate.pairId === pair.id,
+    );
+    if (!run) throw new DomainError("Spelsessie niet gevonden.", 404);
+    return run;
   }
 
   private requireCompletePairRecord(installationId: string) {

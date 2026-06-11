@@ -1,4 +1,5 @@
 import { z } from "zod";
+export { waitingGames, waitingGameSchema, type WaitingGame } from "./waitingGames.js";
 
 export const gameMetadataSchema = z.object({
   id: z.string().min(1),

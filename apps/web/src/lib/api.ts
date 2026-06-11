@@ -8,6 +8,7 @@ import {
   pairSchema,
   profileSchema,
   relationshipArchiveSchema,
+  waitingStatsSchema,
   worldProgressSchema,
   type GuestSession,
 } from "@slow-dating/contracts";
@@ -157,6 +158,28 @@ export const api = {
       body: JSON.stringify({ status: "completed", result }),
     }),
   getProgress: () => request("/api/progress", worldProgressSchema),
+  startWaitingSession: (gameRunId: string) =>
+    request("/api/waiting/session/start", z.undefined(), {
+      method: "POST",
+      body: JSON.stringify({ gameRunId }),
+    }),
+  endWaitingSession: (gameRunId: string) =>
+    request("/api/waiting/session/end", z.undefined(), {
+      method: "POST",
+      body: JSON.stringify({ gameRunId }),
+    }),
+  saveWaitingAnswer: (input: {
+    gameRunId: string;
+    waitingGameId: string;
+    answerId: string;
+    answerLabel: string;
+    shareLevel: "private" | "soft_share" | "direct_share";
+  }) =>
+    request("/api/waiting/answers", z.undefined(), {
+      method: "POST",
+      body: JSON.stringify(input),
+    }),
+  getWaitingStats: () => request("/api/waiting/stats", waitingStatsSchema),
   purchaseWorld: (world: number) =>
     request(`/api/worlds/${world}/purchase`, worldProgressSchema, {
       method: "POST",

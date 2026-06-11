@@ -21,6 +21,16 @@ import {
   type InstallationRecord,
 } from "./domain.js";
 
+function waitingBadges(waits: number, seconds: number, games: number) {
+  return [
+    ...(waits >= 5 ? ["Geduldige vos"] : []),
+    ...(waits >= 10 ? ["Kampvuurwachter"] : []),
+    ...(waits >= 20 ? ["Brugbewaker"] : []),
+    ...(seconds >= 1_800 ? ["Theedrinker van het Beginland"] : []),
+    ...(games >= 10 ? ["Lachvonk"] : []),
+  ];
+}
+
 function toProfile(profile: {
   installationId: string;
   displayName: string;
@@ -658,6 +668,79 @@ export class PrismaRepository implements AppRepository {
     };
   }
 
+  async startWaitingSession(installationId: string, gameRunId: string) {
+    const run = await this.requirePairGameRun(installationId, gameRunId);
+    await this.prisma.waitingSession.upsert({
+      where: { gameRunId_userId: { gameRunId, userId: installationId } },
+      update: {},
+      create: {
+        pairId: run.pairId as string,
+        gameRunId,
+        userId: installationId,
+      },
+    });
+  }
+
+  async endWaitingSession(installationId: string, gameRunId: string) {
+    await this.prisma.waitingSession.updateMany({
+      where: { gameRunId, userId: installationId, endedAt: null },
+      data: { endedAt: new Date() },
+    });
+  }
+
+  async saveWaitingAnswer(
+    installationId: string,
+    input: {
+      gameRunId: string;
+      waitingGameId: string;
+      answerId: string;
+      answerLabel: string;
+      shareLevel: "private" | "soft_share" | "direct_share";
+    },
+  ) {
+    await this.startWaitingSession(installationId, input.gameRunId);
+    const session = await this.prisma.waitingSession.findUnique({
+      where: {
+        gameRunId_userId: {
+          gameRunId: input.gameRunId,
+          userId: installationId,
+        },
+      },
+    });
+    if (!session) throw new DomainError("Wachtsessie niet gevonden.", 404);
+    await this.prisma.waitingAnswer.create({
+      data: {
+        waitingSessionId: session.id,
+        userId: installationId,
+        waitingGameId: input.waitingGameId,
+        answerId: input.answerId,
+        answerLabel: input.answerLabel,
+        shareLevel: input.shareLevel,
+      },
+    });
+  }
+
+  async getWaitingStats(installationId: string) {
+    const [sessions, answers] = await Promise.all([
+      this.prisma.waitingSession.findMany({ where: { userId: installationId } }),
+      this.prisma.waitingAnswer.findMany({
+        where: { userId: installationId },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+    const totalWaitSeconds = sessions.reduce((total, session) => {
+      const end = session.endedAt?.getTime() ?? Date.now();
+      return total + Math.max(0, Math.floor((end - session.startedAt.getTime()) / 1_000));
+    }, 0);
+    return {
+      totalWaitCount: sessions.length,
+      totalWaitSeconds,
+      totalGamesPlayed: answers.length,
+      recentGameIds: answers.slice(0, 5).map((answer) => answer.waitingGameId),
+      badges: waitingBadges(sessions.length, totalWaitSeconds, answers.length),
+    };
+  }
+
   async purchaseWorld(installationId: string, world: number) {
     if (world < 2 || world > 5) {
       throw new DomainError("Ongeldige wereld.", 400);
@@ -878,6 +961,15 @@ export class PrismaRepository implements AppRepository {
       throw new DomainError("Je bent nog niet gekoppeld.", 409);
     }
     return pair;
+  }
+
+  private async requirePairGameRun(installationId: string, gameRunId: string) {
+    const pair = await this.requireCompletePair(installationId);
+    const run = await this.prisma.gameRun.findFirst({
+      where: { id: gameRunId, pairId: pair.id },
+    });
+    if (!run) throw new DomainError("Spelsessie niet gevonden.", 404);
+    return run;
   }
 
   private async requireCompletePair(installationId: string) {

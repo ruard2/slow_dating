@@ -96,6 +96,29 @@ button:disabled { cursor:not-allowed; opacity:.45; }
 .gameWelcomeCard h1,.formCard h1 { margin:.5rem 0; font:500 2.7rem Georgia,serif; }
 .gameWelcomeCard p { color:rgba(255,255,255,.68); line-height:1.55; }
 .waitingPulse { width:3.25rem; height:3.25rem; margin:1.5rem auto; border:2px solid rgba(190,219,116,.25); border-top-color:#bedb74; border-radius:50%; animation:spin 1s linear infinite; }
+.waitingRoom { position:fixed; inset:0; overflow:hidden; color:#2f2a18; background:#030706; }
+.waitingBackground { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; }
+.waitingHeader { position:absolute; z-index:2; top:4.5%; left:50%; translate:-50% 0; display:grid; gap:.25rem; width:min(78%,36rem); color:#fff7d5; text-align:center; text-shadow:0 3px 12px #000; }
+.waitingHeader span { font:600 clamp(1.35rem,4vw,2rem) Georgia,serif; }
+.waitingHeader small { color:#e0d4aa; font-size:.78rem; }
+.waitingCard { position:absolute; z-index:2; top:22%; left:50%; translate:-50% 0; width:min(66%,31rem); height:36%; display:flex; flex-direction:column; justify-content:center; overflow:auto; padding:clamp(.8rem,3vw,1.6rem); text-align:center; }
+.waitingKicker { color:#5d6c32; font-size:.65rem; font-weight:900; letter-spacing:.13em; text-transform:uppercase; }
+.waitingCard h1 { margin:.45rem 0 1rem; font:600 clamp(1.15rem,3.5vw,1.75rem)/1.15 Georgia,serif; }
+.waitingCard p { margin:.4rem 0; font-size:.8rem; line-height:1.4; }
+.waitingOptions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.45rem; }
+.waitingOptions button { min-height:2.65rem; padding:.5rem; border:1px solid rgba(80,58,24,.32); border-radius:.65rem; color:#392d17; background:rgba(255,246,207,.56); box-shadow:inset 0 1px rgba(255,255,255,.5); font:600 .72rem/1.2 inherit; cursor:pointer; }
+.waitingOptions button[data-selected="true"] { border-color:#526329; color:#f8f4d8; background:#526329; }
+.waitingFeedback { color:#526329; font-weight:700; }
+.waitingFooter { position:absolute; z-index:2; left:50%; bottom:3.8%; translate:-50% 0; width:min(92%,50rem); height:10%; display:grid; grid-template-columns:1fr 1.25fr 1fr; align-items:center; gap:.5rem; color:#f2dfaa; text-align:center; text-shadow:0 2px 4px #000; }
+.waitingFooter>div { display:grid; gap:.14rem; }
+.waitingFooter strong { font-size:.68rem; }
+.waitingFooter span { font-size:.58rem; }
+.waitingActions button { padding:.48rem .55rem; border:1px solid rgba(235,207,120,.38); border-radius:.7rem; color:#f7e9b4; background:rgba(41,54,20,.92); cursor:pointer; }
+.waitingActions button+button { padding:.25rem; border:0; color:#e0ca8b; background:transparent; font-size:.58rem; }
+.partnerArrived { position:absolute; z-index:3; top:37%; left:50%; translate:-50% -50%; width:min(66%,30rem); color:#3c321d; text-align:center; }
+.partnerArrived span { color:#53602f; font-size:.68rem; font-weight:900; letter-spacing:.13em; text-transform:uppercase; }
+.partnerArrived h1 { margin:.55rem 0; font:600 clamp(1.6rem,5vw,2.6rem) Georgia,serif; }
+.partnerArrived p { font-weight:700; }
 .formCard label { display:block; margin:1rem 0; color:#c6d1bd; }
 .backButton { position:absolute; top:1.5rem; left:1.5rem; }
 .modeSwitch { display:flex; gap:.5rem; margin:1.5rem 0; }
@@ -114,4 +137,6 @@ button:disabled { cursor:not-allowed; opacity:.45; }
   .dock a,.dock button { min-width:4.2rem; padding-inline:.55rem; }
   .drawer { right:.5rem; bottom:5.7rem; width:calc(100% - 1rem); }
   .worldNavigator { right:.35rem; }
+  .waitingCard { top:21.5%; width:72%; height:37%; }
+  .waitingFooter { bottom:3.2%; width:96%; }
 }

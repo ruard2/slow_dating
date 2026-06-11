@@ -6,6 +6,7 @@ import type {
   Pair,
   Profile,
   RelationshipArchive,
+  WaitingStats,
   WorldProgress,
 } from "@slow-dating/contracts";
 
@@ -69,6 +70,24 @@ export interface DataState {
     createdAt: string;
   }>;
   processedEventIds: string[];
+  waitingSessions: Array<{
+    id: string;
+    pairId: string;
+    gameRunId: string;
+    userId: string;
+    startedAt: string;
+    endedAt: string | null;
+  }>;
+  waitingAnswers: Array<{
+    id: string;
+    waitingSessionId: string;
+    userId: string;
+    waitingGameId: string;
+    answerId: string;
+    answerLabel: string;
+    shareLevel: "private" | "soft_share" | "direct_share";
+    createdAt: string;
+  }>;
   legacyArchive?: {
     importedAt: string;
     profiles: unknown;
@@ -146,6 +165,19 @@ export interface AppRepository {
     changes: Partial<Pick<GameRun, "result" | "state" | "status">>,
   ): Promise<GameRun>;
   getWorldProgress(installationId: string): Promise<WorldProgress>;
+  startWaitingSession(installationId: string, gameRunId: string): Promise<void>;
+  endWaitingSession(installationId: string, gameRunId: string): Promise<void>;
+  saveWaitingAnswer(
+    installationId: string,
+    input: {
+      gameRunId: string;
+      waitingGameId: string;
+      answerId: string;
+      answerLabel: string;
+      shareLevel: "private" | "soft_share" | "direct_share";
+    },
+  ): Promise<void>;
+  getWaitingStats(installationId: string): Promise<WaitingStats>;
   purchaseWorld(installationId: string, world: number): Promise<WorldProgress>;
   getCallAccess(installationId: string): Promise<CallAccess>;
   requestCallAccess(installationId: string): Promise<CallAccess>;
