@@ -284,7 +284,6 @@ h2{font-size:1.1rem;font-weight:700;color:#f0e8d0;text-align:center;}
         <span style="font-size:.72rem;color:#7a9060;" id="vertel-teller">1/6</span>
       </div>
       <div class="vertel-card" id="vertel-card"></div>
-      <p class="safe-note" style="margin-top:9px;">Je mag ook gewoon hardop vertellen — typen is niet verplicht.</p>
     </div>
   </div>
 </div>
@@ -627,7 +626,6 @@ function openChat(vraag){ CommLayer.openChat(vraag); }
 // ── afsluiting
 function startEind(){
   showCommBar(false);
-  brugRtc.stop();
   showS('s-klaar');
 }
 function afronden(){showS('s-klaar');}
