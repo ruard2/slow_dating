@@ -36,10 +36,13 @@ profielinzichten. Generieke click- en activity-events blijven diagnostiek.
 
 ## Data
 
-Het Prisma-schema is de doeldataspecificatie voor PostgreSQL. Omdat deze
-werkplek geen Docker/PostgreSQL bevat, biedt `LocalRepository` dezelfde
-applicatie-interface met atomische JSON-writes. Oude profiel-, voortgangs- en
-belstatusbestanden worden eenmaal als afzonderlijk `legacyArchive` ingelezen.
+Het Prisma-schema is de doeldataspecificatie voor PostgreSQL 17. Docker Compose
+levert lokaal een persistente database met healthcheck. `LocalRepository`
+implementeert dezelfde applicatie-interface met atomische JSON-writes en blijft
+alleen de snelle fallback. Eén gedeelde contracttest bewaakt identiteit,
+koppeling, berichten, spelruns, wachtdata, profielprojectie en relatiearchief
+tegen beide repositories. Oude profiel-, voortgangs- en belstatusbestanden
+worden eenmaal als afzonderlijk `legacyArchive` ingelezen.
 
 Profielinzichten zijn afgeleide data en worden niet als tweede waarheid
 opgeslagen. De API herberekent ze deterministisch uit gevalideerde voltooide

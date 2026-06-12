@@ -51,7 +51,8 @@ httpServer.listen(config.PORT, "0.0.0.0", () => {
 
 function shutdown() {
   io.close(() => {
-    httpServer.close(() => {
+    httpServer.close(async () => {
+      await repository.close();
       process.exit(0);
     });
   });

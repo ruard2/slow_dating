@@ -71,6 +71,10 @@ export class PrismaRepository implements AppRepository {
     await this.prisma.$connect();
   }
 
+  async close() {
+    await this.prisma.$disconnect();
+  }
+
   async findOrCreateInstallation(
     secretHash: string,
   ): Promise<InstallationRecord> {

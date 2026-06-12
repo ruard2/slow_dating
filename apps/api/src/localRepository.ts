@@ -107,6 +107,8 @@ export class LocalRepository implements AppRepository {
     await this.importLegacyArchive();
   }
 
+  async close() {}
+
   async findOrCreateInstallation(secretHash: string) {
     const existing = this.state.installations.find(
       (installation) => installation.secretHash === secretHash,

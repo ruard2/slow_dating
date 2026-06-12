@@ -10,10 +10,11 @@ services:
     volumes:
       - slowdating-postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U slowdating"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      test: ["CMD-SHELL", "pg_isready -U slowdating -d slowdating"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
 
 volumes:
   slowdating-postgres:

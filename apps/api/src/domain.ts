@@ -111,6 +111,7 @@ export interface DataState {
 
 export interface AppRepository {
   initialize(): Promise<void>;
+  close(): Promise<void>;
   findOrCreateInstallation(secretHash: string): Promise<InstallationRecord>;
   getInstallation(installationId: string): Promise<InstallationRecord>;
   createAccount(

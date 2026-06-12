@@ -33,3 +33,49 @@ jobs:
 
       - name: Browser smoke test
         run: npm run test:e2e
+
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: slowdating
+          POSTGRES_USER: slowdating
+          POSTGRES_PASSWORD: slowdating
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U slowdating -d slowdating"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgresql://slowdating:slowdating@127.0.0.1:5432/slowdating
+      RUN_POSTGRES_CONTRACTS: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate --workspace @slow-dating/api
+
+      - name: Apply migrations from an empty database
+        run: npm run db:deploy --workspace @slow-dating/api
+
+      - name: Seed two users, a relationship and a completed game
+        run: npm run db:seed --workspace @slow-dating/api
+
+      - name: Run repository contracts against JSON and PostgreSQL
+        run: npm run test:repository --workspace @slow-dating/api

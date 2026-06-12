@@ -23,7 +23,8 @@ Dit plan wordt strikt in volgorde uitgevoerd. Iedere fase:
 - Fase 4: afgerond
 - Architectuurreview: afgerond
 - Fase 5: afgerond
-- Fase 6: volgende fase
+- Fase 6: implementatie afgerond; lokale runtimecontrole na Windows-herstart
+- Fase 7: volgende fase
 
 ## Niet Onderhandelbare Regels
 
@@ -234,6 +235,14 @@ Klaar wanneer:
 - een schone database met één commando opstart en migreert;
 - dezelfde contracttests op beide repositories slagen;
 - lokale JSON alleen nog snelle fallback is, niet de enige geteste opslag.
+
+Status: implementatie afgerond. Docker Compose, PostgreSQL-healthcheck,
+Prisma-reset/deploy/generate-scripts, vaste seed en gedeelde
+repositorycontracttests zijn toegevoegd. CI bouwt een lege PostgreSQL 17-
+database op en draait dezelfde contracten tegen JSON en Prisma. Docker Desktop
+en de vereiste WSL2-features zijn lokaal geïnstalleerd. Windows moet nog één
+keer herstarten voordat `npm run db:check` ook op deze werkplek kan worden
+uitgevoerd.
 
 ## Fase 7: Kwaliteitspoort Voor Nieuwe Werelden
 

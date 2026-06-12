@@ -34,6 +34,10 @@
     "build": "tsup",
     "db:generate": "prisma generate --config prisma.config.ts",
     "db:migrate": "prisma migrate dev --config prisma.config.ts",
+    "db:deploy": "prisma migrate deploy --config prisma.config.ts",
+    "db:reset": "prisma migrate reset --force --config prisma.config.ts",
+    "db:seed": "tsx src/dbSeed.ts",
+    "test:repository": "vitest run --root ../.. apps/api/src/repository.contract.test.ts",
     "db:studio": "prisma studio --config prisma.config.ts",
     "typecheck": "tsc --noEmit",
     "start": "node dist/server.js"
