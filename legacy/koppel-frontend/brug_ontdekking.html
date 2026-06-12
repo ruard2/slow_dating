@@ -44,32 +44,57 @@ h2{font-size:1.1rem;font-weight:700;color:#f0e8d0;text-align:center;}
 @keyframes bop{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
 
 /* stones */
+.choose-head{width:100%;max-width:440px;padding:40px 16px 7px;text-align:center;}
+.choose-head h1{font-size:1.32rem;}
+.choose-intro{max-width:390px;margin:5px auto 0;font-size:.86rem;color:#e7dfc9;line-height:1.45;}
+.selection-tray{width:calc(100% - 24px);max-width:410px;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:8px 10px;margin-bottom:4px;border:1px solid rgba(232,192,96,.25);border-radius:16px;
+  background:rgba(10,20,8,.82);box-shadow:0 8px 22px rgba(0,0,0,.2);backdrop-filter:blur(8px);}
+.selection-copy{min-width:84px;}
+.selection-title{font-size:.66rem;color:#a9b996;text-transform:uppercase;letter-spacing:.08em;}
+.selection-count{font-size:.88rem;color:#e8c060;font-weight:800;margin-top:2px;}
 .stones-wrap{flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;
-  padding:6px 10px 0;min-height:0;width:100%;}
-.stones-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:420px;}
+  padding:4px 10px 96px;min-height:0;width:100%;}
+.stones-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px;width:100%;max-width:420px;}
 .stone-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
-  padding:6px 4px 8px;border-radius:14px;transition:all .18s;border:2px solid transparent;
+  min-height:126px;padding:6px 4px 9px;border-radius:14px;transition:all .18s;border:2px solid transparent;
   position:relative;user-select:none;}
 .stone-item:active{transform:scale(.92);}
 .stone-item.selected{border-color:#e8c060;background:rgba(232,192,96,.13);
   box-shadow:0 0 14px rgba(232,192,96,.3);}
-.stone-item img{width:100%;max-width:95px;aspect-ratio:1;object-fit:contain;
+.stone-item img{width:100%;max-width:102px;height:96px;object-fit:contain;
   filter:drop-shadow(0 3px 7px rgba(0,0,0,.55));}
 .stone-item.selected img{filter:drop-shadow(0 0 10px rgba(232,192,96,.65)) drop-shadow(0 3px 7px rgba(0,0,0,.55));}
-.stone-label{font-size:.75rem;font-weight:700;color:#b8a870;text-align:center;line-height:1.25;max-width:88px;
-  margin-top:-4px;} /* iets groter + hoger */
-.stone-item.selected .stone-label{color:#e8c060;}
+.stone-label{font-size:.88rem;font-weight:750;color:#e0d5b5;text-align:center;line-height:1.18;max-width:112px;
+  text-shadow:0 1px 4px rgba(0,0,0,.75);}
+.stone-item.selected .stone-label{color:#f4cd68;}
 .stone-check{position:absolute;top:3px;right:3px;width:17px;height:17px;border-radius:50%;
   background:#e8c060;color:#1a1208;font-size:.6rem;display:none;align-items:center;justify-content:center;font-weight:800;}
 .stone-item.selected .stone-check{display:flex;}
 
-/* bottom bar */
-.bottom-bar{width:100%;max-width:420px;padding:8px 14px 18px;display:flex;flex-direction:column;gap:7px;align-items:center;}
+/* selection summary */
 .slot-row{display:flex;gap:8px;justify-content:center;}
-.slot{width:44px;height:44px;border-radius:12px;border:1.5px dashed rgba(232,192,96,.4);
+.slot{width:42px;height:42px;border-radius:11px;border:1.5px dashed rgba(232,192,96,.4);
   display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(0,0,0,.2);}
-.slot img{width:40px;height:40px;object-fit:contain;}
+.slot img{width:39px;height:39px;object-fit:contain;}
 .slot.empty{opacity:.5;}
+.selection-tray .btn{flex:0 0 auto;padding:10px 13px;border-radius:11px;font-size:.78rem;}
+
+@media (max-width:390px){
+  .choose-head{padding-left:12px;padding-right:12px;}
+  .choose-intro{font-size:.82rem;}
+  .selection-tray{gap:8px;padding:7px 8px;}
+  .selection-copy{min-width:70px;}
+  .selection-title{font-size:.58rem;}
+  .selection-count{font-size:.78rem;}
+  .slot-row{gap:5px;}
+  .slot{width:36px;height:36px;}
+  .slot img{width:34px;height:34px;}
+  .selection-tray .btn{padding:9px 10px;font-size:.72rem;}
+  .stone-item{min-height:118px;}
+  .stone-item img{height:88px;}
+  .stone-label{font-size:.82rem;}
+}
 
 /* modal */
 .modal-ov{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0);pointer-events:none;transition:background .3s;}
@@ -195,20 +220,23 @@ h2{font-size:1.1rem;font-weight:700;color:#f0e8d0;text-align:center;}
 <div id="s-kies" class="screen">
   <div class="bg"></div>
   <div class="ov">
-    <div style="width:100%;max-width:420px;padding:42px 12px 0;text-align:center;">
-      <h1 style="font-size:1.2rem;">Kies drie stenen</h1>
-      <p class="sub" style="font-size:.72rem;margin-top:2px;">Tik een steen aan voor uitleg — dan kiezen of overslaan</p>
+    <div class="choose-head">
+      <h1>Kies drie stenen</h1>
+      <p class="choose-intro">In deze oefening mag je iets over jezelf vertellen. Kies drie onderwerpen waarover je meer zou willen vertellen.</p>
     </div>
-    <div class="stones-wrap"><div class="stones-grid" id="stones-grid"></div></div>
-    <div class="bottom-bar">
+    <div class="selection-tray">
+      <div class="selection-copy">
+        <div class="selection-title">Jouw keuze</div>
+        <div class="selection-count" id="selection-count">0 van 3</div>
+      </div>
       <div class="slot-row" id="slot-row">
         <div class="slot empty" id="sl0"></div>
         <div class="slot empty" id="sl1"></div>
         <div class="slot empty" id="sl2"></div>
       </div>
-      <button class="btn btn-gold" id="kies-btn" disabled onclick="submitKeuze()" style="width:100%;max-width:300px;">Klaar (0/3) →</button>
-      <p class="safe-note">Deel alleen wat goed voelt. Een klein verhaal is genoeg.</p>
+      <button class="btn btn-gold" id="kies-btn" disabled onclick="submitKeuze()">Klaar</button>
     </div>
+    <div class="stones-wrap"><div class="stones-grid" id="stones-grid"></div></div>
   </div>
 </div>
 
@@ -471,7 +499,8 @@ function updateSlots(){
   }
   const n=S.mijn.length;
   const btn=document.getElementById('kies-btn');
-  btn.textContent='Klaar ('+n+'/3) →';
+  document.getElementById('selection-count').textContent=n+' van 3';
+  btn.textContent=n===3?'Klaar →':'Klaar';
   btn.disabled=n<3;
 }
 
