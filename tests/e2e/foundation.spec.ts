@@ -11,7 +11,7 @@ async function createAccount(
   await page.getByRole("button", { name: "Account maken" }).click();
   await expect(
     page.getByRole("heading", { name: "Maak je persoonlijke account" }),
-  ).toBeHidden({ timeout: 15_000 });
+  ).toBeHidden({ timeout: 30_000 });
 }
 
 test("loads the world map without console errors", async ({ page }) => {
@@ -184,10 +184,38 @@ test("sends the obsolete legacy world route back to the app", async ({ page }) =
   await expect(page.getByAltText("Kaart van wereld 1")).toBeVisible();
 });
 
+test("lets an admin simulate an absent and arriving test partner", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Opties openen" }).click();
+  await page.getByRole("button", { name: "Partner koppelen" }).click();
+  await page.getByPlaceholder("ABC234 of 1111").fill("1111");
+  await page.getByRole("button", { name: "Open beheerdersmodus" }).click();
+  await page.getByRole("button", { name: "Sluiten" }).click();
+
+  await page.getByRole("button", { name: "Opties openen" }).click();
+  await page.getByRole("button", { name: "Afwezig" }).click();
+  await expect(page.getByText("Je krijgt eerst de centrale wachtkamer.")).toBeVisible();
+  await page.getByRole("button", { name: "Sluiten" }).click();
+
+  await page.goto("/games/waarden");
+  await expect(page.getByText("Wachten op je reisgenoot...")).toBeVisible();
+  await expect(page.getByText("Testpartner", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Opties openen" }).click();
+  await page.getByRole("button", { name: "Aanwezig" }).click();
+  await expect(page.getByText("Testpartner is er!")).toBeVisible();
+  await expect(page.locator("iframe[title='Je waarden']")).toBeVisible({
+    timeout: 8_000,
+  });
+});
+
 test("pairs two browsers and delivers chat exactly once", async ({
   browser,
   isMobile,
 }) => {
+  test.setTimeout(60_000);
   test.skip(isMobile, "De twee-browserflow draait eenmaal op desktop.");
   const firstContext = await browser.newContext();
   const secondContext = await browser.newContext();

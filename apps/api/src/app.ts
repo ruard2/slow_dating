@@ -104,7 +104,10 @@ export function createApp({
   webOrigin,
 }: CreateAppOptions) {
   const app = express();
-  const authRateLimit = createRateLimiter(10, 15 * 60 * 1_000);
+  const authRateLimit = createRateLimiter(
+    process.env.NODE_ENV === "production" ? 10 : 1_000,
+    15 * 60 * 1_000,
+  );
 
   app.disable("x-powered-by");
   app.get("/legacy/sd-client.js", (_request, response) => {

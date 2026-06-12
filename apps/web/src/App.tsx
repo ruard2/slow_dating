@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -362,7 +363,17 @@ function WorldPage() {
   );
 }
 
-function GamePage({ pair }: { pair: Pair | null | undefined }) {
+function GamePage({
+  developerPartnerArriving,
+  developerPartnerPresent,
+  onDeveloperPartnerArrivalComplete,
+  pair,
+}: {
+  developerPartnerArriving: boolean;
+  developerPartnerPresent: boolean;
+  onDeveloperPartnerArrivalComplete(): void;
+  pair: Pair | null | undefined;
+}) {
   const { session } = useSession();
   const { gameId = "" } = useParams();
   const navigate = useNavigate();
@@ -394,8 +405,9 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
       )
     : [];
   const started = Boolean(
-    pair?.developerMode ||
+    (pair?.developerMode && developerPartnerPresent) ||
       (pair &&
+        !pair.developerMode &&
         readyInstallationIds.filter((id) =>
           pair.members.some((member) => member.installationId === id),
         ).length >= 2),
@@ -405,7 +417,7 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
   );
   const hasWaited = Boolean(
     run &&
-      !pair?.developerMode &&
+      (!pair?.developerMode || developerPartnerArriving) &&
       run.installationId === session?.installationId,
   );
 
@@ -422,16 +434,26 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
   }, [enterRun, game, gameId, pair]);
 
   useEffect(() => {
-    if (!run || started || pair?.developerMode) return;
+    if (!run || started) return;
     void api.startWaitingSession(run.id);
-  }, [pair?.developerMode, run, started]);
+  }, [run, started]);
 
   useEffect(() => {
     if (!started || !run || !hasWaited || arrivalComplete) return;
     void api.endWaitingSession(run.id);
-    const timeout = window.setTimeout(() => setArrivalComplete(true), 1_400);
+    const timeout = window.setTimeout(() => {
+      setArrivalComplete(true);
+      if (pair?.developerMode) onDeveloperPartnerArrivalComplete();
+    }, 1_400);
     return () => clearTimeout(timeout);
-  }, [arrivalComplete, hasWaited, run, started]);
+  }, [
+    arrivalComplete,
+    hasWaited,
+    onDeveloperPartnerArrivalComplete,
+    pair?.developerMode,
+    run,
+    started,
+  ]);
 
   useEffect(() => {
     if (lastEvent?.type === "game.lobby.enter") {
@@ -930,9 +952,13 @@ function CallPanel({ pair }: { pair: Pair | null | undefined }) {
 }
 
 function SettingsPanel({
+  developerPartnerPresent,
+  onDeveloperPartnerPresenceChange,
   pair,
   partnerOnline,
 }: {
+  developerPartnerPresent: boolean;
+  onDeveloperPartnerPresenceChange(present: boolean): void;
   pair: Pair | null | undefined;
   partnerOnline: boolean;
 }) {
@@ -947,6 +973,36 @@ function SettingsPanel({
       </p>
       <NavLink onClick={() => setDrawer(null)} to="/profile">Profiel beheren</NavLink>
       <NavLink onClick={() => setDrawer(null)} to="/account">Account en herstel</NavLink>
+      {pair?.developerMode && (
+        <section className={styles.developerControls}>
+          <span className={styles.panelKicker}>Testpartner</span>
+          <p>
+            Simuleer of de computerpartner al in het spel aanwezig is.
+            Je beheerderskoppeling blijft bewaard.
+          </p>
+          <div>
+            <button
+              data-selected={!developerPartnerPresent}
+              onClick={() => onDeveloperPartnerPresenceChange(false)}
+              type="button"
+            >
+              Afwezig
+            </button>
+            <button
+              data-selected={developerPartnerPresent}
+              onClick={() => onDeveloperPartnerPresenceChange(true)}
+              type="button"
+            >
+              Aanwezig
+            </button>
+          </div>
+          <small>
+            {developerPartnerPresent
+              ? "Spellen starten direct."
+              : "Je krijgt eerst de centrale wachtkamer."}
+          </small>
+        </section>
+      )}
       <button onClick={() => setDrawer("pair")} type="button">
         {pair ? "Koppeling beheren" : "Partner koppelen"}
       </button>
@@ -962,6 +1018,11 @@ function AppShell() {
   const queryClient = useQueryClient();
   const drawer = useAppStore((state) => state.drawer);
   const setDrawer = useAppStore((state) => state.setDrawer);
+  const [developerPartnerPresent, setDeveloperPartnerPresent] = useState(
+    () => localStorage.getItem("slow-dating:developer-partner-present") !== "false",
+  );
+  const [developerPartnerArriving, setDeveloperPartnerArriving] =
+    useState(false);
   const pair = useQuery({ queryKey: ["pair"], queryFn: api.getPair });
   const messages = useQuery<Message[]>({
     queryKey: ["messages", pair.data?.id],
@@ -986,6 +1047,9 @@ function AppShell() {
           message.senderInstallationId !== session?.installationId &&
           (!lastChatReadAt || message.sentAt > lastChatReadAt),
       ).length ?? 0;
+  const effectivePartnerOnline = pair.data?.developerMode
+    ? developerPartnerPresent
+    : partnerOnline;
   const callAllowed = Boolean(callAccess.data?.unlocked);
   const callActive = call.status !== "idle";
   const inGame = location.pathname.startsWith("/games/");
@@ -1018,12 +1082,40 @@ function AppShell() {
     setDrawer("chat");
   }
 
+  function changeDeveloperPartnerPresence(present: boolean) {
+    setDeveloperPartnerArriving(
+      present &&
+        !developerPartnerPresent &&
+        location.pathname.startsWith("/games/"),
+    );
+    localStorage.setItem(
+      "slow-dating:developer-partner-present",
+      String(present),
+    );
+    setDeveloperPartnerPresent(present);
+    void queryClient.invalidateQueries({ queryKey: ["active-game-run"] });
+  }
+  const completeDeveloperPartnerArrival = useCallback(
+    () => setDeveloperPartnerArriving(false),
+    [],
+  );
+
   return (
     <div className={styles.app}>
       <Routes>
         <Route path="/" element={<WorldPage />} />
         <Route path="/worlds/:worldId" element={<WorldPage />} />
-        <Route path="/games/:gameId" element={<GamePage pair={pair.data} />} />
+        <Route
+          path="/games/:gameId"
+          element={
+            <GamePage
+              developerPartnerArriving={developerPartnerArriving}
+              developerPartnerPresent={developerPartnerPresent}
+              onDeveloperPartnerArrivalComplete={completeDeveloperPartnerArrival}
+              pair={pair.data}
+            />
+          }
+        />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -1061,7 +1153,7 @@ function AppShell() {
             callActive
               ? "Gesprek actief"
               : callAllowed
-                ? partnerOnline
+                ? effectivePartnerOnline
                   ? "Partner bellen"
                   : "Bellen toegestaan, partner offline"
                 : "Bellen nog niet toegestaan"
@@ -1091,11 +1183,16 @@ function AppShell() {
           <button className={styles.closeButton} onClick={() => setDrawer(null)} type="button">Sluiten</button>
           {drawer === "pair" && <PairPanel pair={pair.data} />}
           {drawer === "chat" && (
-            <ChatPanel pair={pair.data} partnerOnline={partnerOnline} />
+            <ChatPanel pair={pair.data} partnerOnline={effectivePartnerOnline} />
           )}
           {drawer === "call" && <CallPanel pair={pair.data} />}
           {drawer === "settings" && (
-            <SettingsPanel pair={pair.data} partnerOnline={partnerOnline} />
+            <SettingsPanel
+              developerPartnerPresent={developerPartnerPresent}
+              onDeveloperPartnerPresenceChange={changeDeveloperPartnerPresence}
+              pair={pair.data}
+              partnerOnline={effectivePartnerOnline}
+            />
           )}
         </aside>
       )}

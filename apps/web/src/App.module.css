@@ -49,6 +49,12 @@
 .settingsPanel { display:grid; gap:.65rem; }
 .settingsPanel h2 { margin:.2rem 0 .5rem; }
 .settingsPanel a,.settingsPanel button { display:block; padding:.8rem; border:1px solid rgba(255,255,255,.1); border-radius:.75rem; color:#eef4e8; background:rgba(255,255,255,.05); text-align:left; text-decoration:none; }
+.developerControls { display:grid; gap:.65rem; margin:.35rem 0; padding:1rem; border:1px solid rgba(190,219,116,.18); border-radius:1rem; background:rgba(190,219,116,.045); }
+.developerControls p { margin:0; color:#aebaa9; font-size:.75rem; line-height:1.45; }
+.developerControls>div { display:grid; grid-template-columns:1fr 1fr; gap:.4rem; }
+.developerControls button { padding:.65rem!important; text-align:center!important; }
+.developerControls button[data-selected="true"] { border-color:rgba(190,219,116,.48); color:#18210f; background:#bedb74; font-weight:800; }
+.developerControls small { color:#92a18b; font-size:.67rem; }
 .partnerStatus { display:flex; align-items:center; gap:.55rem; margin:0 0 .5rem; color:#9da899; font-size:.78rem; }
 .partnerStatus span { width:.55rem; height:.55rem; border-radius:50%; background:#747b71; }
 .partnerStatus[data-online="true"] { color:#a9dc83; }
