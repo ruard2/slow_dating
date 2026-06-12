@@ -209,6 +209,27 @@ describe("Slow Dating API", () => {
     expect(run.body.state.readyInstallationIds).toHaveLength(2);
   });
 
+  it("rejects planned and profile entries as game runs", async () => {
+    const app = await createTestApp();
+    const session = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "q".repeat(64) });
+    const auth = { authorization: `Bearer ${session.body.accessToken}` };
+
+    await request(app).post("/api/pairs/developer").set(auth).send({});
+
+    await request(app)
+      .post("/api/game-runs")
+      .set(auth)
+      .send({ gameId: "grot", mode: "couple", version: 1 })
+      .expect(404);
+    await request(app)
+      .post("/api/game-runs")
+      .set(auth)
+      .send({ gameId: "profiel", mode: "couple", version: 1 })
+      .expect(404);
+  });
+
   it("creates a guest session and only updates its own profile", async () => {
     const app = await createTestApp();
     const session = await request(app)

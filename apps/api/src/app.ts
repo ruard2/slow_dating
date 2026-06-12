@@ -27,6 +27,7 @@ import {
   waitingAnswerRequestSchema,
   waitingSessionRequestSchema,
 } from "@slow-dating/contracts";
+import { findPlayableGame } from "@slow-dating/content";
 
 import type { AuthenticatedRequest } from "./auth.js";
 import type { ReturnTypeCreateAuth } from "./types.js";
@@ -323,10 +324,21 @@ export function createApp({
 
   app.post("/api/game-runs", auth.requireAuth, async (request, response) => {
     const input = createGameRunSchema.parse(request.body);
+    const game = findPlayableGame(input.gameId);
+    if (!game) {
+      throw new DomainError("Dit spel is nog niet beschikbaar.", 404);
+    }
+    if (input.version !== game.version) {
+      throw new DomainError("Deze spelversie wordt niet ondersteund.", 409);
+    }
     response
       .status(201)
       .json(
-        await repository.createGameRun(installationId(request), input),
+        await repository.createGameRun(installationId(request), {
+          gameId: game.id,
+          mode: "couple",
+          version: game.version,
+        }),
       );
   });
 

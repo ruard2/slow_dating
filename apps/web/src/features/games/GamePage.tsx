@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 
 import type { Pair } from "@slow-dating/contracts";
-import { findGame } from "@slow-dating/content";
+import { findPlayableGame } from "@slow-dating/content";
 
 import styles from "../../App.module.css";
 import { LoadingScreen } from "../../app/LoadingScreen";
@@ -34,7 +34,7 @@ export function GamePage({
   const [arrivalComplete, setArrivalComplete] = useState(false);
   const { lastEvent, send } = useRealtime();
   const setDrawer = useAppStore((state) => state.setDrawer);
-  const game = findGame(gameId);
+  const game = findPlayableGame(gameId);
   const activeRun = useQuery({
     queryKey: ["active-game-run", pair?.id, gameId],
     queryFn: () => api.getActiveGameRun(gameId),
@@ -235,6 +235,8 @@ export function GamePage({
       <PartnerArrived partnerName={partner?.displayName ?? "Je partner"} />
     );
   }
+
+  if (!game.legacyPath) return <Navigate replace to="/" />;
 
   return (
     <main className={styles.gameFramePage}>

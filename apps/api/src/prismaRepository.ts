@@ -12,6 +12,7 @@ import type {
   RelationshipArchive,
   WorldProgress,
 } from "@slow-dating/contracts";
+import { isDiscoveryGameId } from "@slow-dating/content";
 
 import { PrismaClient, type Prisma } from "./generated/prisma/client.js";
 import {
@@ -419,7 +420,11 @@ export class PrismaRepository implements AppRepository {
       memberships.map(async ({ pair }) => ({
         ...(await this.getPair(pair.id)),
         messageCount: pair._count.messages,
-        completedGames: new Set(pair.gameRuns.map((run) => run.gameId)).size,
+        completedGames: new Set(
+          pair.gameRuns
+            .map((run) => run.gameId)
+            .filter(isDiscoveryGameId),
+        ).size,
       })),
     );
   }
@@ -729,7 +734,9 @@ export class PrismaRepository implements AppRepository {
       select: { gameId: true },
     });
     const completedGames = new Set(
-      completedRuns.map((run) => run.gameId),
+      completedRuns
+        .map((run) => run.gameId)
+        .filter(isDiscoveryGameId),
     ).size;
     const account = await this.getAccountForInstallation(installationId);
     const purchases = account
@@ -964,7 +971,9 @@ export class PrismaRepository implements AppRepository {
           )
         : 0);
     const completedGames = new Set(
-      record.gameRuns.map((run) => run.gameId),
+      record.gameRuns
+        .map((run) => run.gameId)
+        .filter(isDiscoveryGameId),
     ).size;
     const consent =
       (record.callConsent as Record<string, "yes" | "no" | null> | null) ?? {};

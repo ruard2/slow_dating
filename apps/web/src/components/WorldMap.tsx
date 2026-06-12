@@ -8,7 +8,11 @@ import {
 import { NavLink, useNavigate } from "react-router-dom";
 
 import type { WorldProgress } from "@slow-dating/contracts";
-import { games, worlds, type WorldDefinition } from "@slow-dating/content";
+import {
+  getWorldPlacements,
+  worlds,
+  type WorldDefinition,
+} from "@slow-dating/content";
 
 import styles from "../App.module.css";
 
@@ -29,11 +33,22 @@ function formatPrice(priceCents: number) {
   }).format(priceCents / 100);
 }
 
-function InteractiveFirstWorld() {
+function WorldCard({
+  activate,
+  progress,
+  world,
+}: {
+  activate(world: WorldDefinition): void;
+  progress: WorldProgress;
+  world: WorldDefinition;
+}) {
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const lastPoint = useRef<{ x: number; y: number } | null>(null);
   const pinch = useRef<{ distance: number; scale: number } | null>(null);
+  const unlocked = progress.unlockedWorlds.includes(world.id);
+  const placements = getWorldPlacements(world.id);
+  const zoomable = unlocked && placements.length > 0;
 
   function setScale(nextScale: number) {
     const scale = Math.max(1, Math.min(nextScale, 3));
@@ -46,7 +61,7 @@ function InteractiveFirstWorld() {
     if ((event.target as Element).closest("a,button")) return;
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     lastPoint.current = { x: event.clientX, y: event.clientY };
-    if (transform.scale > 1) {
+    if (zoomable && transform.scale > 1) {
       event.currentTarget.setPointerCapture(event.pointerId);
     }
     if (pointers.current.size === 2) {
@@ -72,7 +87,7 @@ function InteractiveFirstWorld() {
       }
       return;
     }
-    if (transform.scale > 1 && lastPoint.current) {
+    if (zoomable && transform.scale > 1 && lastPoint.current) {
       const dx = event.clientX - lastPoint.current.x;
       const dy = event.clientY - lastPoint.current.y;
       setTransform((current) => ({
@@ -91,58 +106,121 @@ function InteractiveFirstWorld() {
   }
 
   function wheel(event: WheelEvent<HTMLElement>) {
-    if (!event.ctrlKey) return;
+    if (!event.ctrlKey || !zoomable) return;
     event.preventDefault();
     setScale(transform.scale + (event.deltaY < 0 ? 0.2 : -0.2));
   }
 
   return (
     <section
-      aria-label="Wereld 1 met spellen"
+      aria-label={
+        world.id === 1
+          ? "Wereld 1 met spellen"
+          : `Wereld ${world.id}: ${world.name}`
+      }
       className={styles.worldCard}
-      data-world-id="1"
-      onDoubleClick={() => setTransform({ scale: 1, x: 0, y: 0 })}
+      data-world-id={world.id}
+      onDoubleClick={() => {
+        if (zoomable) setTransform({ scale: 1, x: 0, y: 0 });
+      }}
       onPointerCancel={pointerUp}
       onPointerDown={pointerDown}
       onPointerMove={pointerMove}
       onPointerUp={pointerUp}
       onWheel={wheel}
-      style={{ touchAction: transform.scale > 1 ? "none" : "pan-y" }}
+      style={{
+        touchAction: zoomable && transform.scale > 1 ? "none" : "pan-y",
+      }}
     >
       <div
         className={styles.mapInner}
-        data-testid="world-one-map-inner"
+        data-testid={
+          world.id === 1
+            ? "world-one-map-inner"
+            : `world-${world.id}-map-inner`
+        }
         style={{
           transform: `translate3d(${transform.x}px,${transform.y}px,0) scale(${transform.scale})`,
         }}
       >
-        <img className={styles.worldImage} src="/assets/kaart1.webp" alt="Kaart van wereld 1" />
-        {games.slice(0, 7).map((game) => (
-          <NavLink
-            aria-label={game.title}
-            className={styles.mapHotspot ?? ""}
-            key={game.id}
-            style={{
-              left: `${game.position.left}%`,
-              top: `${game.position.top}%`,
-              width: `${game.position.width}%`,
-              height: `${game.position.height}%`,
-            }}
-            to={`/games/${game.id}`}
-          />
-        ))}
+        <img
+          className={unlocked ? styles.worldImage : styles.lockedWorldImage}
+          src={world.image}
+          alt={`Kaart van wereld ${world.id}`}
+        />
+        {unlocked &&
+          placements.map(({ game, position }) => (
+            <NavLink
+              aria-label={game.title}
+              className={styles.mapHotspot ?? ""}
+              key={game.id}
+              style={{
+                left: `${position.left}%`,
+                top: `${position.top}%`,
+                width: `${position.width}%`,
+                height: `${position.height}%`,
+              }}
+              to={`/games/${game.id}`}
+            />
+          ))}
       </div>
-      <div
-        className={styles.zoomControls}
-        aria-label="Kaartzoom"
-        onPointerDown={(event) => event.stopPropagation()}
-      >
-        <button aria-label="Inzoomen" onClick={() => setScale(transform.scale + 0.25)} type="button">+</button>
-        <button aria-label="Uitzoomen" disabled={transform.scale === 1} onClick={() => setScale(transform.scale - 0.25)} type="button">-</button>
-        {transform.scale > 1 && (
-          <button aria-label="Zoom herstellen" onClick={() => setTransform({ scale: 1, x: 0, y: 0 })} type="button">1x</button>
-        )}
-      </div>
+      {!unlocked && (
+        <div className={styles.worldLockOverlay}>
+          <strong>
+            Wereld {world.id} - {world.name}
+          </strong>
+          <span>
+            {progress.unlockedWorlds.includes(world.id - 1)
+              ? progress.eligibleWorlds.includes(world.id)
+                ? "Klaar om vrij te schakelen"
+                : `${progress.completedGames} / ${world.requiredDiscoveries} ontdekkingen`
+              : `Open eerst wereld ${world.id - 1}`}
+          </span>
+          <small>Tik voor details</small>
+        </div>
+      )}
+      {zoomable && (
+        <div
+          className={styles.zoomControls}
+          aria-label="Kaartzoom"
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <button
+            aria-label="Inzoomen"
+            onClick={() => setScale(transform.scale + 0.25)}
+            type="button"
+          >
+            +
+          </button>
+          <button
+            aria-label="Uitzoomen"
+            disabled={transform.scale === 1}
+            onClick={() => setScale(transform.scale - 0.25)}
+            type="button"
+          >
+            -
+          </button>
+          {transform.scale > 1 && (
+            <button
+              aria-label="Zoom herstellen"
+              onClick={() => setTransform({ scale: 1, x: 0, y: 0 })}
+              type="button"
+            >
+              1x
+            </button>
+          )}
+        </div>
+      )}
+      {world.id > 1 && (
+        <button
+          aria-label={`${unlocked ? "Open" : "Bekijk"} wereld ${world.id}: ${
+            world.name
+          }`}
+          className={styles.worldPortalButton}
+          onClick={() => activate(world)}
+          type="button"
+        />
+      )}
     </section>
   );
 }
@@ -235,43 +313,14 @@ export function WorldMap({
       </nav>
 
       <div className={styles.worldScroller} ref={scroller}>
-        {[...worlds].reverse().map((world) =>
-          world.id === 1 ? (
-            <InteractiveFirstWorld key={world.id} />
-          ) : (
-            <section
-              aria-label={`Wereld ${world.id}: ${world.name}`}
-              className={styles.worldCard}
-              data-world-id={world.id}
-              key={world.id}
-            >
-              <img
-                className={progress.unlockedWorlds.includes(world.id) ? styles.worldImage : styles.lockedWorldImage}
-                src={world.image}
-                alt={`Kaart van wereld ${world.id}`}
-              />
-              {!progress.unlockedWorlds.includes(world.id) && (
-                <div className={styles.worldLockOverlay}>
-                  <strong>Wereld {world.id} - {world.name}</strong>
-                  <span>
-                    {progress.unlockedWorlds.includes(world.id - 1)
-                      ? progress.eligibleWorlds.includes(world.id)
-                        ? "Klaar om vrij te schakelen"
-                        : `${progress.completedGames} / ${world.requiredDiscoveries} ontdekkingen`
-                      : `Open eerst wereld ${world.id - 1}`}
-                  </span>
-                  <small>Tik voor details</small>
-                </div>
-              )}
-              <button
-                aria-label={`${progress.unlockedWorlds.includes(world.id) ? "Open" : "Bekijk"} wereld ${world.id}: ${world.name}`}
-                className={styles.worldPortalButton}
-                onClick={() => activateWorld(world)}
-                type="button"
-              />
-            </section>
-          ),
-        )}
+        {[...worlds].reverse().map((world) => (
+          <WorldCard
+            activate={activateWorld}
+            key={world.id}
+            progress={progress}
+            world={world}
+          />
+        ))}
       </div>
 
       {toastWorld && (

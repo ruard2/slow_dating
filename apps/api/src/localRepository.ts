@@ -13,6 +13,7 @@ import type {
   RelationshipArchive,
   WorldProgress,
 } from "@slow-dating/contracts";
+import { isDiscoveryGameId } from "@slow-dating/content";
 
 import {
   type AccountRecord,
@@ -442,7 +443,10 @@ export class LocalRepository implements AppRepository {
           completedGames: new Set(
             this.state.gameRuns
               .filter(
-                (run) => run.pairId === pair.id && run.status === "completed",
+                (run) =>
+                  run.pairId === pair.id &&
+                  run.status === "completed" &&
+                  isDiscoveryGameId(run.gameId),
               )
               .map((run) => run.gameId),
           ).size,
@@ -693,6 +697,7 @@ export class LocalRepository implements AppRepository {
         .filter(
           (run) =>
             run.status === "completed" &&
+            isDiscoveryGameId(run.gameId) &&
             (run.installationId === installationId ||
               (run.pairId ? relationshipIds.includes(run.pairId) : false)),
         )
@@ -905,7 +910,12 @@ export class LocalRepository implements AppRepository {
     );
     const completedGames = new Set(
       this.state.gameRuns
-        .filter((run) => run.pairId === pair.id && run.status === "completed")
+        .filter(
+          (run) =>
+            run.pairId === pair.id &&
+            run.status === "completed" &&
+            isDiscoveryGameId(run.gameId),
+        )
         .map((run) => run.gameId),
     ).size;
     const sharedSeconds =
