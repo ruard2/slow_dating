@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import type {
+  ActivityEvent,
   CallAccess,
   GameRun,
   Message,
@@ -537,6 +538,13 @@ export class PrismaRepository implements AppRepository {
           } as Prisma.InputJsonValue,
         },
       });
+      await this.recordActivity(installationId, {
+        clientEventId: `game-entered:${updated.id}`,
+        category: "game",
+        type: "game.entered",
+        gameRunId: updated.id,
+        payload: {},
+      });
       return this.toGameRun(updated);
     }
     try {
@@ -554,6 +562,13 @@ export class PrismaRepository implements AppRepository {
               : [installationId],
           },
         },
+      });
+      await this.recordActivity(installationId, {
+        clientEventId: `game-entered:${run.id}`,
+        category: "game",
+        type: "game.entered",
+        gameRunId: run.id,
+        payload: {},
       });
       return this.toGameRun(run);
     } catch (error) {
@@ -597,6 +612,15 @@ export class PrismaRepository implements AppRepository {
     }
     if (run.status === "completed") {
       if (changes.status === "completed") {
+        await this.recordActivity(installationId, {
+          clientEventId: `game-completed:${run.id}`,
+          category: "game",
+          type: "game.completed",
+          gameRunId: run.id,
+          payload: {
+            result: (run.result ?? {}) as Record<string, unknown>,
+          },
+        });
         return this.toGameRun(run);
       }
       throw new DomainError("Een afgeronde spelsessie kan niet worden gewijzigd.", 409);
@@ -621,7 +645,70 @@ export class PrismaRepository implements AppRepository {
             : {}),
       },
     });
+    if (changes.status === "completed") {
+      await this.recordActivity(installationId, {
+        clientEventId: `game-completed:${updated.id}`,
+        category: "game",
+        type: "game.completed",
+        gameRunId: updated.id,
+        payload: {
+          result: (updated.result ?? {}) as Record<string, unknown>,
+        },
+      });
+    }
     return this.toGameRun(updated);
+  }
+
+  async recordActivity(
+    installationId: string,
+    input: {
+      clientEventId: string;
+      category: ActivityEvent["category"];
+      type: string;
+      gameRunId?: string;
+      payload: Record<string, unknown>;
+    },
+  ) {
+    const run = input.gameRunId
+      ? await this.requirePairGameRun(installationId, input.gameRunId)
+      : null;
+    const membership = run
+      ? null
+      : await this.prisma.pairMember.findFirst({
+          where: {
+            installationId,
+            pair: { disconnectedAt: null },
+          },
+          select: { pairId: true },
+        });
+    const event = await this.prisma.activityEvent.upsert({
+      where: {
+        installationId_clientEventId: {
+          installationId,
+          clientEventId: input.clientEventId,
+        },
+      },
+      update: {},
+      create: {
+        clientEventId: input.clientEventId,
+        installationId,
+        pairId: run?.pairId ?? membership?.pairId ?? null,
+        gameRunId: run?.id ?? null,
+        gameId: run?.gameId ?? null,
+        category: input.category,
+        type: input.type,
+        payload: input.payload as Prisma.InputJsonValue,
+      },
+    });
+    return this.toActivityEvent(event);
+  }
+
+  async listActivity(installationId: string) {
+    const events = await this.prisma.activityEvent.findMany({
+      where: { installationId },
+      orderBy: { occurredAt: "desc" },
+    });
+    return events.map((event) => this.toActivityEvent(event));
   }
 
   async getWorldProgress(installationId: string): Promise<WorldProgress> {
@@ -670,21 +757,78 @@ export class PrismaRepository implements AppRepository {
 
   async startWaitingSession(installationId: string, gameRunId: string) {
     const run = await this.requirePairGameRun(installationId, gameRunId);
-    await this.prisma.waitingSession.upsert({
-      where: { gameRunId_userId: { gameRunId, userId: installationId } },
-      update: {},
-      create: {
-        pairId: run.pairId as string,
-        gameRunId,
-        userId: installationId,
-      },
+    await this.prisma.$transaction(async (transaction) => {
+      const session = await transaction.waitingSession.upsert({
+        where: { gameRunId_userId: { gameRunId, userId: installationId } },
+        update: {},
+        create: {
+          pairId: run.pairId as string,
+          gameRunId,
+          userId: installationId,
+        },
+      });
+      await transaction.activityEvent.upsert({
+        where: {
+          installationId_clientEventId: {
+            installationId,
+            clientEventId: `waiting-start:${session.id}`,
+          },
+        },
+        update: {},
+        create: {
+          clientEventId: `waiting-start:${session.id}`,
+          installationId,
+          pairId: run.pairId,
+          gameRunId,
+          gameId: run.gameId,
+          category: "waiting",
+          type: "waiting.started",
+          payload: {},
+          occurredAt: session.startedAt,
+        },
+      });
     });
   }
 
   async endWaitingSession(installationId: string, gameRunId: string) {
-    await this.prisma.waitingSession.updateMany({
-      where: { gameRunId, userId: installationId, endedAt: null },
-      data: { endedAt: new Date() },
+    await this.prisma.$transaction(async (transaction) => {
+      const session = await transaction.waitingSession.findFirst({
+        where: { gameRunId, userId: installationId, endedAt: null },
+        include: { gameRun: true },
+      });
+      if (!session) return;
+      const endedAt = new Date();
+      await transaction.waitingSession.update({
+        where: { id: session.id },
+        data: { endedAt },
+      });
+      await transaction.activityEvent.upsert({
+        where: {
+          installationId_clientEventId: {
+            installationId,
+            clientEventId: `waiting-end:${session.id}`,
+          },
+        },
+        update: {},
+        create: {
+          clientEventId: `waiting-end:${session.id}`,
+          installationId,
+          pairId: session.pairId,
+          gameRunId,
+          gameId: session.gameRun.gameId,
+          category: "waiting",
+          type: "waiting.ended",
+          payload: {
+            durationSeconds: Math.max(
+              0,
+              Math.floor(
+                (endedAt.getTime() - session.startedAt.getTime()) / 1_000,
+              ),
+            ),
+          },
+          occurredAt: endedAt,
+        },
+      });
     });
   }
 
@@ -708,15 +852,38 @@ export class PrismaRepository implements AppRepository {
       },
     });
     if (!session) throw new DomainError("Wachtsessie niet gevonden.", 404);
-    await this.prisma.waitingAnswer.create({
-      data: {
-        waitingSessionId: session.id,
-        userId: installationId,
-        waitingGameId: input.waitingGameId,
-        answerId: input.answerId,
-        answerLabel: input.answerLabel,
-        shareLevel: input.shareLevel,
-      },
+    await this.prisma.$transaction(async (transaction) => {
+      const answer = await transaction.waitingAnswer.create({
+        data: {
+          waitingSessionId: session.id,
+          userId: installationId,
+          waitingGameId: input.waitingGameId,
+          answerId: input.answerId,
+          answerLabel: input.answerLabel,
+          shareLevel: input.shareLevel,
+        },
+      });
+      const run = await transaction.gameRun.findUniqueOrThrow({
+        where: { id: input.gameRunId },
+      });
+      await transaction.activityEvent.create({
+        data: {
+          clientEventId: `waiting-answer:${answer.id}`,
+          installationId,
+          pairId: session.pairId,
+          gameRunId: input.gameRunId,
+          gameId: run.gameId,
+          category: "waiting",
+          type: "waiting.answer.saved",
+          payload: {
+            waitingGameId: input.waitingGameId,
+            answerId: input.answerId,
+            answerLabel: input.answerLabel,
+            shareLevel: input.shareLevel,
+          },
+          occurredAt: answer.createdAt,
+        },
+      });
     });
   }
 
@@ -1073,6 +1240,32 @@ export class PrismaRepository implements AppRepository {
       result: run.result as Record<string, unknown> | null,
       startedAt: run.startedAt.toISOString(),
       completedAt: run.completedAt?.toISOString() ?? null,
+    };
+  }
+
+  private toActivityEvent(event: {
+    id: string;
+    clientEventId: string;
+    installationId: string;
+    pairId: string | null;
+    gameRunId: string | null;
+    gameId: string | null;
+    category: string;
+    type: string;
+    payload: unknown;
+    occurredAt: Date;
+  }): ActivityEvent {
+    return {
+      id: event.id,
+      clientEventId: event.clientEventId,
+      installationId: event.installationId,
+      pairId: event.pairId,
+      gameRunId: event.gameRunId,
+      gameId: event.gameId,
+      category: event.category as ActivityEvent["category"],
+      type: event.type,
+      payload: (event.payload ?? {}) as Record<string, unknown>,
+      occurredAt: event.occurredAt.toISOString(),
     };
   }
 

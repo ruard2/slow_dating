@@ -10,12 +10,14 @@ import helmet from "helmet";
 import { ZodError } from "zod";
 
 import {
+  activityEventSchema,
   callConsentRequestSchema,
   completePasswordResetSchema,
   createGameRunSchema,
   guestSessionRequestSchema,
   joinPairSchema,
   loginSchema,
+  recordActivitySchema,
   registerAccountSchema,
   requestPasswordResetSchema,
   sendMessageSchema,
@@ -224,6 +226,27 @@ export function createApp({
     };
     response.json(
       await repository.updateProfile(installationId(request), changes),
+    );
+  });
+
+  app.get("/api/profile/activity", auth.requireAuth, async (request, response) => {
+    response.json(await repository.listActivity(installationId(request)));
+  });
+
+  app.post("/api/profile/activity", auth.requireAuth, async (request, response) => {
+    const input = recordActivitySchema.parse(request.body);
+    response.status(201).json(
+      activityEventSchema.parse(
+        await repository.recordActivity(installationId(request), {
+          clientEventId: input.clientEventId,
+          category: input.category,
+          type: input.type,
+          payload: input.payload,
+          ...(input.gameRunId === undefined
+            ? {}
+            : { gameRunId: input.gameRunId }),
+        }),
+      ),
     );
   });
 

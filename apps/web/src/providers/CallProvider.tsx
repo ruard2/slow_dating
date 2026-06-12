@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 
+import { api } from "../lib/api";
 import { useRealtime } from "./RealtimeProvider";
 
 type CallStatus = "idle" | "calling" | "ringing" | "connecting" | "active";
@@ -34,6 +35,22 @@ export function CallProvider({ children }: { children: ReactNode }) {
   const connectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const callIdRef = useRef<string | null>(null);
+
+  const trackCall = useCallback(
+    (type: string, payload: Record<string, unknown> = {}) => {
+      void api.recordActivity({
+        clientEventId: crypto.randomUUID(),
+        category: "call",
+        type,
+        payload: {
+          callId: callIdRef.current,
+          ...payload,
+        },
+      });
+    },
+    [],
+  );
 
   const sendSignal = useCallback(
     (signalType: CallSignal["signalType"], data?: unknown) => {
@@ -72,10 +89,11 @@ export function CallProvider({ children }: { children: ReactNode }) {
         void remoteAudioRef.current.play();
       }
       setStatus("active");
+      trackCall("call.connected");
     };
     connectionRef.current = connection;
     return connection;
-  }, [ensureMedia, sendSignal]);
+  }, [ensureMedia, sendSignal, trackCall]);
 
   const cleanup = useCallback(() => {
     connectionRef.current?.close();
@@ -95,7 +113,9 @@ export function CallProvider({ children }: { children: ReactNode }) {
     const signal = lastEvent.payload as CallSignal;
     void (async () => {
       if (signal.signalType === "request") {
+        callIdRef.current = lastEvent.id;
         setStatus("ringing");
+        trackCall("call.received");
       } else if (signal.signalType === "accept") {
         setStatus("connecting");
         const connection = await ensureConnection();
@@ -123,34 +143,42 @@ export function CallProvider({ children }: { children: ReactNode }) {
         signal.signalType === "hangup" ||
         signal.signalType === "decline"
       ) {
+        trackCall(
+          signal.signalType === "decline" ? "call.declined_remote" : "call.ended_remote",
+        );
         cleanup();
       }
     })().catch(() => cleanup());
-  }, [cleanup, ensureConnection, lastEvent, sendSignal]);
+  }, [cleanup, ensureConnection, lastEvent, sendSignal, trackCall]);
 
   const value = useMemo<CallContextValue>(
     () => ({
       status,
       async start() {
         await ensureMedia();
+        callIdRef.current = crypto.randomUUID();
         setStatus("calling");
+        trackCall("call.requested");
         sendSignal("request");
       },
       async accept() {
         await ensureMedia();
         setStatus("connecting");
+        trackCall("call.accepted");
         sendSignal("accept");
       },
       decline() {
+        trackCall("call.declined");
         sendSignal("decline");
         cleanup();
       },
       hangup() {
+        trackCall("call.ended");
         sendSignal("hangup");
         cleanup();
       },
     }),
-    [cleanup, ensureMedia, sendSignal, status],
+    [cleanup, ensureMedia, sendSignal, status, trackCall],
   );
 
   return (

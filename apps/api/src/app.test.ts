@@ -137,6 +137,53 @@ describe("Slow Dating API", () => {
       .set(firstAuth)
       .send({ gameRunId: run.body.id })
       .expect(204);
+
+    const recorded = await request(app)
+      .post("/api/profile/activity")
+      .set(firstAuth)
+      .send({
+        clientEventId: "waarden-choice-1",
+        category: "game",
+        type: "legacy.partner_progress",
+        gameRunId: run.body.id,
+        payload: { choice: "eerlijkheid" },
+      })
+      .expect(201);
+    const repeated = await request(app)
+      .post("/api/profile/activity")
+      .set(firstAuth)
+      .send({
+        clientEventId: "waarden-choice-1",
+        category: "game",
+        type: "legacy.partner_progress",
+        gameRunId: run.body.id,
+        payload: { choice: "anders" },
+      })
+      .expect(201);
+    const activity = await request(app)
+      .get("/api/profile/activity")
+      .set(firstAuth)
+      .expect(200);
+    const partnerActivity = await request(app)
+      .get("/api/profile/activity")
+      .set(secondAuth)
+      .expect(200);
+
+    expect(repeated.body.id).toBe(recorded.body.id);
+    expect(activity.body.map((event: { type: string }) => event.type)).toEqual(
+      expect.arrayContaining([
+        "waiting.started",
+        "waiting.answer.saved",
+        "waiting.ended",
+        "legacy.partner_progress",
+      ]),
+    );
+    expect(
+      activity.body.find(
+        (event: { type: string }) => event.type === "legacy.partner_progress",
+      ).payload,
+    ).toEqual({ choice: "eerlijkheid" });
+    expect(partnerActivity.body).toEqual([]);
   });
 
   it("activates the local 1111 developer pair outside production", async () => {

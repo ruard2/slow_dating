@@ -34,6 +34,7 @@ model Installation {
   messages   Message[]
   waitingSessions WaitingSession[]
   waitingAnswers WaitingAnswer[]
+  activityEvents ActivityEvent[]
 }
 
 model Account {
@@ -95,6 +96,7 @@ model Pair {
   progress     Progress[]
   messages     Message[]
   waitingSessions WaitingSession[]
+  activityEvents ActivityEvent[]
 }
 
 model PairMember {
@@ -145,6 +147,28 @@ model GameRun {
   pair           Pair?         @relation(fields: [pairId], references: [id], onDelete: Cascade)
   progress       Progress[]
   waitingSessions WaitingSession[]
+  activityEvents ActivityEvent[]
+}
+
+model ActivityEvent {
+  id             String       @id @default(uuid())
+  clientEventId  String
+  installationId String
+  pairId         String?
+  gameRunId      String?
+  gameId         String?
+  category       String
+  type           String
+  payload        Json
+  occurredAt     DateTime     @default(now())
+  installation   Installation @relation(fields: [installationId], references: [id], onDelete: Cascade)
+  pair           Pair?        @relation(fields: [pairId], references: [id], onDelete: SetNull)
+  gameRun        GameRun?     @relation(fields: [gameRunId], references: [id], onDelete: SetNull)
+
+  @@unique([installationId, clientEventId])
+  @@index([installationId, occurredAt])
+  @@index([pairId, occurredAt])
+  @@index([gameRunId, occurredAt])
 }
 
 model WaitingSession {

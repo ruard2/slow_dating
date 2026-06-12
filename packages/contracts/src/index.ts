@@ -164,6 +164,39 @@ export const updateGameRunSchema = z.object({
 
 export type GameRun = z.infer<typeof gameRunSchema>;
 
+export const activityCategorySchema = z.enum([
+  "game",
+  "waiting",
+  "pair",
+  "chat",
+  "call",
+  "profile",
+  "world",
+]);
+
+export const activityEventSchema = z.object({
+  id: idSchema,
+  clientEventId: z.string().min(1).max(100),
+  installationId: idSchema,
+  pairId: idSchema.nullable(),
+  gameRunId: idSchema.nullable(),
+  gameId: z.string().min(1).max(100).nullable(),
+  category: activityCategorySchema,
+  type: z.string().min(1).max(100),
+  payload: z.record(z.string(), z.unknown()),
+  occurredAt: z.string().datetime(),
+});
+
+export const recordActivitySchema = z.object({
+  clientEventId: z.string().min(1).max(100),
+  category: activityCategorySchema,
+  type: z.string().min(1).max(100),
+  gameRunId: idSchema.optional(),
+  payload: z.record(z.string(), z.unknown()).default({}),
+});
+
+export type ActivityEvent = z.infer<typeof activityEventSchema>;
+
 export const worldProgressSchema = z.object({
   completedGames: z.number().int().nonnegative(),
   eligibleWorlds: z.array(z.number().int().min(1).max(5)),

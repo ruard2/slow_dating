@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  activityEventSchema,
   callAccessSchema,
   gameRunSchema,
   guestSessionSchema,
@@ -119,6 +120,19 @@ export const api = {
     request("/api/profile", profileSchema, {
       method: "PATCH",
       body: JSON.stringify(changes),
+    }),
+  getActivity: () =>
+    request("/api/profile/activity", z.array(activityEventSchema)),
+  recordActivity: (input: {
+    clientEventId: string;
+    category: "game" | "waiting" | "pair" | "chat" | "call" | "profile" | "world";
+    type: string;
+    gameRunId?: string;
+    payload?: Record<string, unknown>;
+  }) =>
+    request("/api/profile/activity", activityEventSchema, {
+      method: "POST",
+      body: JSON.stringify({ ...input, payload: input.payload ?? {} }),
     }),
   getPair: () => request("/api/pairs/current", pairSchema.nullable()),
   createPair: () =>

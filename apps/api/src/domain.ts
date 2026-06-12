@@ -1,5 +1,6 @@
 import type {
   Account,
+  ActivityEvent,
   CallAccess,
   GameRun,
   Message,
@@ -88,6 +89,7 @@ export interface DataState {
     shareLevel: "private" | "soft_share" | "direct_share";
     createdAt: string;
   }>;
+  activityEvents: ActivityEvent[];
   legacyArchive?: {
     importedAt: string;
     profiles: unknown;
@@ -164,6 +166,17 @@ export interface AppRepository {
     runId: string,
     changes: Partial<Pick<GameRun, "result" | "state" | "status">>,
   ): Promise<GameRun>;
+  recordActivity(
+    installationId: string,
+    input: {
+      clientEventId: string;
+      category: ActivityEvent["category"];
+      type: string;
+      gameRunId?: string;
+      payload: Record<string, unknown>;
+    },
+  ): Promise<ActivityEvent>;
+  listActivity(installationId: string): Promise<ActivityEvent[]>;
   getWorldProgress(installationId: string): Promise<WorldProgress>;
   startWaitingSession(installationId: string, gameRunId: string): Promise<void>;
   endWaitingSession(installationId: string, gameRunId: string): Promise<void>;

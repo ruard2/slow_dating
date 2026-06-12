@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type {
+  ActivityEvent,
   CallAccess,
   GameRun,
   Message,
@@ -36,6 +37,7 @@ const EMPTY_STATE: DataState = {
   processedEventIds: [],
   waitingSessions: [],
   waitingAnswers: [],
+  activityEvents: [],
 };
 
 const CODE_CHARACTERS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -532,6 +534,13 @@ export class LocalRepository implements AppRepository {
         readyInstallationIds: [...readyInstallationIds],
       };
       await this.persist();
+      await this.recordActivity(installationId, {
+        clientEventId: `game-entered:${active.id}`,
+        category: "game",
+        type: "game.entered",
+        gameRunId: active.id,
+        payload: {},
+      });
       return structuredClone(active);
     }
     const run: GameRun = {
@@ -553,6 +562,13 @@ export class LocalRepository implements AppRepository {
     };
     this.state.gameRuns.push(run);
     await this.persist();
+    await this.recordActivity(installationId, {
+      clientEventId: `game-entered:${run.id}`,
+      category: "game",
+      type: "game.entered",
+      gameRunId: run.id,
+      payload: {},
+    });
     return structuredClone(run);
   }
 
@@ -586,6 +602,13 @@ export class LocalRepository implements AppRepository {
     }
     if (run.status === "completed") {
       if (changes.status === "completed") {
+        await this.recordActivity(installationId, {
+          clientEventId: `game-completed:${run.id}`,
+          category: "game",
+          type: "game.completed",
+          gameRunId: run.id,
+          payload: { result: run.result ?? {} },
+        });
         return structuredClone(run);
       }
       throw new DomainError("Een afgeronde spelsessie kan niet worden gewijzigd.", 409);
@@ -598,7 +621,67 @@ export class LocalRepository implements AppRepository {
       run.completedAt = now();
     }
     await this.persist();
+    if (changes.status === "completed") {
+      await this.recordActivity(installationId, {
+        clientEventId: `game-completed:${run.id}`,
+        category: "game",
+        type: "game.completed",
+        gameRunId: run.id,
+        payload: { result: run.result ?? {} },
+      });
+    }
     return structuredClone(run);
+  }
+
+  async recordActivity(
+    installationId: string,
+    input: {
+      clientEventId: string;
+      category: ActivityEvent["category"];
+      type: string;
+      gameRunId?: string;
+      payload: Record<string, unknown>;
+    },
+  ) {
+    const existing = this.state.activityEvents.find(
+      (event) =>
+        event.installationId === installationId &&
+        event.clientEventId === input.clientEventId,
+    );
+    if (existing) return structuredClone(existing);
+
+    const run = input.gameRunId
+      ? this.requirePairGameRun(installationId, input.gameRunId)
+      : null;
+    const pair = run?.pairId
+      ? this.state.pairs.find((candidate) => candidate.id === run.pairId)
+      : this.state.pairs.find(
+          (candidate) =>
+            !candidate.disconnectedAt &&
+            candidate.memberIds.includes(installationId),
+        );
+    const activity: ActivityEvent = {
+      id: randomUUID(),
+      clientEventId: input.clientEventId,
+      installationId,
+      pairId: run?.pairId ?? pair?.id ?? null,
+      gameRunId: run?.id ?? null,
+      gameId: run?.gameId ?? null,
+      category: input.category,
+      type: input.type,
+      payload: structuredClone(input.payload),
+      occurredAt: now(),
+    };
+    this.state.activityEvents.push(activity);
+    await this.persist();
+    return structuredClone(activity);
+  }
+
+  async listActivity(installationId: string) {
+    return this.state.activityEvents
+      .filter((event) => event.installationId === installationId)
+      .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt))
+      .map((event) => structuredClone(event));
   }
 
   async getWorldProgress(installationId: string): Promise<WorldProgress> {
@@ -643,13 +726,26 @@ export class LocalRepository implements AppRepository {
         session.gameRunId === gameRunId && session.userId === installationId,
     );
     if (!existing) {
-      this.state.waitingSessions.push({
+      const session = {
         id: randomUUID(),
         pairId: run.pairId as string,
         gameRunId,
         userId: installationId,
         startedAt: now(),
         endedAt: null,
+      };
+      this.state.waitingSessions.push(session);
+      this.state.activityEvents.push({
+        id: randomUUID(),
+        clientEventId: `waiting-start:${session.id}`,
+        installationId,
+        pairId: session.pairId,
+        gameRunId,
+        gameId: run.gameId,
+        category: "waiting",
+        type: "waiting.started",
+        payload: {},
+        occurredAt: session.startedAt,
       });
       await this.persist();
     }
@@ -664,6 +760,30 @@ export class LocalRepository implements AppRepository {
     );
     if (session) {
       session.endedAt = now();
+      const run = this.state.gameRuns.find(
+        (candidate) => candidate.id === gameRunId,
+      );
+      this.state.activityEvents.push({
+        id: randomUUID(),
+        clientEventId: `waiting-end:${session.id}`,
+        installationId,
+        pairId: session.pairId,
+        gameRunId,
+        gameId: run?.gameId ?? null,
+        category: "waiting",
+        type: "waiting.ended",
+        payload: {
+          durationSeconds: Math.max(
+            0,
+            Math.floor(
+              (new Date(session.endedAt).getTime() -
+                new Date(session.startedAt).getTime()) /
+                1_000,
+            ),
+          ),
+        },
+        occurredAt: session.endedAt,
+      });
       await this.persist();
     }
   }
@@ -685,7 +805,7 @@ export class LocalRepository implements AppRepository {
         candidate.userId === installationId,
     );
     if (!session) throw new DomainError("Wachtsessie niet gevonden.", 404);
-    this.state.waitingAnswers.push({
+    const answer = {
       id: randomUUID(),
       waitingSessionId: session.id,
       userId: installationId,
@@ -694,6 +814,27 @@ export class LocalRepository implements AppRepository {
       answerLabel: input.answerLabel,
       shareLevel: input.shareLevel,
       createdAt: now(),
+    };
+    this.state.waitingAnswers.push(answer);
+    const run = this.state.gameRuns.find(
+      (candidate) => candidate.id === input.gameRunId,
+    );
+    this.state.activityEvents.push({
+      id: randomUUID(),
+      clientEventId: `waiting-answer:${answer.id}`,
+      installationId,
+      pairId: session.pairId,
+      gameRunId: input.gameRunId,
+      gameId: run?.gameId ?? null,
+      category: "waiting",
+      type: "waiting.answer.saved",
+      payload: {
+        waitingGameId: input.waitingGameId,
+        answerId: input.answerId,
+        answerLabel: input.answerLabel,
+        shareLevel: input.shareLevel,
+      },
+      occurredAt: answer.createdAt,
     });
     await this.persist();
   }

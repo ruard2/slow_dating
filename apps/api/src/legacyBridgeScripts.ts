@@ -22,6 +22,73 @@ export const legacySdClientBridge = String.raw`
     }, location.origin);
   }
 
+  function cleanText(value, maximum) {
+    return String(value == null ? "" : value).replace(/\s+/g, " ").trim().slice(0, maximum);
+  }
+
+  function elementKey(element) {
+    return cleanText(
+      element.id ||
+      element.getAttribute("name") ||
+      element.getAttribute("data-id") ||
+      element.getAttribute("data-value") ||
+      element.className ||
+      element.tagName,
+      160
+    );
+  }
+
+  const originalSetItem = Storage.prototype.setItem;
+  Storage.prototype.setItem = function (key, value) {
+    originalSetItem.call(this, key, value);
+    if (
+      this !== localStorage ||
+      /password|passwd|secret|token|auth|comm_code|comm_player|code$/i.test(key)
+    ) return;
+    send("local_state_saved", {
+      key: cleanText(key, 160),
+      value: cleanText(value, 20000)
+    });
+  };
+
+  function observeChoices() {
+    document.addEventListener("change", function (event) {
+      const element = event.target;
+      if (!element || !element.matches || !element.matches("input,select,textarea")) return;
+      if (element.type === "password") return;
+      send("ui_value_changed", {
+        element: elementKey(element),
+        inputType: cleanText(element.type || element.tagName, 40),
+        value: element.type === "checkbox" || element.type === "radio"
+          ? cleanText(element.value || element.checked, 500)
+          : cleanText(element.value, 2000),
+        checked: typeof element.checked === "boolean" ? element.checked : undefined
+      });
+    }, true);
+
+    document.addEventListener("click", function (event) {
+      const element = event.target && event.target.closest
+        ? event.target.closest("button,[role='button'],a,.choice,.option,.card,.tile")
+        : null;
+      if (!element) return;
+      send("ui_choice_selected", {
+        element: elementKey(element),
+        label: cleanText(
+          element.getAttribute("aria-label") ||
+          element.getAttribute("title") ||
+          element.textContent,
+          500
+        ),
+        value: cleanText(
+          element.getAttribute("data-value") ||
+          element.getAttribute("data-id") ||
+          "",
+          500
+        )
+      });
+    }, true);
+  }
+
   addEventListener("message", function (event) {
     if (event.origin !== location.origin || !event.data || event.data.type !== "slow-dating:legacy-event") return;
     const payload = event.data.payload || {};
@@ -108,9 +175,13 @@ export const legacySdClientBridge = String.raw`
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", enforceCoupleOnly, { once: true });
+    document.addEventListener("DOMContentLoaded", function () {
+      enforceCoupleOnly();
+      observeChoices();
+    }, { once: true });
   } else {
     enforceCoupleOnly();
+    observeChoices();
   }
 
   addEventListener("load", function () {

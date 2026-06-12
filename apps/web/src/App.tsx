@@ -488,6 +488,20 @@ function GamePage({
         return;
       }
       const legacyEvent = String(event.data.legacyEvent ?? "");
+      if (run) {
+        void api.recordActivity({
+          clientEventId: crypto.randomUUID(),
+          category: "game",
+          type: `legacy.${legacyEvent || "unknown"}`,
+          gameRunId: run.id,
+          payload:
+            event.data.data &&
+            typeof event.data.data === "object" &&
+            !Array.isArray(event.data.data)
+              ? event.data.data
+              : { value: event.data.data ?? null },
+        });
+      }
       if (legacyEvent === "open_chat") {
         setDrawer("chat");
         return;
