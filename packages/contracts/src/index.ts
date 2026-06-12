@@ -165,6 +165,36 @@ export const updateGameRunSchema = z.object({
 
 export type GameRun = z.infer<typeof gameRunSchema>;
 
+export const valueIdSchema = z.enum([
+  "eerlijkheid",
+  "trouw",
+  "familie",
+  "humor",
+  "respect",
+  "avontuur",
+  "geloof",
+  "warmte",
+  "vrijheid",
+  "groei",
+  "rust",
+  "vriendschap",
+  "ambitie",
+  "verbinding",
+  "dankbaarheid",
+  "creativiteit",
+]);
+
+export type ValueId = z.infer<typeof valueIdSchema>;
+
+export const waardenResultSchema = z.object({
+  schemaVersion: z.literal(1),
+  selections: z.record(idSchema, z.array(valueIdSchema).length(3)),
+  sharedValues: z.array(valueIdSchema),
+  completedAt: z.string().datetime(),
+});
+
+export type WaardenResult = z.infer<typeof waardenResultSchema>;
+
 export const gameActionRequestSchema = z.object({
   id: idSchema,
   expectedRevision: z.number().int().nonnegative(),
@@ -240,6 +270,82 @@ export const waitingStatsSchema = z.object({
 });
 
 export type WaitingStats = z.infer<typeof waitingStatsSchema>;
+
+export const resultProvenanceSchema = z.object({
+  gameRunId: idSchema,
+  gameId: z.string().min(1),
+  gameVersion: z.number().int().positive(),
+  resultSchemaVersion: z.number().int().positive(),
+  pairId: idSchema.nullable(),
+  completedAt: z.string().datetime(),
+});
+
+export type ResultProvenance = z.infer<typeof resultProvenanceSchema>;
+
+export const valueInsightSchema = z.object({
+  valueId: valueIdSchema,
+  occurrences: z.number().int().positive(),
+  lastSeenAt: z.string().datetime(),
+  sources: z.array(resultProvenanceSchema).min(1),
+});
+
+export const relationshipInsightsSchema = z.object({
+  pairId: idSchema,
+  partnerName: z.string().min(1),
+  completedRuns: z.number().int().nonnegative(),
+  sharedValues: z.array(valueIdSchema),
+  differingValues: z.array(valueIdSchema),
+  provenance: z.array(resultProvenanceSchema),
+});
+
+export type RelationshipInsights = z.infer<typeof relationshipInsightsSchema>;
+
+export const profileInsightsSchema = z.object({
+  schemaVersion: z.literal(1),
+  generatedAt: z.string().datetime(),
+  personal: z.object({
+    completedRuns: z.number().int().nonnegative(),
+    values: z.array(valueInsightSchema),
+    waiting: waitingStatsSchema,
+    provenance: z.array(resultProvenanceSchema),
+  }),
+  currentRelationship: relationshipInsightsSchema.nullable(),
+});
+
+export type ProfileInsights = z.infer<typeof profileInsightsSchema>;
+
+export const relationshipGameResultSchema = z.object({
+  provenance: resultProvenanceSchema,
+  result: z.record(z.string(), z.unknown()),
+});
+
+export type RelationshipGameResult = z.infer<
+  typeof relationshipGameResultSchema
+>;
+
+export const profileDataExportSchema = z.object({
+  schemaVersion: z.literal(1),
+  exportedAt: z.string().datetime(),
+  profile: profileSchema,
+  insights: profileInsightsSchema,
+  currentRelationship: z
+    .object({
+      pair: pairSchema,
+      messages: z.array(messageSchema),
+      results: z.array(relationshipGameResultSchema),
+    })
+    .nullable(),
+  relationships: z.array(
+    z.object({
+      archive: relationshipArchiveSchema,
+      messages: z.array(messageSchema),
+      results: z.array(relationshipGameResultSchema),
+    }),
+  ),
+  activity: z.array(activityEventSchema),
+});
+
+export type ProfileDataExport = z.infer<typeof profileDataExportSchema>;
 
 export const callAccessSchema = z.object({
   sharedSeconds: z.number().int().nonnegative(),

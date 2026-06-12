@@ -6,7 +6,9 @@ import type {
   Message,
   Pair,
   Profile,
+  ProfileInsights,
   RelationshipArchive,
+  RelationshipGameResult,
   WaitingStats,
   WorldProgress,
 } from "@slow-dating/contracts";
@@ -155,6 +157,10 @@ export interface AppRepository {
     installationId: string,
     pairId: string,
   ): Promise<Message[]>;
+  listRelationshipGameResults(
+    installationId: string,
+    pairId: string,
+  ): Promise<RelationshipGameResult[]>;
   disconnectPair(installationId: string): Promise<void>;
   listMessages(installationId: string): Promise<Message[]>;
   createMessage(
@@ -199,6 +205,7 @@ export interface AppRepository {
     },
   ): Promise<ActivityEvent>;
   listActivity(installationId: string): Promise<ActivityEvent[]>;
+  getProfileInsights(installationId: string): Promise<ProfileInsights>;
   getWorldProgress(installationId: string): Promise<WorldProgress>;
   startWaitingSession(installationId: string, gameRunId: string): Promise<void>;
   endWaitingSession(installationId: string, gameRunId: string): Promise<void>;

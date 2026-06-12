@@ -9,7 +9,9 @@ import type {
   Message,
   Pair,
   Profile,
+  ProfileInsights,
   RelationshipArchive,
+  RelationshipGameResult,
   WorldProgress,
 } from "@slow-dating/contracts";
 import { isDiscoveryGameId } from "@slow-dating/content";
@@ -22,6 +24,10 @@ import {
   DomainError,
   type InstallationRecord,
 } from "./domain.js";
+import {
+  buildProfileInsights,
+  relationshipGameResults,
+} from "./profileInsights.js";
 
 function waitingBadges(waits: number, seconds: number, games: number) {
   return [
@@ -434,7 +440,6 @@ export class PrismaRepository implements AppRepository {
       where: {
         installationId,
         pairId,
-        pair: { disconnectedAt: { not: null } },
       },
     });
     if (!membership) {
@@ -454,6 +459,26 @@ export class PrismaRepository implements AppRepository {
       text: message.text,
       sentAt: message.sentAt.toISOString(),
     }));
+  }
+
+  async listRelationshipGameResults(
+    installationId: string,
+    pairId: string,
+  ): Promise<RelationshipGameResult[]> {
+    const membership = await this.prisma.pairMember.findFirst({
+      where: {
+        installationId,
+        pairId,
+      },
+    });
+    if (!membership) {
+      throw new DomainError("Relatiearchief niet gevonden.", 404);
+    }
+    const runs = await this.prisma.gameRun.findMany({
+      where: { pairId, status: "completed" },
+      orderBy: { completedAt: "desc" },
+    });
+    return relationshipGameResults(runs.map((run) => this.toGameRun(run)));
   }
 
   async listMessages(installationId: string) {
@@ -812,6 +837,56 @@ export class PrismaRepository implements AppRepository {
       orderBy: { occurredAt: "desc" },
     });
     return events.map((event) => this.toActivityEvent(event));
+  }
+
+  async getProfileInsights(
+    installationId: string,
+  ): Promise<ProfileInsights> {
+    const memberships = await this.prisma.pairMember.findMany({
+      where: { installationId },
+      include: {
+        pair: {
+          include: {
+            members: {
+              include: { installation: { include: { profile: true } } },
+            },
+          },
+        },
+      },
+    });
+    const currentMembership =
+      memberships.find(({ pair }) => pair.disconnectedAt === null) ?? null;
+    const partner = currentMembership?.pair.members.find(
+      (member) => member.installationId !== installationId,
+    );
+    const runs = await this.prisma.gameRun.findMany({
+      where: {
+        status: "completed",
+        OR: [
+          { installationId },
+          ...(memberships.length
+            ? [{ pairId: { in: memberships.map(({ pairId }) => pairId) } }]
+            : []),
+        ],
+      },
+      orderBy: { completedAt: "asc" },
+    });
+    return buildProfileInsights({
+      installationId,
+      completedRuns: runs.map((run) => this.toGameRun(run)),
+      waiting: await this.getWaitingStats(installationId),
+      currentPair: currentMembership
+        ? {
+            id: currentMembership.pair.id,
+            memberIds: currentMembership.pair.members.map(
+              (member) => member.installationId,
+            ),
+            partnerName:
+              partner?.installation.profile?.displayName ?? "Je reisgenoot",
+          }
+        : null,
+      generatedAt: new Date().toISOString(),
+    });
   }
 
   async getWorldProgress(installationId: string): Promise<WorldProgress> {

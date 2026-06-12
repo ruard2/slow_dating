@@ -71,6 +71,12 @@ test("loads the world map without console errors", async ({ page }) => {
 
 test("persists the guest profile after refresh", async ({ page }) => {
   await page.goto("/profile");
+  await expect(
+    page.getByRole("heading", { name: "Profielinzichten" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Exporteer mijn gegevens" }),
+  ).toBeVisible();
   await page.getByLabel("Naam").fill("Browser Tester");
   await page.getByLabel("Iets over jou").fill("Een lokaal testprofiel.");
   await page.getByRole("button", { name: "Opslaan" }).click();

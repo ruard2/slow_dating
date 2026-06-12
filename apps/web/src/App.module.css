@@ -121,6 +121,22 @@ button:disabled { cursor:not-allowed; opacity:.45; }
 .archiveRow span { color:#9baa92; font-size:.75rem; }
 .archiveMessages { max-height:14rem; overflow:auto; padding:.6rem; border-radius:.7rem; background:rgba(0,0,0,.2); }
 .archiveMessages p { margin:.35rem 0; font-size:.78rem; }
+.insightsCard { width:min(32rem,100%); padding:1.5rem; border:1px solid rgba(212,185,101,.18); border-radius:1.25rem; background:rgba(16,32,21,.9); }
+.insightsCard>span { color:#d4b965; font-size:.7rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+.insightsCard h2 { margin:.4rem 0 1rem; font:500 1.65rem Georgia,serif; }
+.insightsCard h3 { margin:1.2rem 0 .55rem; font-size:.9rem; }
+.insightStats { display:grid; grid-template-columns:repeat(3,1fr); gap:.55rem; }
+.insightStats div { min-width:0; padding:.8rem .55rem; border-radius:.8rem; background:rgba(255,255,255,.05); text-align:center; }
+.insightStats strong { display:block; color:#d5e99b; font-size:1.45rem; }
+.insightStats small { display:block; margin-top:.2rem; color:#9baa92; font-size:.67rem; line-height:1.25; }
+.valueChips { display:flex; flex-wrap:wrap; gap:.45rem; }
+.valueChips span { padding:.45rem .65rem; border:1px solid rgba(183,212,103,.22); border-radius:999px; color:#dce9d3; background:rgba(183,212,103,.08); font-size:.76rem; }
+.relationshipInsight { margin-top:1rem; padding:1rem; border-left:2px solid #b7d467; border-radius:0 .8rem .8rem 0; background:rgba(183,212,103,.06); }
+.relationshipInsight p { margin:.4rem 0; color:#b8c5af; font-size:.8rem; line-height:1.45; }
+.secondaryButton { margin-top:1.2rem; padding:.7rem .9rem; border:1px solid rgba(212,185,101,.3); border-radius:.7rem; color:#d9e5d1; background:transparent; cursor:pointer; }
+.archiveResult { padding:.65rem; border-bottom:1px solid rgba(255,255,255,.08); }
+.archiveResult strong,.archiveResult span { display:block; }
+.archiveResult span { margin-top:.15rem; color:#9baa92; font-size:.7rem; }
 .gameWelcomeCard h1,.formCard h1 { margin:.5rem 0; font:500 2.7rem Georgia,serif; }
 .gameWelcomeCard p { color:rgba(255,255,255,.68); line-height:1.55; }
 .waitingPulse { width:3.25rem; height:3.25rem; margin:1.5rem auto; border:2px solid rgba(190,219,116,.25); border-top-color:#bedb74; border-radius:50%; animation:spin 1s linear infinite; }

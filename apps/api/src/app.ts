@@ -18,9 +18,12 @@ import {
   gameActionRequestSchema,
   joinPairSchema,
   loginSchema,
+  profileDataExportSchema,
+  profileInsightsSchema,
   recordActivitySchema,
   registerAccountSchema,
   requestPasswordResetSchema,
+  relationshipGameResultSchema,
   sendMessageSchema,
   updateGameRunSchema,
   updateProfileSchema,
@@ -235,6 +238,55 @@ export function createApp({
     response.json(await repository.listActivity(installationId(request)));
   });
 
+  app.get("/api/profile/insights", auth.requireAuth, async (request, response) => {
+    response.json(
+      profileInsightsSchema.parse(
+        await repository.getProfileInsights(installationId(request)),
+      ),
+    );
+  });
+
+  app.get("/api/profile/export", auth.requireAuth, async (request, response) => {
+    const ownerId = installationId(request);
+    const archives = await repository.listRelationshipArchives(ownerId);
+    const currentPair = await repository.getPairForInstallation(ownerId);
+    response.json(
+      profileDataExportSchema.parse({
+        schemaVersion: 1,
+        exportedAt: new Date().toISOString(),
+        profile: await repository.getProfile(ownerId),
+        insights: await repository.getProfileInsights(ownerId),
+        currentRelationship: currentPair
+          ? {
+              pair: currentPair,
+              messages: await repository.listRelationshipMessages(
+                ownerId,
+                currentPair.id,
+              ),
+              results: await repository.listRelationshipGameResults(
+                ownerId,
+                currentPair.id,
+              ),
+            }
+          : null,
+        relationships: await Promise.all(
+          archives.map(async (archive) => ({
+            archive,
+            messages: await repository.listRelationshipMessages(
+              ownerId,
+              archive.id,
+            ),
+            results: await repository.listRelationshipGameResults(
+              ownerId,
+              archive.id,
+            ),
+          })),
+        ),
+        activity: await repository.listActivity(ownerId),
+      }),
+    );
+  });
+
   app.post("/api/profile/activity", auth.requireAuth, async (request, response) => {
     const input = recordActivitySchema.parse(request.body);
     response.status(201).json(
@@ -301,6 +353,25 @@ export function createApp({
         await repository.listRelationshipMessages(
           installationId(request),
           pairId,
+        ),
+      );
+    },
+  );
+
+  app.get(
+    "/api/relationships/:pairId/results",
+    auth.requireAuth,
+    async (request, response) => {
+      const pairId = request.params.pairId;
+      if (typeof pairId !== "string") {
+        throw new DomainError("Ongeldig relatiearchief.", 400);
+      }
+      response.json(
+        relationshipGameResultSchema.array().parse(
+          await repository.listRelationshipGameResults(
+            installationId(request),
+            pairId,
+          ),
         ),
       );
     },

@@ -10,7 +10,9 @@ import type {
   Message,
   Pair,
   Profile,
+  ProfileInsights,
   RelationshipArchive,
+  RelationshipGameResult,
   WorldProgress,
 } from "@slow-dating/contracts";
 import { isDiscoveryGameId } from "@slow-dating/content";
@@ -24,6 +26,10 @@ import {
   type InstallationRecord,
   type PairRecord,
 } from "./domain.js";
+import {
+  buildProfileInsights,
+  relationshipGameResults,
+} from "./profileInsights.js";
 
 const EMPTY_STATE: DataState = {
   installations: [],
@@ -463,7 +469,6 @@ export class LocalRepository implements AppRepository {
     const pair = this.state.pairs.find(
       (candidate) =>
         candidate.id === pairId &&
-        Boolean(candidate.disconnectedAt) &&
         candidate.memberIds.includes(installationId),
     );
     if (!pair) {
@@ -473,6 +478,25 @@ export class LocalRepository implements AppRepository {
       .filter((message) => message.pairId === pairId)
       .sort((left, right) => left.sentAt.localeCompare(right.sentAt))
       .map((message) => structuredClone(message));
+  }
+
+  async listRelationshipGameResults(
+    installationId: string,
+    pairId: string,
+  ): Promise<RelationshipGameResult[]> {
+    const pair = this.state.pairs.find(
+      (candidate) =>
+        candidate.id === pairId &&
+        candidate.memberIds.includes(installationId),
+    );
+    if (!pair) {
+      throw new DomainError("Relatiearchief niet gevonden.", 404);
+    }
+    return relationshipGameResults(
+      this.state.gameRuns.filter(
+        (run) => run.pairId === pairId && run.status === "completed",
+      ),
+    );
   }
 
   async listMessages(installationId: string) {
@@ -760,6 +784,40 @@ export class LocalRepository implements AppRepository {
       .filter((event) => event.installationId === installationId)
       .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt))
       .map((event) => structuredClone(event));
+  }
+
+  async getProfileInsights(
+    installationId: string,
+  ): Promise<ProfileInsights> {
+    const pairs = this.state.pairs.filter((pair) =>
+      pair.memberIds.includes(installationId),
+    );
+    const pairIds = new Set(pairs.map((pair) => pair.id));
+    const currentPair = pairs.find((pair) => !pair.disconnectedAt) ?? null;
+    const partnerId = currentPair?.memberIds.find(
+      (memberId) => memberId !== installationId,
+    );
+    const partner = partnerId
+      ? this.state.profiles.find((profile) => profile.id === partnerId)
+      : null;
+    return buildProfileInsights({
+      installationId,
+      completedRuns: this.state.gameRuns.filter(
+        (run) =>
+          run.status === "completed" &&
+          (run.installationId === installationId ||
+            Boolean(run.pairId && pairIds.has(run.pairId))),
+      ),
+      waiting: await this.getWaitingStats(installationId),
+      currentPair: currentPair
+        ? {
+            id: currentPair.id,
+            memberIds: currentPair.memberIds,
+            partnerName: partner?.displayName ?? "Je reisgenoot",
+          }
+        : null,
+      generatedAt: now(),
+    });
   }
 
   async getWorldProgress(installationId: string): Promise<WorldProgress> {

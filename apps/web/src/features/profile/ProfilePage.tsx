@@ -5,12 +5,25 @@ import styles from "../../App.module.css";
 import { LoadingScreen } from "../../app/LoadingScreen";
 import { api } from "../../lib/api";
 import { useSession } from "../../providers/SessionProvider";
+import { values } from "../games/waarden/content";
+
+const valueNames = new Map<string, string>(
+  values.map((value) => [value.id, value.name]),
+);
+
+function valueList(valueIds: string[]) {
+  return valueIds.map((valueId) => valueNames.get(valueId) ?? valueId).join(", ");
+}
 
 export function ProfilePage() {
   const { session } = useSession();
   const queryClient = useQueryClient();
   const [openArchiveId, setOpenArchiveId] = useState<string | null>(null);
   const profile = useQuery({ queryKey: ["profile"], queryFn: api.getProfile });
+  const insights = useQuery({
+    queryKey: ["profile-insights"],
+    queryFn: api.getProfileInsights,
+  });
   const archives = useQuery({
     queryKey: ["relationship-archives"],
     queryFn: api.getRelationshipArchives,
@@ -20,6 +33,26 @@ export function ProfilePage() {
     queryKey: ["relationship-archive-messages", openArchiveId],
     queryFn: () => api.getRelationshipMessages(openArchiveId ?? ""),
     enabled: Boolean(openArchiveId),
+  });
+  const archivedResults = useQuery({
+    queryKey: ["relationship-archive-results", openArchiveId],
+    queryFn: () => api.getRelationshipResults(openArchiveId ?? ""),
+    enabled: Boolean(openArchiveId),
+  });
+  const exportProfile = useMutation({
+    mutationFn: api.getProfileExport,
+    onSuccess: (value) => {
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(value, null, 2)], {
+          type: "application/json",
+        }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `slow-dating-profiel-${value.exportedAt.slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    },
   });
   const update = useMutation({
     mutationFn: (changes: Record<string, string>) =>
@@ -71,6 +104,66 @@ export function ProfilePage() {
           <p className={styles.success}>Profiel opgeslagen.</p>
         )}
       </form>
+      {insights.data && (
+        <section className={styles.insightsCard}>
+          <span>Jouw geschiedenis</span>
+          <h2>Profielinzichten</h2>
+          <div className={styles.insightStats}>
+            <div>
+              <strong>{insights.data.personal.completedRuns}</strong>
+              <small>semantische spelresultaten</small>
+            </div>
+            <div>
+              <strong>{insights.data.personal.waiting.totalWaitCount}</strong>
+              <small>keer gewacht</small>
+            </div>
+            <div>
+              <strong>
+                {Math.round(
+                  insights.data.personal.waiting.totalWaitSeconds / 60,
+                )}
+              </strong>
+              <small>minuten gewacht</small>
+            </div>
+          </div>
+          <h3>Waarden die bij jou terugkomen</h3>
+          {insights.data.personal.values.length ? (
+            <div className={styles.valueChips}>
+              {insights.data.personal.values.map((value) => (
+                <span key={value.valueId}>
+                  {valueNames.get(value.valueId) ?? value.valueId}
+                  {value.occurrences > 1 ? ` · ${value.occurrences}×` : ""}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p>Na voltooide spellen verschijnen hier jouw inzichten.</p>
+          )}
+          {insights.data.currentRelationship && (
+            <div className={styles.relationshipInsight}>
+              <h3>Jij en {insights.data.currentRelationship.partnerName}</h3>
+              <p>
+                <strong>Gedeeld:</strong>{" "}
+                {valueList(insights.data.currentRelationship.sharedValues) ||
+                  "nog geen gedeelde waarden"}
+              </p>
+              <p>
+                <strong>Verschillend:</strong>{" "}
+                {valueList(insights.data.currentRelationship.differingValues) ||
+                  "nog geen verschillen berekend"}
+              </p>
+            </div>
+          )}
+          <button
+            className={styles.secondaryButton}
+            disabled={exportProfile.isPending}
+            onClick={() => exportProfile.mutate()}
+            type="button"
+          >
+            Exporteer mijn gegevens
+          </button>
+        </section>
+      )}
       {session?.account && (
         <section className={styles.archiveCard}>
           <span>Account</span>
@@ -105,6 +198,34 @@ export function ProfilePage() {
                 </button>
                 {openArchiveId === archive.id && (
                   <div className={styles.archiveMessages}>
+                    {archivedResults.data?.map(({ provenance, result }) => {
+                      const selections =
+                        provenance.gameId === "waarden" &&
+                        typeof result.selections === "object" &&
+                        result.selections
+                          ? (result.selections as Record<string, string[]>)[
+                              session.installationId
+                            ] ?? []
+                          : [];
+                      return (
+                        <div
+                          className={styles.archiveResult}
+                          key={provenance.gameRunId}
+                        >
+                          <strong>
+                            {provenance.gameId} · versie {provenance.gameVersion}
+                          </strong>
+                          <span>
+                            {new Date(
+                              provenance.completedAt,
+                            ).toLocaleDateString("nl-NL")}
+                          </span>
+                          {selections.length > 0 && (
+                            <p>Jouw waarden: {valueList(selections)}</p>
+                          )}
+                        </div>
+                      );
+                    })}
                     {archivedMessages.data?.map((message) => (
                       <p key={message.id}>
                         <strong>{message.senderName}:</strong> {message.text}

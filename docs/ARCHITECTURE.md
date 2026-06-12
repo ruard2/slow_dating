@@ -27,10 +27,12 @@ worden alleen binnen de geverifieerde pair-room doorgestuurd.
 ## Spellen
 
 Elk spel heeft metadata in `packages/content`. De appshell start een
-servergeregistreerde `GameRun`. De bestaande rijke spelimplementaties draaien
-via een expliciete iframe-adapter uit `legacy/koppel-frontend`. Daardoor blijven
-inhoud en vormgeving behouden, terwijl navigatie, identiteit, chat en bellen
-appbreed zijn. Nieuwe modules implementeren rechtstreeks `GameDefinition`.
+servergeregistreerde `GameRun`. Legacy-spellen draaien tijdelijk via een
+expliciete iframe-adapter; native spellen implementeren `GameDefinition`.
+Ieder native spel levert daarnaast een versieerbaar resultaatschema in
+`packages/contracts`. Alleen resultaten die zo'n schema doorstaan mogen door
+een server-side projector worden omgezet in persoonlijke of gezamenlijke
+profielinzichten. Generieke click- en activity-events blijven diagnostiek.
 
 ## Data
 
@@ -39,9 +41,20 @@ werkplek geen Docker/PostgreSQL bevat, biedt `LocalRepository` dezelfde
 applicatie-interface met atomische JSON-writes. Oude profiel-, voortgangs- en
 belstatusbestanden worden eenmaal als afzonderlijk `legacyArchive` ingelezen.
 
+Profielinzichten zijn afgeleide data en worden niet als tweede waarheid
+opgeslagen. De API herberekent ze deterministisch uit gevalideerde voltooide
+spelruns, wachtdata en de relatie waartoe iedere bron behoort. Iedere afleiding
+bevat provenance naar `gameRunId`, spelversie en resultaatschemaversie. De
+persoonlijke projectie omvat alle eigen relaties; de actuele relatieprojectie
+filtert uitsluitend op de huidige `pairId`.
+
 ## Privacy
 
 - De PWA cachet geen API-, profiel- of chatresponses.
-- Ontkoppelen verwijdert nieuwe pair-chat direct.
+- Ontkoppelen sluit de relatie af. Berichten en semantische spelresultaten
+  blijven alleen voor de twee voormalige leden beschikbaar in het
+  relatiearchief.
+- Profiel-export bevat de actieve relatie en afgesloten relatiearchieven met
+  berichten en gevalideerde spelresultaten.
 - WebRTC-audio wordt niet opgenomen of opgeslagen.
 - Legacydata blijft gescheiden totdat accountkoppeling bestaat.

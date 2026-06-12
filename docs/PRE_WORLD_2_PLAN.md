@@ -21,7 +21,9 @@ Dit plan wordt strikt in volgorde uitgevoerd. Iedere fase:
 - Fase 2: afgerond
 - Fase 3: afgerond
 - Fase 4: afgerond
-- Architectuurreview: volgende stap
+- Architectuurreview: afgerond
+- Fase 5: afgerond
+- Fase 6: volgende fase
 
 ## Niet Onderhandelbare Regels
 
@@ -197,6 +199,14 @@ Klaar wanneer:
 - herberekening deterministisch is;
 - een nieuwe partner geen oud relatieprofiel ziet;
 - persoonlijke geschiedenis na ontkoppeling behouden blijft.
+
+Status: afgerond. Spelresultaten hebben gedeelde, versieerbare schema's en
+worden server-side gevalideerd voordat ze profielbron mogen zijn. De
+profielprojectie wordt deterministisch uit voltooide runs en wachtdata
+herberekend, bevat provenance naar run- en spelversie en isoleert de actuele
+relatie van eerdere relaties. Afgesloten relaties bewaren berichten en
+gevalideerde resultaten in het eigen archief. De JSON-export bevat profiel,
+inzichten, activiteit en alle actieve en afgesloten relatiegegevens.
 
 ## Fase 6: PostgreSQL Als Geteste Doelomgeving
 

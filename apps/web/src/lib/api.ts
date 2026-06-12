@@ -7,8 +7,11 @@ import {
   guestSessionSchema,
   messageSchema,
   pairSchema,
+  profileDataExportSchema,
+  profileInsightsSchema,
   profileSchema,
   relationshipArchiveSchema,
+  relationshipGameResultSchema,
   waitingStatsSchema,
   worldProgressSchema,
   type GuestSession,
@@ -123,6 +126,10 @@ export const api = {
     }),
   getActivity: () =>
     request("/api/profile/activity", z.array(activityEventSchema)),
+  getProfileInsights: () =>
+    request("/api/profile/insights", profileInsightsSchema),
+  getProfileExport: () =>
+    request("/api/profile/export", profileDataExportSchema),
   recordActivity: (input: {
     clientEventId: string;
     category: "game" | "waiting" | "pair" | "chat" | "call" | "profile" | "world";
@@ -153,6 +160,11 @@ export const api = {
     request("/api/relationships/archives", z.array(relationshipArchiveSchema)),
   getRelationshipMessages: (pairId: string) =>
     request(`/api/relationships/${pairId}/messages`, z.array(messageSchema)),
+  getRelationshipResults: (pairId: string) =>
+    request(
+      `/api/relationships/${pairId}/results`,
+      z.array(relationshipGameResultSchema),
+    ),
   getMessages: () => request("/api/messages", z.array(messageSchema)),
   sendMessage: (clientId: string, text: string) =>
     request("/api/messages", messageSchema, {

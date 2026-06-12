@@ -474,4 +474,91 @@ describe("Slow Dating API", () => {
     expect(archives.body[0].messageCount).toBe(1);
     expect(archives.body[0].disconnectedAt).toBeTruthy();
   });
+
+  it("projects semantic profile insights and keeps archived results private", async () => {
+    const app = await createTestApp();
+    const first = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "i".repeat(64) });
+    const second = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "j".repeat(64) });
+    const outsider = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "k".repeat(64) });
+    const firstAuth = { authorization: `Bearer ${first.body.accessToken}` };
+    const secondAuth = { authorization: `Bearer ${second.body.accessToken}` };
+    const outsiderAuth = {
+      authorization: `Bearer ${outsider.body.accessToken}`,
+    };
+    const pair = await request(app).post("/api/pairs").set(firstAuth).send({});
+    await request(app)
+      .post("/api/pairs/join")
+      .set(secondAuth)
+      .send({ code: pair.body.code });
+    await request(app)
+      .post("/api/game-runs")
+      .set(firstAuth)
+      .send({ gameId: "waarden", mode: "couple", version: 2 });
+    const run = await request(app)
+      .post("/api/game-runs")
+      .set(secondAuth)
+      .send({ gameId: "waarden", mode: "couple", version: 2 });
+    const result = {
+      schemaVersion: 1,
+      selections: {
+        [first.body.installationId]: ["eerlijkheid", "familie", "rust"],
+        [second.body.installationId]: ["eerlijkheid", "humor", "avontuur"],
+      },
+      sharedValues: ["eerlijkheid"],
+      completedAt: "2026-06-12T10:00:00.000Z",
+    };
+    await request(app)
+      .post(`/api/game-runs/${run.body.id}/actions`)
+      .set(firstAuth)
+      .send({
+        id: randomUUID(),
+        expectedRevision: run.body.revision,
+        type: "waarden.game.completed",
+        payload: {},
+        state: run.body.state,
+        status: "completed",
+        result,
+      });
+
+    const insights = await request(app)
+      .get("/api/profile/insights")
+      .set(firstAuth);
+    const exported = await request(app)
+      .get("/api/profile/export")
+      .set(firstAuth);
+    expect(insights.status).toBe(200);
+    expect(insights.body.personal.values).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ valueId: "eerlijkheid", occurrences: 1 }),
+      ]),
+    );
+    expect(insights.body.currentRelationship).toMatchObject({
+      pairId: pair.body.id,
+      sharedValues: ["eerlijkheid"],
+    });
+    expect(exported.body.insights.personal.completedRuns).toBe(1);
+
+    await request(app).delete("/api/pairs/current").set(firstAuth);
+    const archivedResults = await request(app)
+      .get(`/api/relationships/${pair.body.id}/results`)
+      .set(firstAuth);
+    const blockedResults = await request(app)
+      .get(`/api/relationships/${pair.body.id}/results`)
+      .set(outsiderAuth);
+    const afterDisconnect = await request(app)
+      .get("/api/profile/insights")
+      .set(firstAuth);
+
+    expect(archivedResults.status).toBe(200);
+    expect(archivedResults.body).toHaveLength(1);
+    expect(blockedResults.status).toBe(404);
+    expect(afterDisconnect.body.personal.completedRuns).toBe(1);
+    expect(afterDisconnect.body.currentRelationship).toBeNull();
+  });
 });
