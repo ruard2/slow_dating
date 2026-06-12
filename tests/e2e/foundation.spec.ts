@@ -135,6 +135,7 @@ test("opens all seven world games inside the permanent icon shell", async ({
       ? frame.locator(game.visibleSelector)
       : frame.getByText(game.visibleText, { exact: false });
     await expect(activeContent).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Wachten op je reisgenoot...")).toHaveCount(0);
     await expect(
       frame.getByText("Doe mee met koppelcode", { exact: false }),
     ).toHaveCount(0);
@@ -237,12 +238,21 @@ test("pairs two browsers and delivers chat exactly once", async ({
   await first.getByRole("button", { name: "Chat openen" }).click();
   await second.getByRole("button", { name: "Chat openen" }).click();
   await second.getByPlaceholder("Schrijf iets...").fill("Hallo vanuit browser twee");
-  await second.getByRole("button", { name: "Stuur" }).click();
+  await second.getByRole("button", { name: "Bericht versturen" }).click();
 
   await expect(first.getByText("Hallo vanuit browser twee")).toHaveCount(1);
+  await expect(
+    first.locator("[class*='messages'] article[data-own='false']"),
+  ).toContainText("Hallo vanuit browser twee");
+  await expect(
+    second.locator("[class*='messages'] article[data-own='true']"),
+  ).toContainText("Hallo vanuit browser twee");
+  await expect(
+    second.getByRole("textbox", { name: "Bericht", exact: true }),
+  ).toBeVisible();
   await first.getByRole("button", { name: "Chat openen" }).click();
   await second.getByPlaceholder("Schrijf iets...").fill("Nog een ongelezen bericht");
-  await second.getByRole("button", { name: "Stuur" }).click();
+  await second.getByRole("button", { name: "Bericht versturen" }).click();
   await expect(
     first.getByRole("button", { name: "Chat openen, 1 ongelezen" }),
   ).toBeVisible();

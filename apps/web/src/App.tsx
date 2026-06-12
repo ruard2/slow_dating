@@ -72,6 +72,13 @@ function ShellIcon({
   );
 }
 
+function formatMessageTime(value: string) {
+  return new Intl.DateTimeFormat("nl-NL", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 function AccountGate() {
   const { session } = useSession();
   const [mode, setMode] = useState<"register" | "login" | "reset">("register");
@@ -387,10 +394,11 @@ function GamePage({ pair }: { pair: Pair | null | undefined }) {
       )
     : [];
   const started = Boolean(
-    pair &&
-      readyInstallationIds.filter((id) =>
-        pair.members.some((member) => member.installationId === id),
-      ).length >= 2,
+    pair?.developerMode ||
+      (pair &&
+        readyInstallationIds.filter((id) =>
+          pair.members.some((member) => member.installationId === id),
+        ).length >= 2),
   );
   const partner = pair?.members.find(
     (member) => member.installationId !== session?.installationId,
@@ -737,9 +745,17 @@ function PairPanel({ pair }: { pair: Pair | null | undefined }) {
   );
 }
 
-function ChatPanel({ pair }: { pair: Pair | null | undefined }) {
+function ChatPanel({
+  pair,
+  partnerOnline,
+}: {
+  pair: Pair | null | undefined;
+  partnerOnline: boolean;
+}) {
+  const { session } = useSession();
   const { lastEvent, send } = useRealtime();
   const queryClient = useQueryClient();
+  const messagesRef = useRef<HTMLDivElement | null>(null);
   const [text, setText] = useState("");
   const messages = useQuery<Message[]>({
     queryKey: ["messages", pair?.id],
@@ -756,6 +772,13 @@ function ChatPanel({ pair }: { pair: Pair | null | undefined }) {
     }
   }, [lastEvent, pair?.id, queryClient]);
 
+  useEffect(() => {
+    messagesRef.current?.scrollTo({
+      top: messagesRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages.data]);
+
   function submit(event: FormEvent) {
     event.preventDefault();
     const value = text.trim();
@@ -768,24 +791,65 @@ function ChatPanel({ pair }: { pair: Pair | null | undefined }) {
     return <p>Koppel eerst met je partner om te chatten.</p>;
   }
 
+  const partner = pair.members.find(
+    (member) => member.installationId !== session?.installationId,
+  );
+
   return (
     <div className={styles.chat}>
-      <div className={styles.messages}>
-        {messages.data?.map((message) => (
-          <article key={message.id}>
-            <strong>{message.senderName}</strong>
-            <p>{message.text}</p>
-          </article>
-        ))}
+      <header className={styles.chatHeader}>
+        <div className={styles.chatAvatar}>
+          {(partner?.displayName ?? "P").slice(0, 1).toUpperCase()}
+        </div>
+        <div>
+          <strong>{partner?.displayName ?? "Je partner"}</strong>
+          <span data-online={partnerOnline}>
+            <i />
+            {partnerOnline ? "Online" : "Offline"}
+          </span>
+        </div>
+      </header>
+      <div className={styles.messages} ref={messagesRef}>
+        {!messages.isPending && messages.data?.length === 0 && (
+          <div className={styles.emptyChat}>
+            <ShellIcon name="chat" />
+            <strong>Begin jullie gesprek</strong>
+            <span>Berichten blijven beschikbaar na het wisselen van spel.</span>
+          </div>
+        )}
+        {messages.data?.map((message) => {
+          const own = message.senderInstallationId === session?.installationId;
+          return (
+            <article data-own={own} key={message.id}>
+              {!own && <strong>{message.senderName}</strong>}
+              <p>{message.text}</p>
+              <time dateTime={message.sentAt}>
+                {formatMessageTime(message.sentAt)}
+              </time>
+            </article>
+          );
+        })}
       </div>
-      <form onSubmit={submit}>
-        <input
+      <form className={styles.chatComposer} onSubmit={submit}>
+        <textarea
+          aria-label="Bericht"
           maxLength={2_000}
           onChange={(event) => setText(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
           placeholder="Schrijf iets..."
+          rows={1}
           value={text}
         />
-        <button type="submit">Stuur</button>
+        <button aria-label="Bericht versturen" disabled={!text.trim()} type="submit">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m4 4 17 8-17 8 3-8-3-8Zm3 8h14" />
+          </svg>
+        </button>
       </form>
     </div>
   );
@@ -1021,10 +1085,14 @@ function AppShell() {
       </nav>
 
       {drawer && (
-        <aside className={styles.drawer}>
+        <aside
+          className={`${styles.drawer} ${drawer === "chat" ? styles.chatDrawer : ""}`}
+        >
           <button className={styles.closeButton} onClick={() => setDrawer(null)} type="button">Sluiten</button>
           {drawer === "pair" && <PairPanel pair={pair.data} />}
-          {drawer === "chat" && <ChatPanel pair={pair.data} />}
+          {drawer === "chat" && (
+            <ChatPanel pair={pair.data} partnerOnline={partnerOnline} />
+          )}
           {drawer === "call" && <CallPanel pair={pair.data} />}
           {drawer === "settings" && (
             <SettingsPanel pair={pair.data} partnerOnline={partnerOnline} />
