@@ -49,6 +49,10 @@ CSS Modules, Express, Socket.IO, PostgreSQL/Prisma, Vitest en Playwright.
 Na fase 5 volgt een expliciete architectuurreview voordat meer spellen worden
 gemigreerd.
 
+De concrete kwaliteitspoort voordat wereld 2 inhoud krijgt staat in
+`docs/PRE_WORLD_2_PLAN.md`. Dat document bepaalt vanaf nu de uitvoeringsvolgorde
+voor de resterende architectuurreview en de native migratie van Waarden.
+
 ## Vaste Interfaces
 
 Iedere spelmodule levert minimaal:
@@ -57,7 +61,7 @@ Iedere spelmodule levert minimaal:
 interface GameDefinition<State, Result> {
   id: string;
   version: number;
-  modes: Array<"solo" | "couple">;
+  modes: Array<"couple">;
   createInitialState(): State;
   validateContent(): void;
   serializeResult(state: State): Result;
