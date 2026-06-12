@@ -98,10 +98,10 @@ export const games: GameMetadata[] = [
     id: "waarden",
     title: "Je waarden",
     description: "Ontdek wat voor jou echt telt en waar waarden kunnen botsen.",
-    legacyPath: "waarden.html",
+    legacyPath: null,
     modes: ["couple"],
-    version: 1,
-    status: "legacy-adapter",
+    version: 2,
+    status: "native",
     scoresDiscovery: true,
   },
   {

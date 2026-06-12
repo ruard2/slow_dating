@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 
@@ -12,6 +12,14 @@ import { api } from "../../lib/api";
 import { useRealtime } from "../../providers/RealtimeProvider";
 import { useSession } from "../../providers/SessionProvider";
 import { useAppStore } from "../../store/appStore";
+import type { WaardenAction } from "./waarden/contracts";
+import { waardenDefinition } from "./waarden/definition";
+import {
+  addDeveloperPartnerSelection,
+  normalizeWaardenState,
+  waardenReducer,
+} from "./waarden/reducer";
+import { serializeWaardenResult } from "./waarden/result";
 
 export function GamePage({
   developerPartnerArriving,
@@ -34,6 +42,7 @@ export function GamePage({
   const runRef = useRef<GameRun | null>(null);
   const actionQueueRef = useRef(Promise.resolve());
   const [arrivalComplete, setArrivalComplete] = useState(false);
+  const [nativePending, setNativePending] = useState(false);
   const { connected, lastEvent, send } = useRealtime();
   const setDrawer = useAppStore((state) => state.setDrawer);
   const game = findPlayableGame(gameId);
@@ -41,7 +50,8 @@ export function GamePage({
     queryKey: ["active-game-run", pair?.id, gameId],
     queryFn: () => api.getActiveGameRun(gameId),
     enabled: Boolean(game && pair?.members.length === 2),
-    refetchInterval: 1_500,
+    refetchInterval: (query) =>
+      query.state.data?.status === "completed" ? false : 1_500,
   });
   const enterRun = useMutation({
     mutationFn: () => api.createGameRun(gameId, game?.version ?? 1),
@@ -164,6 +174,84 @@ export function GamePage({
       window.location.origin,
     );
   }, [run]);
+
+  const dispatchWaardenAction = useCallback(
+    async (action: WaardenAction) => {
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+
+        const apply = () => {
+          const currentState = normalizeWaardenState(current!.state);
+          let nextState = waardenReducer(currentState, action);
+          if (
+            pair?.developerMode &&
+            action.type === "waarden.selection.submitted"
+          ) {
+            const partnerId = pair.members.find(
+              (member) => member.installationId !== action.actorId,
+            )?.installationId;
+            if (partnerId) {
+              nextState = addDeveloperPartnerSelection(
+                nextState,
+                partnerId,
+                nextState.selections[action.actorId] ?? [],
+              );
+            }
+          }
+          const completesRun = action.type === "waarden.game.completed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeWaardenResult(
+                    nextState,
+                    pair?.members.map((member) => member.installationId) ?? [],
+                  ),
+                }
+              : {}),
+          });
+        };
+
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (action.type === "waarden.game.completed") {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          navigate("/");
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, gameId, navigate, pair, queryClient, send],
+  );
 
   useEffect(() => {
     function receiveLegacyMessage(event: MessageEvent) {
@@ -323,6 +411,27 @@ export function GamePage({
   if (hasWaited && !arrivalComplete) {
     return (
       <PartnerArrived partnerName={partner?.displayName ?? "Je partner"} />
+    );
+  }
+
+  if (game.status === "native" && game.id === waardenDefinition.id && run) {
+    const WaardenComponent = waardenDefinition.Component;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="waarden"
+      >
+        <WaardenComponent
+          dispatch={dispatchWaardenAction}
+          installationId={session?.installationId ?? ""}
+          memberIds={pair.members.map((member) => member.installationId)}
+          partnerName={partner?.displayName ?? "je partner"}
+          pending={nativePending}
+          state={normalizeWaardenState(run.state)}
+        />
+      </main>
     );
   }
 

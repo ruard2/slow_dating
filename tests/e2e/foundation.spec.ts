@@ -100,7 +100,13 @@ test("opens all seven world games inside the permanent icon shell", async ({
   await page.getByRole("button", { name: "Open beheerdersmodus" }).click();
 
   const games = [
-    { id: "waarden", title: "Je waarden", visibleText: "Dit zijn mijn 3" },
+    {
+      id: "waarden",
+      title: "Je waarden",
+      visibleText: "",
+      visibleSelector: "[aria-label='Kies jouw drie waarden']",
+      native: true,
+    },
     { id: "lach-samen", title: "Lach samen", visibleText: "1 / 15" },
     {
       id: "kennismaking",
@@ -130,6 +136,23 @@ test("opens all seven world games inside the permanent icon shell", async ({
 
   for (const game of games) {
     await page.goto(`/games/${game.id}`);
+    if ("native" in game && game.native) {
+      await expect(page.locator(game.visibleSelector)).toBeVisible({
+        timeout: 15_000,
+      });
+      await expect(page.getByText("Wachten op je reisgenoot...")).toHaveCount(0);
+      await expect(page.getByRole("link", { name: "Terug naar de kaart" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Chat openen" })).toBeVisible();
+      await expect(
+        page.locator("nav[aria-label='Vaste appbediening'] button[data-call-state]"),
+      ).toHaveAttribute("data-call-state", "ready");
+      await page.getByRole("button", { name: "Eerlijkheid kiezen" }).click();
+      await page.getByRole("button", { name: "Trouw kiezen" }).click();
+      await page.getByRole("button", { name: "Familie kiezen" }).click();
+      await page.getByRole("button", { name: "Dit zijn mijn drie waarden" }).click();
+      await expect(page.getByRole("button", { name: "Ontdekking afronden" })).toBeVisible();
+      continue;
+    }
     const frame = page.frameLocator(`iframe[title='${game.title}']`);
     const activeContent = "visibleSelector" in game
       ? frame.locator(game.visibleSelector)
@@ -151,12 +174,7 @@ test("opens all seven world games inside the permanent icon shell", async ({
     ).toHaveAttribute("data-call-state", "ready");
     await expect(page.getByRole("button", { name: "Opties openen" })).toBeVisible();
 
-    if (game.id === "waarden") {
-      await frame.locator(".chip").nth(0).click();
-      await frame.locator(".chip").nth(1).click();
-      await frame.locator(".chip").nth(2).click();
-      await frame.getByRole("button", { name: /Dit zijn mijn 3/ }).click();
-    } else if (game.id === "lach-samen") {
+    if (game.id === "lach-samen") {
       await frame.locator("#btn-a").click();
     } else if (game.id === "kennismaking") {
       await frame.locator("#duur-choices button").first().click();
@@ -206,7 +224,7 @@ test("lets an admin simulate an absent and arriving test partner", async ({
   await page.getByRole("button", { name: "Opties openen" }).click();
   await page.getByRole("button", { name: "Aanwezig" }).click();
   await expect(page.getByText("Testpartner is er!")).toBeVisible();
-  await expect(page.locator("iframe[title='Je waarden']")).toBeVisible({
+  await expect(page.locator("main[data-native-game='waarden']")).toBeVisible({
     timeout: 8_000,
   });
 });
@@ -219,29 +237,23 @@ test("restores the active game run after a refresh", async ({ page }) => {
   await page.getByRole("button", { name: "Open beheerdersmodus" }).click();
 
   await page.goto("/games/waarden");
-  const frame = page.frameLocator("iframe[title='Je waarden']");
-  const beginTogether = frame.getByRole("button", { name: /Begin samen/ });
-  if (await beginTogether.isVisible()) {
-    await beginTogether.click();
-  }
-  await expect(frame.locator(".chip").first()).toBeVisible();
-  await frame.locator(".chip").first().click();
+  await expect(page.getByRole("button", { name: "Eerlijkheid kiezen" })).toBeVisible();
+  await page.getByRole("button", { name: "Eerlijkheid kiezen" }).click();
 
-  const gameFrame = page.locator("iframe[title='Je waarden']");
-  await expect(gameFrame).toHaveAttribute("data-game-revision", /^[1-9]\d*$/);
-  const runId = await gameFrame.getAttribute("data-game-run-id");
-  const revision = await gameFrame.getAttribute("data-game-revision");
+  const nativeGame = page.locator("main[data-native-game='waarden']");
+  await expect(nativeGame).toHaveAttribute("data-game-revision", /^[1-9]\d*$/);
+  const runId = await nativeGame.getAttribute("data-game-run-id");
+  const revision = await nativeGame.getAttribute("data-game-revision");
 
   await page.reload();
-  const restoredFrame = page.locator("iframe[title='Je waarden']");
-  await expect(restoredFrame).toBeVisible({
-    timeout: 8_000,
-  });
-  await expect(restoredFrame).toHaveAttribute("data-game-run-id", runId ?? "");
-  await expect(restoredFrame).toHaveAttribute(
+  const restoredGame = page.locator("main[data-native-game='waarden']");
+  await expect(restoredGame).toBeVisible({ timeout: 8_000 });
+  await expect(restoredGame).toHaveAttribute("data-game-run-id", runId ?? "");
+  await expect(restoredGame).toHaveAttribute(
     "data-game-revision",
     revision ?? "",
   );
+  await expect(page.getByRole("button", { name: "Eerlijkheid gekozen" })).toBeVisible();
 });
 
 test("pairs two browsers and delivers chat exactly once", async ({
@@ -294,40 +306,54 @@ test("pairs two browsers and delivers chat exactly once", async ({
   await first.getByRole("button", { name: "Chat openen" }).click();
   await second.goto("/games/waarden");
   await expect(first.getByText("Browser Twee is er!")).toBeVisible();
-  await expect(first.locator("iframe[title='Je waarden']")).toBeVisible({ timeout: 8_000 });
-  await expect(second.locator("iframe[title='Je waarden']")).toBeVisible();
-  const firstGame = first.frameLocator("iframe[title='Je waarden']");
-  await expect(firstGame.locator(".chip").first()).toBeVisible();
-  await firstGame.locator(".chip").first().click();
-  const firstFrame = first.locator("iframe[title='Je waarden']");
-  const secondFrame = second.locator("iframe[title='Je waarden']");
-  await expect(firstFrame).toHaveAttribute("data-game-revision", /^[1-9]\d*$/);
-  const sharedRunId = await firstFrame.getAttribute("data-game-run-id");
-  await expect(secondFrame).toHaveAttribute("data-game-run-id", sharedRunId ?? "");
+  await expect(first.locator("main[data-native-game='waarden']")).toBeVisible({ timeout: 8_000 });
+  await expect(second.locator("main[data-native-game='waarden']")).toBeVisible();
+  await first.getByRole("button", { name: "Eerlijkheid kiezen" }).click();
+  const firstGame = first.locator("main[data-native-game='waarden']");
+  const secondGame = second.locator("main[data-native-game='waarden']");
+  await expect(firstGame).toHaveAttribute("data-game-revision", /^[1-9]\d*$/);
+  const sharedRunId = await firstGame.getAttribute("data-game-run-id");
+  await expect(secondGame).toHaveAttribute("data-game-run-id", sharedRunId ?? "");
   await expect.poll(async () => {
-    const firstRevision = await firstFrame.getAttribute("data-game-revision");
-    const secondRevision = await secondFrame.getAttribute("data-game-revision");
+    const firstRevision = await firstGame.getAttribute("data-game-revision");
+    const secondRevision = await secondGame.getAttribute("data-game-revision");
     return firstRevision === secondRevision ? firstRevision : null;
   }, { timeout: 8_000 }).toMatch(/^[1-9]\d*$/);
   const sharedRevision = Number(
-    await firstFrame.getAttribute("data-game-revision"),
+    await firstGame.getAttribute("data-game-revision"),
   );
   await second.reload();
-  const restoredSecondFrame = second.locator("iframe[title='Je waarden']");
-  await expect(restoredSecondFrame).toHaveAttribute(
+  const restoredSecondGame = second.locator("main[data-native-game='waarden']");
+  await expect(restoredSecondGame).toHaveAttribute(
     "data-game-run-id",
     sharedRunId ?? "",
   );
   await expect.poll(async () =>
-    Number(await restoredSecondFrame.getAttribute("data-game-revision")),
+    Number(await restoredSecondGame.getAttribute("data-game-revision")),
   ).toBeGreaterThanOrEqual(sharedRevision);
   await expect.poll(async () => {
-    const firstRevision = await firstFrame.getAttribute("data-game-revision");
-    const secondRevision = await restoredSecondFrame.getAttribute(
+    const firstRevision = await firstGame.getAttribute("data-game-revision");
+    const secondRevision = await restoredSecondGame.getAttribute(
       "data-game-revision",
     );
     return firstRevision === secondRevision ? firstRevision : null;
   }, { timeout: 8_000 }).toMatch(/^[1-9]\d*$/);
+  await first.getByRole("button", { name: "Trouw kiezen" }).click();
+  await first.getByRole("button", { name: "Familie kiezen" }).click();
+  await first.getByRole("button", { name: "Dit zijn mijn drie waarden" }).click();
+  await second.getByRole("button", { name: "Eerlijkheid kiezen" }).click();
+  await second.getByRole("button", { name: "Rust kiezen" }).click();
+  await second.getByRole("button", { name: "Groei kiezen" }).click();
+  await second.getByRole("button", { name: "Dit zijn mijn drie waarden" }).click();
+  await expect(
+    first.getByRole("button", { name: "Ontdekking afronden" }),
+  ).toBeVisible({ timeout: 8_000 });
+  await expect(
+    second.getByRole("button", { name: "Ontdekking afronden" }),
+  ).toBeVisible();
+  await first.getByRole("button", { name: "Ontdekking afronden" }).click();
+  await expect(first).toHaveURL(/\/$/);
+  await expect(first.getByText("1 / 5 ontdekkingen")).toBeVisible();
   await first.getByRole("button", { name: "Chat openen" }).click();
   await second.getByRole("button", { name: "Chat openen" }).click();
   await second.getByPlaceholder("Schrijf iets...").fill("Hallo vanuit browser twee");
@@ -358,7 +384,7 @@ test("pairs two browsers and delivers chat exactly once", async ({
   await first.getByRole("button", { name: "Opties openen" }).click();
   await first.getByRole("link", { name: "Profiel beheren" }).click();
   await expect(first.getByRole("heading", { name: "Relatiearchieven" })).toBeVisible();
-  await expect(first.getByText(/2 berichten.*0 ontdekkingen/)).toBeVisible();
+  await expect(first.getByText(/2 berichten.*1 ontdekking/)).toBeVisible();
 
   await firstContext.close();
   await secondContext.close();

@@ -59,11 +59,11 @@ describe("Slow Dating API", () => {
     const lobby = await request(app)
       .post("/api/game-runs")
       .set(auth)
-      .send({ gameId: "waarden", mode: "couple", version: 1 });
+      .send({ gameId: "waarden", mode: "couple", version: 2 });
     const created = await request(app)
       .post("/api/game-runs")
       .set(partnerAuth)
-      .send({ gameId: "waarden", mode: "couple", version: 1 });
+      .send({ gameId: "waarden", mode: "couple", version: 2 });
     const completionId = randomUUID();
 
     const completed = await request(app)
@@ -133,11 +133,11 @@ describe("Slow Dating API", () => {
     const lobby = await request(app)
       .post("/api/game-runs")
       .set(firstAuth)
-      .send({ gameId: "waarden", mode: "couple", version: 1 });
+      .send({ gameId: "waarden", mode: "couple", version: 2 });
     const run = await request(app)
       .post("/api/game-runs")
       .set(secondAuth)
-      .send({ gameId: "waarden", mode: "couple", version: 1 });
+      .send({ gameId: "waarden", mode: "couple", version: 2 });
     const action = {
       id: randomUUID(),
       expectedRevision: run.body.revision,
@@ -211,7 +211,7 @@ describe("Slow Dating API", () => {
     const run = await request(app)
       .post("/api/game-runs")
       .set(firstAuth)
-      .send({ gameId: "waarden", mode: "couple", version: 1 });
+      .send({ gameId: "waarden", mode: "couple", version: 2 });
 
     await request(app)
       .post("/api/waiting/session/start")
@@ -307,7 +307,7 @@ describe("Slow Dating API", () => {
     const run = await request(app)
       .post("/api/game-runs")
       .set(auth)
-      .send({ gameId: "waarden", mode: "couple", version: 1 });
+      .send({ gameId: "waarden", mode: "couple", version: 2 });
 
     expect(pair.status).toBe(201);
     expect(pair.body.developerMode).toBe(true);

@@ -20,7 +20,8 @@ Dit plan wordt strikt in volgorde uitgevoerd. Iedere fase:
 - Fase 1: afgerond
 - Fase 2: afgerond
 - Fase 3: afgerond
-- Fase 4: volgende fase
+- Fase 4: afgerond
+- Architectuurreview: volgende stap
 
 ## Niet Onderhandelbare Regels
 
@@ -169,6 +170,12 @@ Klaar wanneer:
 
 Hier volgt een expliciete architectuurreview. Problemen worden in Waarden
 opgelost voordat een tweede native spel wordt gebouwd.
+
+Status: afgerond. Waarden draait als getypeerde React-spelmodule met
+gevalideerde content, een reducer, servergestuurde spelstatus,
+conflict-herstel en semantische resultaatopslag. Refresh,
+twee-browser-synchronisatie en wereldkaartprogressie zijn met browsertests
+afgedekt. Fase 5 start pas na de hierboven genoemde architectuurreview.
 
 ## Fase 5: Profielinzichten En Resultaatmodellen
 

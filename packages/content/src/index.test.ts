@@ -21,7 +21,7 @@ describe("world and game registry", () => {
   });
 
   it("only exposes available games and discovery scoring explicitly", () => {
-    expect(findPlayableGame("waarden")?.status).toBe("legacy-adapter");
+    expect(findPlayableGame("waarden")?.status).toBe("native");
     expect(findPlayableGame("grot")).toBeUndefined();
     expect(findPlayableGame("profiel")).toBeUndefined();
     expect(isDiscoveryGameId("waarden")).toBe(true);
