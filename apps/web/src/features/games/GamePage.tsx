@@ -45,6 +45,7 @@ export function GamePage({
   const [nativePending, setNativePending] = useState(false);
   const { connected, lastEvent, send } = useRealtime();
   const setDrawer = useAppStore((state) => state.setDrawer);
+  const setChatContext = useAppStore((state) => state.setChatContext);
   const game = findPlayableGame(gameId);
   const activeRun = useQuery({
     queryKey: ["active-game-run", pair?.id, gameId],
@@ -282,6 +283,32 @@ export function GamePage({
           });
       }
       if (legacyEvent === "open_chat") {
+        const chatText =
+          event.data.data &&
+          typeof event.data.data === "object" &&
+          !Array.isArray(event.data.data) &&
+          typeof event.data.data.text === "string"
+            ? event.data.data.text
+            : "";
+        const returnsToMap =
+          event.data.data &&
+          typeof event.data.data === "object" &&
+          !Array.isArray(event.data.data) &&
+          event.data.data.returnToMap === true;
+        const autoSend =
+          event.data.data &&
+          typeof event.data.data === "object" &&
+          !Array.isArray(event.data.data) &&
+          event.data.data.autoSend === true;
+        if (autoSend && chatText.trim()) {
+          send("chat.send", {
+            clientId: crypto.randomUUID(),
+            text: chatText.trim(),
+          });
+          setChatContext("", returnsToMap);
+        } else {
+          setChatContext(chatText, returnsToMap);
+        }
         setDrawer("chat");
         return;
       }
@@ -367,6 +394,7 @@ export function GamePage({
     queryClient,
     run,
     send,
+    setChatContext,
     setDrawer,
   ]);
 

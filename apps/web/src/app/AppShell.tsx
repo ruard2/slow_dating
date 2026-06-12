@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import type { Message } from "@slow-dating/contracts";
 
@@ -21,11 +21,15 @@ import { AppRoutes } from "./routes";
 export function AppShell() {
   const { session } = useSession();
   const location = useLocation();
+  const navigate = useNavigate();
   const call = useCall();
   const { lastEvent, partnerOnline } = useRealtime();
   const queryClient = useQueryClient();
   const drawer = useAppStore((state) => state.drawer);
   const setDrawer = useAppStore((state) => state.setDrawer);
+  const chatDraft = useAppStore((state) => state.chatDraft);
+  const chatReturnsToMap = useAppStore((state) => state.chatReturnsToMap);
+  const clearChatContext = useAppStore((state) => state.clearChatContext);
   const drawerCloseRef = useRef<HTMLButtonElement | null>(null);
   const [developerPartnerPresent, setDeveloperPartnerPresent] = useState(
     () =>
@@ -35,15 +39,28 @@ export function AppShell() {
     useState(false);
   const pair = useQuery({ queryKey: ["pair"], queryFn: api.getPair });
 
+  const closeDrawer = useCallback(() => {
+    const returnToMap = drawer === "chat" && chatReturnsToMap;
+    setDrawer(null);
+    clearChatContext();
+    if (returnToMap) navigate("/");
+  }, [
+    chatReturnsToMap,
+    clearChatContext,
+    drawer,
+    navigate,
+    setDrawer,
+  ]);
+
   useEffect(() => {
     if (!drawer) return;
     drawerCloseRef.current?.focus();
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setDrawer(null);
+      if (event.key === "Escape") closeDrawer();
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [drawer, setDrawer]);
+  }, [closeDrawer, drawer]);
   const messages = useQuery<Message[]>({
     queryKey: ["messages", pair.data?.id],
     queryFn: api.getMessages,
@@ -95,9 +112,10 @@ export function AppShell() {
 
   function toggleChat() {
     if (drawer === "chat") {
-      setDrawer(null);
+      closeDrawer();
       return;
     }
+    clearChatContext();
     const latest = messages.data?.at(-1)?.sentAt ?? new Date().toISOString();
     if (readStorageKey) localStorage.setItem(readStorageKey, latest);
     setDrawer("chat");
@@ -209,7 +227,7 @@ export function AppShell() {
         >
           <button
             className={styles.closeButton}
-            onClick={() => setDrawer(null)}
+            onClick={closeDrawer}
             ref={drawerCloseRef}
             type="button"
           >
@@ -218,6 +236,7 @@ export function AppShell() {
           {drawer === "pair" && <PairPanel pair={pair.data} />}
           {drawer === "chat" && (
             <ChatPanel
+              key={chatDraft}
               pair={pair.data}
               partnerOnline={effectivePartnerOnline}
             />

@@ -19,6 +19,21 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: url('images/vijver/vragen_spot.webp') center 48% / cover no-repeat;
+  z-index: -2;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(5,18,17,.72), rgba(7,22,20,.82));
+  z-index: -1;
 }
 
 #app {
@@ -27,11 +42,18 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 0 0 32px;
+  padding: 0;
 }
 
 /* ── Screens ── */
-.screen { display: none; flex-direction: column; flex: 1; animation: fadeIn .3s ease; }
+.screen {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  min-height: 100vh;
+  padding-bottom: 112px;
+  animation: fadeIn .3s ease;
+}
 .screen.active { display: flex; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
@@ -46,11 +68,12 @@ body {
 
 /* ── Cards ── */
 .card {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(8,28,25,.78);
+  border: 1px solid rgba(190,225,215,.16);
   border-radius: 18px;
   padding: 22px;
   margin: 0 16px;
+  backdrop-filter: blur(8px);
 }
 
 /* ── Buttons ── */
@@ -74,9 +97,9 @@ body {
   padding: 0 16px;
 }
 .mode-card {
-  background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.1);
+  background: rgba(8,28,25,.78); border: 1px solid rgba(190,225,215,.18);
   border-radius: 16px; padding: 22px 12px; cursor: pointer;
-  text-align: center; transition: all .2s;
+  text-align: center; transition: all .2s; backdrop-filter: blur(8px);
 }
 .mode-card:hover { border-color: #2a7a6a; background: rgba(42,122,106,.15); }
 .mode-card.selected { border-color: #3fcfb4; background: rgba(63,207,180,.1); }
@@ -151,8 +174,9 @@ body {
   padding: 0 16px;
 }
 .reveal-col {
-  background: rgba(255,255,255,.05); border-radius: 16px;
+  background: rgba(8,28,25,.82); border:1px solid rgba(190,225,215,.12); border-radius: 16px;
   padding: 14px 10px; text-align: center;
+  backdrop-filter: blur(8px);
 }
 .reveal-col .who {
   font-size: .75rem; font-weight: 700; text-transform: uppercase;
@@ -172,13 +196,15 @@ body {
 
 /* ── Reflectie-prompt ── */
 .prompt-box {
-  background: rgba(63,207,180,.08); border: 1px solid rgba(63,207,180,.25);
+  background: rgba(8,38,34,.84); border: 1px solid rgba(63,207,180,.3);
   border-radius: 16px; padding: 18px; margin: 0 16px;
   font-size: 1rem; color: #a8d8d0; line-height: 1.5; text-align: center;
+  backdrop-filter: blur(8px);
 }
 .prompt-answer {
-  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+  background: rgba(8,28,25,.84); border: 1px solid rgba(190,225,215,.14);
   border-radius: 14px; padding: 14px 16px; margin: 12px 16px 0;
+  backdrop-filter: blur(8px);
 }
 .prompt-answer-label { font-size: .75rem; color: #7a9e9a; margin-bottom: 6px; }
 .prompt-answer-text { font-size: .9rem; color: #e8f0ef; line-height: 1.5; font-style: italic; }
@@ -206,6 +232,20 @@ body {
 }
 .divider span { font-size: .75rem; color: #4a6a66; text-transform: uppercase; letter-spacing: .5px; }
 .divider::before, .divider::after { content:''; flex:1; height:1px; background: rgba(255,255,255,.1); }
+
+.end-card {
+  margin: auto 16px;
+  padding: 26px 22px;
+  border: 1px solid rgba(63,207,180,.28);
+  border-radius: 20px;
+  background: rgba(7,27,24,.9);
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+.end-card .icon { display:block; font-size:2.5rem; margin-bottom:10px; }
+.end-card h2 { color:#b9e4dc; font-size:1.35rem; }
+.end-card p { color:#a6bfbb; font-size:.92rem; line-height:1.55; margin-top:10px; }
+.end-card .btn { width:100%; margin:20px 0 0; }
 </style>
 </head>
 <body>
@@ -216,7 +256,7 @@ body {
   <div class="sv-header">
     <span class="icon">🌿</span>
     <h1>Stille Vijver</h1>
-    <p>Kies samen drie woorden of beelden<br>die beschrijven hoe je je voelt bij deze ontmoeting.</p>
+    <p>Kies samen drie woorden of foto's<br>die beschrijven hoe je je voelt bij deze ontmoeting.</p>
   </div>
 
   <!-- Verbinding status banner -->
@@ -294,7 +334,7 @@ body {
     </div>
     <div class="mode-card" onclick="kiesModus('beelden')">
       <span class="mode-icon">🖼️</span>
-      <h3>Beelden</h3>
+    <h3>Foto's</h3>
       <p>Kies drie foto's die je gevoel laten zien</p>
     </div>
   </div>
@@ -318,12 +358,12 @@ body {
   </button>
 </div>
 
-<!-- ══ SCREEN: KIES BEELDEN ══════════════════════════════ -->
+<!-- ══ SCREEN: KIES FOTO'S ═══════════════════════════════ -->
 <div id="screen-beelden" class="screen">
   <button class="back-btn" onclick="STATE.mijnKeuze=[]; goScreen('screen-modus')">← Terug</button>
   <div style="padding: 4px 16px 12px;">
     <div style="font-size:1.1rem; font-weight:700; color:#a8d8d0; text-align:center;">
-      Kies drie beelden
+      Kies drie foto's
     </div>
     <div style="font-size:.85rem; color:#7a9e9a; text-align:center; margin-top:4px;">
       die beschrijven hoe je je voelt bij deze ontmoeting
@@ -332,7 +372,7 @@ body {
   <p class="pick-counter">Gekozen: <span id="img-count">0</span> / 3</p>
   <div class="pick-grid" id="img-grid"></div>
   <button class="btn" id="btn-beelden-klaar" style="margin-top:20px; opacity:.4; pointer-events:none;" onclick="kiesKlaar()">
-    Dit zijn mijn drie beelden →
+    Dit zijn mijn drie foto's →
   </button>
 </div>
 
@@ -383,7 +423,7 @@ body {
       Vertel het aan je partner
     </div>
     <div class="prompt-box">
-      💬 Waarom koos je deze woorden/beelden? Wat voelde je precies?
+      💬 Waarom koos je deze woorden/foto's? Wat voelde je precies?
     </div>
   </div>
 
@@ -417,6 +457,16 @@ body {
       <div class="prompt-answer-text" id="reflectie-antw-them"></div>
     </div>
     <button class="btn" style="margin-top:20px;" onclick="naarChat()">Chat verder →</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN: AFRONDING ═════════════════════════════════ -->
+<div id="screen-eind" class="screen">
+  <div class="end-card">
+    <span class="icon">🌿</span>
+    <h2>Praat samen verder</h2>
+    <p>Stel elkaar gerust nog een vraag over wat jullie kozen. Zijn jullie uitgepraat, dan kunnen jullie Stille Vijver sluiten.</p>
+    <button class="btn" onclick="sluitSpel()">Sluiten en terug naar de kaart</button>
   </div>
 </div>
 
@@ -873,8 +923,20 @@ function showReflecties(mijn, partner) {
 // ══════════════════════════════════════════════════════════
 
 function naarChat() {
-  // Chat is now handled by sd-chat.js
-  window.SDChat?.open();
+  const vraag = "Waarom koos je deze woorden/foto's? Wat voelde je precies?";
+  const context = [
+    'Stille Vijver',
+    'Vraag: ' + vraag,
+    '',
+    'Mijn antwoord: ' + STATE.mijnReflectie,
+    STATE.themName + ': ' + STATE.partnerReflectie
+  ].join('\n');
+  goScreen('screen-eind');
+  window.SDClient?.chat(context, { autoSend: true, returnToMap: true });
+}
+
+function sluitSpel() {
+  window.parent.location.href = '/';
 }
 
 // ── AUTO-START ─────────────────────────────────────────────────

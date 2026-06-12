@@ -8,6 +8,7 @@ import { ShellIcon } from "../../app/ShellIcon";
 import { api } from "../../lib/api";
 import { useRealtime } from "../../providers/RealtimeProvider";
 import { useSession } from "../../providers/SessionProvider";
+import { useAppStore } from "../../store/appStore";
 
 function formatMessageTime(value: string) {
   return new Intl.DateTimeFormat("nl-NL", {
@@ -27,7 +28,8 @@ export function ChatPanel({
   const { lastEvent, send } = useRealtime();
   const queryClient = useQueryClient();
   const messagesRef = useRef<HTMLDivElement | null>(null);
-  const [text, setText] = useState("");
+  const chatDraft = useAppStore((state) => state.chatDraft);
+  const [text, setText] = useState(chatDraft);
   const messages = useQuery<Message[]>({
     queryKey: ["messages", pair?.id],
     queryFn: api.getMessages,

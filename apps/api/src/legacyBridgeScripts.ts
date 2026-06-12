@@ -124,7 +124,13 @@ export const legacySdClientBridge = String.raw`
     onGameInvite: function (callback) { inviteCallbacks.push(callback); },
     done: function (data) { send("session_complete", data); },
     progress: function (data) { send("partner_progress", data); },
-    chat: function (text) { send("open_chat", { text: text }); },
+    chat: function (text, options) {
+      send("open_chat", {
+        text: text,
+        autoSend: Boolean(options && options.autoSend),
+        returnToMap: Boolean(options && options.returnToMap)
+      });
+    },
     sendTyping: function () {},
     reset: function () { send("reset", {}); },
     getCode: function () { return code; },
