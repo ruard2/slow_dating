@@ -15,6 +15,7 @@ import {
   completePasswordResetSchema,
   createGameRunSchema,
   guestSessionRequestSchema,
+  gameActionRequestSchema,
   joinPairSchema,
   loginSchema,
   recordActivitySchema,
@@ -300,6 +301,33 @@ export function createApp({
         await repository.listRelationshipMessages(
           installationId(request),
           pairId,
+        ),
+      );
+    },
+  );
+
+  app.post(
+    "/api/game-runs/:runId/actions",
+    auth.requireAuth,
+    async (request, response) => {
+      const runId = request.params.runId;
+      if (typeof runId !== "string") {
+        throw new DomainError("Ongeldige spelsessie.", 400);
+      }
+      const action = gameActionRequestSchema.parse(request.body);
+      response.status(201).json(
+        await repository.applyGameAction(
+          installationId(request),
+          runId,
+          {
+            id: action.id,
+            expectedRevision: action.expectedRevision,
+            type: action.type,
+            payload: action.payload,
+            state: action.state,
+            ...(action.status === undefined ? {} : { status: action.status }),
+            ...(action.result === undefined ? {} : { result: action.result }),
+          },
         ),
       );
     },

@@ -166,10 +166,21 @@ export const api = {
     }),
   getActiveGameRun: (gameId: string) =>
     request(`/api/game-runs/active/${encodeURIComponent(gameId)}`, gameRunSchema.nullable()),
-  completeGameRun: (runId: string, result: Record<string, unknown> = {}) =>
-    request(`/api/game-runs/${runId}`, gameRunSchema, {
-      method: "PATCH",
-      body: JSON.stringify({ status: "completed", result }),
+  applyGameAction: (
+    runId: string,
+    input: {
+      id: string;
+      expectedRevision: number;
+      type: string;
+      payload: Record<string, unknown>;
+      state: Record<string, unknown>;
+      status?: "completed" | "abandoned";
+      result?: Record<string, unknown>;
+    },
+  ) =>
+    request(`/api/game-runs/${runId}/actions`, gameRunSchema, {
+      method: "POST",
+      body: JSON.stringify(input),
     }),
   getProgress: () => request("/api/progress", worldProgressSchema),
   startWaitingSession: (gameRunId: string) =>

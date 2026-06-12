@@ -68,7 +68,9 @@ export const legacySdClientBridge = String.raw`
 
     document.addEventListener("click", function (event) {
       const element = event.target && event.target.closest
-        ? event.target.closest("button,[role='button'],a,.choice,.option,.card,.tile")
+        ? event.target.closest(
+            "button,[role='button'],a,[data-choice],[data-value],.choice,.option,.chip,.card,.tile"
+          )
         : null;
       if (!element) return;
       send("ui_choice_selected", {
@@ -132,6 +134,7 @@ export const legacySdClientBridge = String.raw`
 
   window.SDClient = client;
   window.KoppelClient = client;
+  observeChoices();
 
   function removeLegacyShell() {
     document.querySelectorAll("button, a, [role='button'], .modus-card").forEach(function (element) {
@@ -177,11 +180,9 @@ export const legacySdClientBridge = String.raw`
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
       enforceCoupleOnly();
-      observeChoices();
     }, { once: true });
   } else {
     enforceCoupleOnly();
-    observeChoices();
   }
 
   addEventListener("load", function () {

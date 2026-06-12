@@ -211,6 +211,39 @@ test("lets an admin simulate an absent and arriving test partner", async ({
   });
 });
 
+test("restores the active game run after a refresh", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Opties openen" }).click();
+  await page.getByRole("button", { name: "Partner koppelen" }).click();
+  await page.getByPlaceholder("ABC234 of 1111").fill("1111");
+  await page.getByRole("button", { name: "Open beheerdersmodus" }).click();
+
+  await page.goto("/games/waarden");
+  const frame = page.frameLocator("iframe[title='Je waarden']");
+  const beginTogether = frame.getByRole("button", { name: /Begin samen/ });
+  if (await beginTogether.isVisible()) {
+    await beginTogether.click();
+  }
+  await expect(frame.locator(".chip").first()).toBeVisible();
+  await frame.locator(".chip").first().click();
+
+  const gameFrame = page.locator("iframe[title='Je waarden']");
+  await expect(gameFrame).toHaveAttribute("data-game-revision", /^[1-9]\d*$/);
+  const runId = await gameFrame.getAttribute("data-game-run-id");
+  const revision = await gameFrame.getAttribute("data-game-revision");
+
+  await page.reload();
+  const restoredFrame = page.locator("iframe[title='Je waarden']");
+  await expect(restoredFrame).toBeVisible({
+    timeout: 8_000,
+  });
+  await expect(restoredFrame).toHaveAttribute("data-game-run-id", runId ?? "");
+  await expect(restoredFrame).toHaveAttribute(
+    "data-game-revision",
+    revision ?? "",
+  );
+});
+
 test("pairs two browsers and delivers chat exactly once", async ({
   browser,
   isMobile,
@@ -263,6 +296,38 @@ test("pairs two browsers and delivers chat exactly once", async ({
   await expect(first.getByText("Browser Twee is er!")).toBeVisible();
   await expect(first.locator("iframe[title='Je waarden']")).toBeVisible({ timeout: 8_000 });
   await expect(second.locator("iframe[title='Je waarden']")).toBeVisible();
+  const firstGame = first.frameLocator("iframe[title='Je waarden']");
+  await expect(firstGame.locator(".chip").first()).toBeVisible();
+  await firstGame.locator(".chip").first().click();
+  const firstFrame = first.locator("iframe[title='Je waarden']");
+  const secondFrame = second.locator("iframe[title='Je waarden']");
+  await expect(firstFrame).toHaveAttribute("data-game-revision", /^[1-9]\d*$/);
+  const sharedRunId = await firstFrame.getAttribute("data-game-run-id");
+  await expect(secondFrame).toHaveAttribute("data-game-run-id", sharedRunId ?? "");
+  await expect.poll(async () => {
+    const firstRevision = await firstFrame.getAttribute("data-game-revision");
+    const secondRevision = await secondFrame.getAttribute("data-game-revision");
+    return firstRevision === secondRevision ? firstRevision : null;
+  }, { timeout: 8_000 }).toMatch(/^[1-9]\d*$/);
+  const sharedRevision = Number(
+    await firstFrame.getAttribute("data-game-revision"),
+  );
+  await second.reload();
+  const restoredSecondFrame = second.locator("iframe[title='Je waarden']");
+  await expect(restoredSecondFrame).toHaveAttribute(
+    "data-game-run-id",
+    sharedRunId ?? "",
+  );
+  await expect.poll(async () =>
+    Number(await restoredSecondFrame.getAttribute("data-game-revision")),
+  ).toBeGreaterThanOrEqual(sharedRevision);
+  await expect.poll(async () => {
+    const firstRevision = await firstFrame.getAttribute("data-game-revision");
+    const secondRevision = await restoredSecondFrame.getAttribute(
+      "data-game-revision",
+    );
+    return firstRevision === secondRevision ? firstRevision : null;
+  }, { timeout: 8_000 }).toMatch(/^[1-9]\d*$/);
   await first.getByRole("button", { name: "Chat openen" }).click();
   await second.getByRole("button", { name: "Chat openen" }).click();
   await second.getByPlaceholder("Schrijf iets...").fill("Hallo vanuit browser twee");

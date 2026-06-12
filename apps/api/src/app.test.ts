@@ -56,30 +56,137 @@ describe("Slow Dating API", () => {
       .post("/api/pairs/join")
       .set(partnerAuth)
       .send({ code: pair.body.code });
-    const created = await request(app)
+    const lobby = await request(app)
       .post("/api/game-runs")
       .set(auth)
       .send({ gameId: "waarden", mode: "couple", version: 1 });
+    const created = await request(app)
+      .post("/api/game-runs")
+      .set(partnerAuth)
+      .send({ gameId: "waarden", mode: "couple", version: 1 });
+    const completionId = randomUUID();
 
     const completed = await request(app)
-      .patch(`/api/game-runs/${created.body.id}`)
+      .post(`/api/game-runs/${created.body.id}/actions`)
       .set(auth)
-      .send({ status: "completed", result: { answer: 1 } });
+      .send({
+        id: completionId,
+        expectedRevision: created.body.revision,
+        type: "waarden.completed",
+        payload: { answer: 1 },
+        state: { ...created.body.state, answer: 1 },
+        status: "completed",
+        result: { answer: 1 },
+      });
     const repeated = await request(app)
-      .patch(`/api/game-runs/${created.body.id}`)
+      .post(`/api/game-runs/${created.body.id}/actions`)
       .set(auth)
-      .send({ status: "completed", result: { answer: 2 } });
+      .send({
+        id: completionId,
+        expectedRevision: created.body.revision,
+        type: "waarden.completed",
+        payload: { answer: 2 },
+        state: { ...created.body.state, answer: 2 },
+        status: "completed",
+        result: { answer: 2 },
+      });
     const reopened = await request(app)
       .patch(`/api/game-runs/${created.body.id}`)
       .set(auth)
       .send({ status: "active" });
     const progress = await request(app).get("/api/progress").set(auth);
 
-    expect(completed.status).toBe(200);
-    expect(repeated.status).toBe(200);
+    expect(lobby.body.status).toBe("lobby");
+    expect(created.body.status).toBe("active");
+    expect(completed.status).toBe(201);
+    expect(repeated.status).toBe(201);
     expect(repeated.body.result).toEqual({ answer: 1 });
     expect(reopened.status).toBe(409);
     expect(progress.body.completedGames).toBe(1);
+  });
+
+  it("persists game actions idempotently and rejects stale revisions", async () => {
+    const app = await createTestApp();
+    const first = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "r".repeat(64) });
+    const second = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "s".repeat(64) });
+    const outsider = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "t".repeat(64) });
+    const firstAuth = {
+      authorization: `Bearer ${first.body.accessToken}`,
+    };
+    const secondAuth = {
+      authorization: `Bearer ${second.body.accessToken}`,
+    };
+    const outsiderAuth = {
+      authorization: `Bearer ${outsider.body.accessToken}`,
+    };
+    const pair = await request(app).post("/api/pairs").set(firstAuth).send({});
+    await request(app)
+      .post("/api/pairs/join")
+      .set(secondAuth)
+      .send({ code: pair.body.code });
+    const lobby = await request(app)
+      .post("/api/game-runs")
+      .set(firstAuth)
+      .send({ gameId: "waarden", mode: "couple", version: 1 });
+    const run = await request(app)
+      .post("/api/game-runs")
+      .set(secondAuth)
+      .send({ gameId: "waarden", mode: "couple", version: 1 });
+    const action = {
+      id: randomUUID(),
+      expectedRevision: run.body.revision,
+      type: "waarden.choice.selected",
+      payload: { value: "eerlijkheid" },
+      state: {
+        ...run.body.state,
+        selections: { [first.body.installationId]: ["eerlijkheid"] },
+      },
+    };
+
+    const applied = await request(app)
+      .post(`/api/game-runs/${run.body.id}/actions`)
+      .set(firstAuth)
+      .send(action)
+      .expect(201);
+    const duplicate = await request(app)
+      .post(`/api/game-runs/${run.body.id}/actions`)
+      .set(firstAuth)
+      .send(action)
+      .expect(201);
+    await request(app)
+      .post(`/api/game-runs/${run.body.id}/actions`)
+      .set(secondAuth)
+      .send({
+        ...action,
+        id: randomUUID(),
+        payload: { value: "vrijheid" },
+      })
+      .expect(409);
+    await request(app)
+      .post(`/api/game-runs/${run.body.id}/actions`)
+      .set(outsiderAuth)
+      .send({
+        ...action,
+        id: randomUUID(),
+        expectedRevision: applied.body.revision,
+      })
+      .expect(404);
+    const restored = await request(app)
+      .get("/api/game-runs/active/waarden")
+      .set(secondAuth)
+      .expect(200);
+
+    expect(applied.body.revision).toBe(run.body.revision + 1);
+    expect(lobby.body.status).toBe("lobby");
+    expect(run.body.status).toBe("active");
+    expect(duplicate.body.revision).toBe(applied.body.revision);
+    expect(restored.body.state).toEqual(action.state);
   });
 
   it("stores central waiting-room activity and returns personal stats", async () => {

@@ -34,6 +34,10 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
     origin: config.WEB_ORIGIN,
     methods: ["GET", "POST"],
   },
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: false,
+  },
   transports: ["polling", "websocket"],
 });
 

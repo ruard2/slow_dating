@@ -17,6 +17,7 @@ enum GameMode {
 }
 
 enum GameRunStatus {
+  lobby
   active
   completed
   abandoned
@@ -35,6 +36,7 @@ model Installation {
   waitingSessions WaitingSession[]
   waitingAnswers WaitingAnswer[]
   activityEvents ActivityEvent[]
+  gameActions    GameAction[]
 }
 
 model Account {
@@ -136,7 +138,8 @@ model GameRun {
   gameId         String
   version        Int
   mode           GameMode
-  status         GameRunStatus @default(active)
+  status         GameRunStatus @default(lobby)
+  revision       Int           @default(0)
   state          Json
   result         Json?
   installationId String
@@ -148,6 +151,22 @@ model GameRun {
   progress       Progress[]
   waitingSessions WaitingSession[]
   activityEvents ActivityEvent[]
+  actions        GameAction[]
+}
+
+model GameAction {
+  id             String       @id
+  gameRunId      String
+  installationId String
+  revision       Int
+  type           String
+  payload        Json
+  createdAt      DateTime     @default(now())
+  gameRun        GameRun      @relation(fields: [gameRunId], references: [id], onDelete: Cascade)
+  installation   Installation @relation(fields: [installationId], references: [id], onDelete: Cascade)
+
+  @@unique([gameRunId, revision])
+  @@index([gameRunId, createdAt])
 }
 
 model ActivityEvent {

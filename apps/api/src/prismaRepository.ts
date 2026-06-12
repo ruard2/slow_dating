@@ -528,15 +528,23 @@ export class PrismaRepository implements AppRepository {
             )
           : [],
       );
+      const wasReady = readyInstallationIds.has(installationId);
       readyInstallationIds.add(installationId);
       if (pair.developerMode) {
         pair.members.forEach((member) =>
           readyInstallationIds.add(member.installationId),
         );
       }
+      const allReady = pair.members.every((member) =>
+        readyInstallationIds.has(member.installationId),
+      );
       const updated = await this.prisma.gameRun.update({
         where: { id: active.id },
         data: {
+          ...(!wasReady || (allReady && active.status === "lobby")
+            ? { revision: { increment: 1 } }
+            : {}),
+          ...(allReady ? { status: "active" as const } : {}),
           state: {
             ...state,
             readyInstallationIds: [...readyInstallationIds],
@@ -561,6 +569,7 @@ export class PrismaRepository implements AppRepository {
           gameId: input.gameId,
           version: input.version,
           mode: "couple",
+          status: pair.developerMode ? "active" : "lobby",
           state: {
             readyInstallationIds: pair.developerMode
               ? pair.members.map((member) => member.installationId)
@@ -662,6 +671,95 @@ export class PrismaRepository implements AppRepository {
       });
     }
     return this.toGameRun(updated);
+  }
+
+  async applyGameAction(
+    installationId: string,
+    runId: string,
+    action: {
+      id: string;
+      expectedRevision: number;
+      type: string;
+      payload: Record<string, unknown>;
+      state: Record<string, unknown>;
+      status?: "completed" | "abandoned";
+      result?: Record<string, unknown>;
+    },
+  ) {
+    await this.requirePairGameRun(installationId, runId);
+    const duplicate = await this.prisma.gameAction.findUnique({
+      where: { id: action.id },
+    });
+    if (duplicate) {
+      if (duplicate.gameRunId !== runId) {
+        throw new DomainError("Deze actie-ID hoort bij een ander spel.", 409);
+      }
+      const current = await this.prisma.gameRun.findUniqueOrThrow({
+        where: { id: runId },
+      });
+      return this.toGameRun(current);
+    }
+
+    return this.prisma.$transaction(async (transaction) => {
+      const updated = await transaction.gameRun.updateMany({
+        where: {
+          id: runId,
+          status: "active",
+          revision: action.expectedRevision,
+        },
+        data: {
+          revision: { increment: 1 },
+          state: action.state as Prisma.InputJsonValue,
+          ...(action.result === undefined
+            ? {}
+            : { result: action.result as Prisma.InputJsonValue }),
+          ...(action.status === undefined ? {} : { status: action.status }),
+          ...(action.status === "completed"
+            ? { completedAt: new Date(), lobbyKey: null }
+            : action.status === "abandoned"
+              ? { lobbyKey: null }
+              : {}),
+        },
+      });
+      if (updated.count !== 1) {
+        throw new DomainError("De spelstatus is inmiddels gewijzigd.", 409);
+      }
+      const run = await transaction.gameRun.findUniqueOrThrow({
+        where: { id: runId },
+      });
+      await transaction.gameAction.create({
+        data: {
+          id: action.id,
+          gameRunId: runId,
+          installationId,
+          revision: run.revision,
+          type: action.type,
+          payload: action.payload as Prisma.InputJsonValue,
+        },
+      });
+      if (action.status === "completed") {
+        await transaction.activityEvent.upsert({
+          where: {
+            installationId_clientEventId: {
+              installationId,
+              clientEventId: `game-completed:${run.id}`,
+            },
+          },
+          update: {},
+          create: {
+            clientEventId: `game-completed:${run.id}`,
+            installationId,
+            pairId: run.pairId,
+            gameRunId: run.id,
+            gameId: run.gameId,
+            category: "game",
+            type: "game.completed",
+            payload: (action.result ?? {}) as Prisma.InputJsonValue,
+          },
+        });
+      }
+      return this.toGameRun(run);
+    });
   }
 
   async recordActivity(
@@ -1140,9 +1238,14 @@ export class PrismaRepository implements AppRepository {
   }
 
   private async requirePairGameRun(installationId: string, gameRunId: string) {
-    const pair = await this.requireCompletePair(installationId);
     const run = await this.prisma.gameRun.findFirst({
-      where: { id: gameRunId, pairId: pair.id },
+      where: {
+        id: gameRunId,
+        pair: {
+          disconnectedAt: null,
+          members: { some: { installationId } },
+        },
+      },
     });
     if (!run) throw new DomainError("Spelsessie niet gevonden.", 404);
     return run;
@@ -1231,7 +1334,8 @@ export class PrismaRepository implements AppRepository {
     mode: "couple";
     pairId: string | null;
     installationId: string;
-    status: "active" | "completed" | "abandoned";
+    status: "lobby" | "active" | "completed" | "abandoned";
+    revision: number;
     state: unknown;
     result: unknown;
     startedAt: Date;
@@ -1245,6 +1349,7 @@ export class PrismaRepository implements AppRepository {
       pairId: run.pairId,
       installationId: run.installationId,
       status: run.status,
+      revision: run.revision,
       state: (run.state ?? {}) as Record<string, unknown>,
       result: run.result as Record<string, unknown> | null,
       startedAt: run.startedAt.toISOString(),

@@ -143,7 +143,8 @@ export const gameRunSchema = z.object({
   mode: gameModeSchema,
   pairId: idSchema.nullable(),
   installationId: idSchema,
-  status: z.enum(["active", "completed", "abandoned"]),
+  status: z.enum(["lobby", "active", "completed", "abandoned"]),
+  revision: z.number().int().nonnegative(),
   state: z.record(z.string(), z.unknown()),
   result: z.record(z.string(), z.unknown()).nullable(),
   startedAt: z.string().datetime(),
@@ -163,6 +164,18 @@ export const updateGameRunSchema = z.object({
 });
 
 export type GameRun = z.infer<typeof gameRunSchema>;
+
+export const gameActionRequestSchema = z.object({
+  id: idSchema,
+  expectedRevision: z.number().int().nonnegative(),
+  type: z.string().min(1).max(100),
+  payload: z.record(z.string(), z.unknown()).default({}),
+  state: z.record(z.string(), z.unknown()),
+  status: z.enum(["completed", "abandoned"]).optional(),
+  result: z.record(z.string(), z.unknown()).optional(),
+});
+
+export type GameActionRequest = z.infer<typeof gameActionRequestSchema>;
 
 export const activityCategorySchema = z.enum([
   "game",
@@ -286,6 +299,15 @@ export const realtimeClientEventSchema = z.discriminatedUnion("type", [
     payload: z.object({
       gameRunId: idSchema,
       state: z.record(z.string(), z.unknown()),
+    }),
+  }),
+  z.object({
+    id: z.string().min(1),
+    type: z.literal("game.state.updated"),
+    version: z.literal(1),
+    payload: z.object({
+      gameRunId: idSchema,
+      revision: z.number().int().nonnegative(),
     }),
   }),
   z.object({

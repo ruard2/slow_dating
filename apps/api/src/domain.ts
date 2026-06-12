@@ -90,6 +90,15 @@ export interface DataState {
     createdAt: string;
   }>;
   activityEvents: ActivityEvent[];
+  gameActions: Array<{
+    id: string;
+    gameRunId: string;
+    installationId: string;
+    revision: number;
+    type: string;
+    payload: Record<string, unknown>;
+    createdAt: string;
+  }>;
   legacyArchive?: {
     importedAt: string;
     profiles: unknown;
@@ -165,6 +174,19 @@ export interface AppRepository {
     installationId: string,
     runId: string,
     changes: Partial<Pick<GameRun, "result" | "state" | "status">>,
+  ): Promise<GameRun>;
+  applyGameAction(
+    installationId: string,
+    runId: string,
+    action: {
+      id: string;
+      expectedRevision: number;
+      type: string;
+      payload: Record<string, unknown>;
+      state: Record<string, unknown>;
+      status?: "completed" | "abandoned";
+      result?: Record<string, unknown>;
+    },
   ): Promise<GameRun>;
   recordActivity(
     installationId: string,

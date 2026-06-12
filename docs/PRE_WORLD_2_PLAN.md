@@ -15,6 +15,13 @@ Dit plan wordt strikt in volgorde uitgevoerd. Iedere fase:
 5. wordt afzonderlijk gecommit;
 6. wordt pas gevolgd door de volgende fase als de klaarcriteria slagen.
 
+## Voortgang
+
+- Fase 1: afgerond
+- Fase 2: afgerond
+- Fase 3: afgerond
+- Fase 4: volgende fase
+
 ## Niet Onderhandelbare Regels
 
 - De app is uitsluitend voor gekoppelde spelers; er komt geen solomodus terug.

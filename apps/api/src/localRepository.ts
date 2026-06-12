@@ -39,6 +39,7 @@ const EMPTY_STATE: DataState = {
   waitingSessions: [],
   waitingAnswers: [],
   activityEvents: [],
+  gameActions: [],
 };
 
 const CODE_CHARACTERS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -89,6 +90,10 @@ export class LocalRepository implements AppRepository {
       this.state = {
         ...structuredClone(EMPTY_STATE),
         ...stored,
+        gameRuns: (stored.gameRuns ?? []).map((run) => ({
+          ...run,
+          revision: run.revision ?? 0,
+        })),
       };
     } catch {
       await this.persist();
@@ -517,7 +522,7 @@ export class LocalRepository implements AppRepository {
       (run) =>
         run.pairId === pair.id &&
         run.gameId === input.gameId &&
-        run.status === "active",
+        (run.status === "lobby" || run.status === "active"),
     );
     if (active) {
       const readyInstallationIds = new Set(
@@ -527,6 +532,7 @@ export class LocalRepository implements AppRepository {
             )
           : [],
       );
+      const wasReady = readyInstallationIds.has(installationId);
       readyInstallationIds.add(installationId);
       if (pair.developerMode) {
         pair.members.forEach((member) =>
@@ -537,6 +543,13 @@ export class LocalRepository implements AppRepository {
         ...active.state,
         readyInstallationIds: [...readyInstallationIds],
       };
+      const allReady = pair.members.every((member) =>
+        readyInstallationIds.has(member.installationId),
+      );
+      if (!wasReady || (allReady && active.status === "lobby")) {
+        active.revision += 1;
+      }
+      if (allReady) active.status = "active";
       await this.persist();
       await this.recordActivity(installationId, {
         clientEventId: `game-entered:${active.id}`,
@@ -554,7 +567,8 @@ export class LocalRepository implements AppRepository {
       gameId: input.gameId,
       mode: "couple",
       version: input.version,
-      status: "active",
+      status: pair.developerMode ? "active" : "lobby",
+      revision: 0,
       state: {
         readyInstallationIds: pair.developerMode
           ? pair.members.map((member) => member.installationId)
@@ -583,7 +597,7 @@ export class LocalRepository implements AppRepository {
       (candidate) =>
         candidate.pairId === pair.id &&
         candidate.gameId === gameId &&
-        candidate.status === "active",
+        (candidate.status === "lobby" || candidate.status === "active"),
     );
     return run ? structuredClone(run) : null;
   }
@@ -626,6 +640,66 @@ export class LocalRepository implements AppRepository {
     }
     await this.persist();
     if (changes.status === "completed") {
+      await this.recordActivity(installationId, {
+        clientEventId: `game-completed:${run.id}`,
+        category: "game",
+        type: "game.completed",
+        gameRunId: run.id,
+        payload: { result: run.result ?? {} },
+      });
+    }
+    return structuredClone(run);
+  }
+
+  async applyGameAction(
+    installationId: string,
+    runId: string,
+    action: {
+      id: string;
+      expectedRevision: number;
+      type: string;
+      payload: Record<string, unknown>;
+      state: Record<string, unknown>;
+      status?: "completed" | "abandoned";
+      result?: Record<string, unknown>;
+    },
+  ) {
+    const run = this.requirePairGameRun(installationId, runId);
+    const duplicate = this.state.gameActions.find(
+      (candidate) => candidate.id === action.id,
+    );
+    if (duplicate) {
+      if (duplicate.gameRunId !== runId) {
+        throw new DomainError("Deze actie-ID hoort bij een ander spel.", 409);
+      }
+      return structuredClone(run);
+    }
+    if (run.status !== "active") {
+      throw new DomainError("Deze spelsessie is niet meer actief.", 409);
+    }
+    if (run.revision !== action.expectedRevision) {
+      throw new DomainError("De spelstatus is inmiddels gewijzigd.", 409);
+    }
+    run.revision += 1;
+    run.state = structuredClone(action.state);
+    if (action.result !== undefined) {
+      run.result = structuredClone(action.result);
+    }
+    if (action.status !== undefined) {
+      run.status = action.status;
+      run.completedAt = action.status === "completed" ? now() : null;
+    }
+    this.state.gameActions.push({
+      id: action.id,
+      gameRunId: runId,
+      installationId,
+      revision: run.revision,
+      type: action.type,
+      payload: structuredClone(action.payload),
+      createdAt: now(),
+    });
+    await this.persist();
+    if (action.status === "completed") {
       await this.recordActivity(installationId, {
         clientEventId: `game-completed:${run.id}`,
         category: "game",
@@ -1062,11 +1136,20 @@ export class LocalRepository implements AppRepository {
   }
 
   private requirePairGameRun(installationId: string, gameRunId: string) {
-    const pair = this.requireCompletePairRecord(installationId);
     const run = this.state.gameRuns.find(
-      (candidate) => candidate.id === gameRunId && candidate.pairId === pair.id,
+      (candidate) => candidate.id === gameRunId,
     );
-    if (!run) throw new DomainError("Spelsessie niet gevonden.", 404);
+    const pair = run?.pairId
+      ? this.state.pairs.find(
+          (candidate) =>
+            candidate.id === run.pairId &&
+            !candidate.disconnectedAt &&
+            candidate.memberIds.includes(installationId),
+        )
+      : null;
+    if (!run || !pair) {
+      throw new DomainError("Spelsessie niet gevonden.", 404);
+    }
     return run;
   }
 

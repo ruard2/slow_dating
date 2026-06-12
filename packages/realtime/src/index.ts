@@ -19,6 +19,9 @@ export function createRealtimeClient({
       : {}),
     autoConnect: false,
     reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 500,
+    reconnectionDelayMax: 5_000,
     transports: ["polling", "websocket"],
   });
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 
-import type { Pair } from "@slow-dating/contracts";
+import type { GameRun, Pair } from "@slow-dating/contracts";
 import { findPlayableGame } from "@slow-dating/content";
 
 import styles from "../../App.module.css";
@@ -31,8 +31,10 @@ export function GamePage({
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const enteredRef = useRef<string | null>(null);
   const completedRunRef = useRef<string | null>(null);
+  const runRef = useRef<GameRun | null>(null);
+  const actionQueueRef = useRef(Promise.resolve());
   const [arrivalComplete, setArrivalComplete] = useState(false);
-  const { lastEvent, send } = useRealtime();
+  const { connected, lastEvent, send } = useRealtime();
   const setDrawer = useAppStore((state) => state.setDrawer);
   const game = findPlayableGame(gameId);
   const activeRun = useQuery({
@@ -55,12 +57,13 @@ export function GamePage({
       )
     : [];
   const started = Boolean(
-    (pair?.developerMode && developerPartnerPresent) ||
-      (pair &&
-        !pair.developerMode &&
-        readyInstallationIds.filter((id) =>
-          pair.members.some((member) => member.installationId === id),
-        ).length >= 2),
+    run?.status === "active" &&
+      ((pair?.developerMode && developerPartnerPresent) ||
+        (pair &&
+          !pair.developerMode &&
+          readyInstallationIds.filter((id) =>
+            pair.members.some((member) => member.installationId === id),
+          ).length >= 2)),
   );
   const partner = pair?.members.find(
     (member) => member.installationId !== session?.installationId,
@@ -70,6 +73,16 @@ export function GamePage({
       (!pair?.developerMode || developerPartnerArriving) &&
       run.installationId === session?.installationId,
   );
+
+  useEffect(() => {
+    runRef.current = run ?? null;
+  }, [run]);
+
+  useEffect(() => {
+    if (connected && run) {
+      void activeRun.refetch();
+    }
+  }, [activeRun, connected, run]);
 
   useEffect(() => {
     if (
@@ -85,12 +98,16 @@ export function GamePage({
 
   useEffect(() => {
     if (!run || started) return;
-    void api.startWaitingSession(run.id);
+    void api.startWaitingSession(run.id).catch(() => {
+      // Pair teardown can race with the final waiting-room request.
+    });
   }, [run, started]);
 
   useEffect(() => {
     if (!started || !run || !hasWaited || arrivalComplete) return;
-    void api.endWaitingSession(run.id);
+    void api.endWaitingSession(run.id).catch(() => {
+      // Pair teardown can race with the final waiting-room request.
+    });
     const timeout = window.setTimeout(() => {
       setArrivalComplete(true);
       if (pair?.developerMode) onDeveloperPartnerArrivalComplete();
@@ -115,6 +132,13 @@ export function GamePage({
       }
       return;
     }
+    if (lastEvent?.type === "game.state.updated") {
+      const payload = lastEvent.payload as { gameRunId?: string };
+      if (payload.gameRunId === run?.id) {
+        void activeRun.refetch();
+      }
+      return;
+    }
     if (lastEvent?.type !== "game.sync") return;
     const payload = lastEvent.payload as {
       gameRunId?: string;
@@ -124,7 +148,22 @@ export function GamePage({
       { type: "slow-dating:legacy-event", payload: payload.state },
       window.location.origin,
     );
-  }, [gameId, lastEvent, pair?.id, queryClient]);
+  }, [activeRun, gameId, lastEvent, pair?.id, queryClient, run?.id]);
+
+  useEffect(() => {
+    if (!run || !frameRef.current?.contentWindow) return;
+    frameRef.current.contentWindow.postMessage(
+      {
+        type: "slow-dating:legacy-event",
+        payload: {
+          legacyEvent: "state_restored",
+          data: run.state,
+          revision: run.revision,
+        },
+      },
+      window.location.origin,
+    );
+  }, [run]);
 
   useEffect(() => {
     function receiveLegacyMessage(event: MessageEvent) {
@@ -137,18 +176,22 @@ export function GamePage({
       }
       const legacyEvent = String(event.data.legacyEvent ?? "");
       if (run) {
-        void api.recordActivity({
-          clientEventId: crypto.randomUUID(),
-          category: "game",
-          type: `legacy.${legacyEvent || "unknown"}`,
-          gameRunId: run.id,
-          payload:
-            event.data.data &&
-            typeof event.data.data === "object" &&
-            !Array.isArray(event.data.data)
-              ? event.data.data
-              : { value: event.data.data ?? null },
-        });
+        void api
+          .recordActivity({
+            clientEventId: crypto.randomUUID(),
+            category: "game",
+            type: `legacy.${legacyEvent || "unknown"}`,
+            gameRunId: run.id,
+            payload:
+              event.data.data &&
+              typeof event.data.data === "object" &&
+              !Array.isArray(event.data.data)
+                ? event.data.data
+                : { value: event.data.data ?? null },
+          })
+          .catch(() => {
+            // The iframe can emit one final diagnostic event during teardown.
+          });
       }
       if (legacyEvent === "open_chat") {
         setDrawer("chat");
@@ -162,35 +205,82 @@ export function GamePage({
         setDrawer("pair");
         return;
       }
-      if (
-        legacyEvent === "session_complete" &&
-        run &&
-        completedRunRef.current !== run.id
-      ) {
-        completedRunRef.current = run.id;
-        void api
-          .completeGameRun(run.id, event.data.data ?? {})
-          .then(() =>
-            queryClient.invalidateQueries({ queryKey: ["progress"] }),
-          )
-          .catch(() => {
-            completedRunRef.current = null;
-          });
-      }
       if (run) {
-        send("game.sync", {
-          gameRunId: run.id,
-          state: {
-            legacyEvent,
-            data: event.data.data ?? {},
-          },
+        const completesRun =
+          legacyEvent === "session_complete" &&
+          completedRunRef.current !== run.id;
+        if (legacyEvent === "session_complete" && !completesRun) return;
+        if (completesRun) completedRunRef.current = run.id;
+        const actionId = crypto.randomUUID();
+        const payload =
+          event.data.data &&
+          typeof event.data.data === "object" &&
+          !Array.isArray(event.data.data)
+            ? event.data.data
+            : { value: event.data.data ?? null };
+        actionQueueRef.current = actionQueueRef.current.then(async () => {
+          let current = runRef.current;
+          if (!current) return;
+          const apply = () =>
+            api.applyGameAction(current!.id, {
+              id: actionId,
+              expectedRevision: current!.revision,
+              type: `legacy.${legacyEvent || "unknown"}`,
+              payload,
+              state: {
+                ...current!.state,
+                lastLegacyEvent: {
+                  type: legacyEvent,
+                  data: event.data.data ?? {},
+                },
+              },
+              ...(completesRun
+                ? {
+                    status: "completed" as const,
+                    result: payload,
+                  }
+                : {}),
+            });
+          let updated: GameRun;
+          try {
+            updated = await apply();
+          } catch {
+            const refreshed = await activeRun.refetch();
+            if (!refreshed.data) return;
+            current = refreshed.data;
+            runRef.current = current;
+            updated = await apply();
+          }
+          runRef.current = updated;
+          queryClient.setQueryData(
+            ["active-game-run", pair?.id, gameId],
+            updated,
+          );
+          send("game.state.updated", {
+            gameRunId: updated.id,
+            revision: updated.revision,
+          });
+          if (completesRun) {
+            await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          }
+        }).catch(() => {
+            if (completesRun) completedRunRef.current = null;
+            void activeRun.refetch();
         });
       }
     }
 
     window.addEventListener("message", receiveLegacyMessage);
     return () => window.removeEventListener("message", receiveLegacyMessage);
-  }, [queryClient, run, send, setDrawer]);
+  }, [
+    activeRun,
+    gameId,
+    pair?.id,
+    queryClient,
+    run,
+    send,
+    setDrawer,
+  ]);
 
   if (!game) return <Navigate replace to="/" />;
 
@@ -242,6 +332,22 @@ export function GamePage({
     <main className={styles.gameFramePage}>
       <iframe
         className={styles.gameFrame}
+        data-game-revision={run?.revision}
+        data-game-run-id={run?.id}
+        onLoad={() => {
+          if (!run) return;
+          frameRef.current?.contentWindow?.postMessage(
+            {
+              type: "slow-dating:legacy-event",
+              payload: {
+                legacyEvent: "state_restored",
+                data: run.state,
+                revision: run.revision,
+              },
+            },
+            window.location.origin,
+          );
+        }}
         ref={frameRef}
         src={`/legacy/${game.legacyPath}?embedded=1&role=${
           session?.installationId === run?.installationId
