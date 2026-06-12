@@ -21,6 +21,7 @@
     "test": "npm run test:unit",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
+    "test:pwa": "playwright test --config playwright.pwa.config.ts",
     "db:up": "node scripts/db-up.mjs",
     "db:down": "node scripts/db-down.mjs",
     "db:reset": "node scripts/db-reset.mjs",

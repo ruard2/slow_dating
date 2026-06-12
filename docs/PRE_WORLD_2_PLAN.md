@@ -24,7 +24,8 @@ Dit plan wordt strikt in volgorde uitgevoerd. Iedere fase:
 - Architectuurreview: afgerond
 - Fase 5: afgerond
 - Fase 6: implementatie afgerond; lokale runtimecontrole na Windows-herstart
-- Fase 7: volgende fase
+- Fase 7: afgerond
+- Go/no-go wereld 2: wacht alleen op lokale PostgreSQL-runtimecontrole
 
 ## Niet Onderhandelbare Regels
 
@@ -263,6 +264,14 @@ Klaar wanneer:
 - CI alle bovenstaande scenario's stabiel draait;
 - geen console-, type-, lint- of buildfouten bestaan;
 - regressies in de permanente shell visueel worden gedetecteerd.
+
+Status: afgerond. De poort test het volledige native Waarden-spel met twee
+browsers, lobby- en spelrefresh, offline/reconnect, idempotente en verouderde
+acties, relatie-isolatie en opnieuw koppelen. Zes Windows-baselines bewaken
+kaart, wachtkamer en Waarden op desktop en mobiel. De gebouwde PWA wordt
+offline gestart en Cache Storage wordt gecontroleerd op afwezigheid van
+persoonlijke API-data. Wereld- en shelldialogen hebben focus- en Escape-tests.
+CI heeft aparte functionele, visuele en PostgreSQL-jobs.
 
 ## Go/No-Go Voor Wereld 2
 

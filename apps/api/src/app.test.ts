@@ -37,6 +37,7 @@ describe("Slow Dating API", () => {
       version: "0.2.0",
       storage: "local",
     });
+    expect(response.headers["cache-control"]).toBe("no-store");
   });
 
   it("completes a game run idempotently and never reopens it", async () => {
@@ -560,5 +561,61 @@ describe("Slow Dating API", () => {
     expect(blockedResults.status).toBe(404);
     expect(afterDisconnect.body.personal.completedRuns).toBe(1);
     expect(afterDisconnect.body.currentRelationship).toBeNull();
+  });
+
+  it("allows a member to form a new pair without exposing the old relationship", async () => {
+    const app = await createTestApp();
+    const first = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "n".repeat(64) });
+    const oldPartner = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "o".repeat(64) });
+    const newPartner = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "p".repeat(64) });
+    const firstAuth = { authorization: `Bearer ${first.body.accessToken}` };
+    const oldAuth = {
+      authorization: `Bearer ${oldPartner.body.accessToken}`,
+    };
+    const newAuth = {
+      authorization: `Bearer ${newPartner.body.accessToken}`,
+    };
+    const oldPair = await request(app)
+      .post("/api/pairs")
+      .set(firstAuth)
+      .send({});
+    await request(app)
+      .post("/api/pairs/join")
+      .set(oldAuth)
+      .send({ code: oldPair.body.code });
+    await request(app).delete("/api/pairs/current").set(firstAuth).expect(204);
+
+    const newPair = await request(app)
+      .post("/api/pairs")
+      .set(firstAuth)
+      .send({});
+    await request(app)
+      .post("/api/pairs/join")
+      .set(newAuth)
+      .send({ code: newPair.body.code });
+    const current = await request(app)
+      .get("/api/pairs/current")
+      .set(firstAuth)
+      .expect(200);
+    const newPartnerArchives = await request(app)
+      .get("/api/relationships/archives")
+      .set(newAuth)
+      .expect(200);
+    const ownerArchives = await request(app)
+      .get("/api/relationships/archives")
+      .set(firstAuth)
+      .expect(200);
+
+    expect(current.body.id).toBe(newPair.body.id);
+    expect(newPartnerArchives.body).toEqual([]);
+    expect(ownerArchives.body).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: oldPair.body.id })]),
+    );
   });
 });

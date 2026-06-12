@@ -32,7 +32,35 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Browser smoke test
+        env:
+          SKIP_VISUAL: "1"
         run: npm run test:e2e
+
+      - name: Built PWA offline and privacy test
+        run: npm run test:pwa
+
+  visual:
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install chromium
+
+      - name: Compare desktop and mobile visual baselines
+        run: npx playwright test tests/e2e/visual.spec.ts
 
   postgres:
     runs-on: ubuntu-latest

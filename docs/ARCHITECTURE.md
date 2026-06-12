@@ -54,6 +54,9 @@ filtert uitsluitend op de huidige `pairId`.
 ## Privacy
 
 - De PWA cachet geen API-, profiel- of chatresponses.
+- De service worker gebruikt alleen precache voor statische buildbestanden;
+  `/api`, `/socket.io` en `/legacy` zijn uitgesloten van navigatiefallback en
+  hebben geen runtime-cachestrategie.
 - Ontkoppelen sluit de relatie af. Berichten en semantische spelresultaten
   blijven alleen voor de twee voormalige leden beschikbaar in het
   relatiearchief.

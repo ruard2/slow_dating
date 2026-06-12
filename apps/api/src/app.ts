@@ -143,6 +143,10 @@ export function createApp({
   );
   app.use(cors({ origin: webOrigin, credentials: true }));
   app.use(express.json({ limit: "250kb" }));
+  app.use("/api", (_request, response, next) => {
+    response.set("Cache-Control", "no-store");
+    next();
+  });
 
   app.get("/api/health", (_request, response) => {
     response.json({

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -26,6 +26,7 @@ export function AppShell() {
   const queryClient = useQueryClient();
   const drawer = useAppStore((state) => state.drawer);
   const setDrawer = useAppStore((state) => state.setDrawer);
+  const drawerCloseRef = useRef<HTMLButtonElement | null>(null);
   const [developerPartnerPresent, setDeveloperPartnerPresent] = useState(
     () =>
       localStorage.getItem("slow-dating:developer-partner-present") !== "false",
@@ -33,6 +34,16 @@ export function AppShell() {
   const [developerPartnerArriving, setDeveloperPartnerArriving] =
     useState(false);
   const pair = useQuery({ queryKey: ["pair"], queryFn: api.getPair });
+
+  useEffect(() => {
+    if (!drawer) return;
+    drawerCloseRef.current?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDrawer(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [drawer, setDrawer]);
   const messages = useQuery<Message[]>({
     queryKey: ["messages", pair.data?.id],
     queryFn: api.getMessages,
@@ -181,13 +192,25 @@ export function AppShell() {
 
       {drawer && (
         <aside
+          aria-label={
+            drawer === "chat"
+              ? "Chat"
+              : drawer === "call"
+                ? "Bellen"
+                : drawer === "pair"
+                  ? "Koppeling"
+                  : "Opties"
+          }
+          aria-modal="true"
           className={`${styles.drawer} ${
             drawer === "chat" ? styles.chatDrawer : ""
           }`}
+          role="dialog"
         >
           <button
             className={styles.closeButton}
             onClick={() => setDrawer(null)}
+            ref={drawerCloseRef}
             type="button"
           >
             Sluiten

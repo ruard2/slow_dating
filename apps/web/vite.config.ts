@@ -2,6 +2,12 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+export const pwaWorkbox = {
+  navigateFallback: "/index.html",
+  navigateFallbackDenylist: [/^\/api\//, /^\/socket\.io\//, /^\/legacy\//],
+  runtimeCaching: [],
+};
+
 export default defineConfig({
   plugins: [
     react(),
@@ -16,10 +22,7 @@ export default defineConfig({
         display: "standalone",
         orientation: "portrait",
       },
-      workbox: {
-        navigateFallback: "/index.html",
-        runtimeCaching: [],
-      },
+      workbox: pwaWorkbox,
     }),
   ],
   resolve: {

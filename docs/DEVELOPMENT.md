@@ -28,8 +28,21 @@ npm run legacy:start
 ```powershell
 npm run check
 npm run test:e2e
+npm run test:pwa
 npm run db:check
 ```
+
+De browsertests bevatten functionele desktop- en mobiele flows. Visuele
+wijzigingen aan kaart, wachtkamer of Waarden moeten bewust worden beoordeeld
+voordat baselines worden vernieuwd:
+
+```powershell
+npx playwright test tests/e2e/visual.spec.ts --update-snapshots
+```
+
+De CI vergelijkt deze baselines op een vaste Windows-runner. `test:pwa` gebruikt
+de productiebuild en controleert offline opstarten plus de afwezigheid van
+persoonlijke `/api`-responses in Cache Storage.
 
 `npm run db:check` start PostgreSQL, bouwt de database vanaf nul op, past alle
 Prisma-migraties toe, draait hetzelfde repositorycontract tegen JSON en

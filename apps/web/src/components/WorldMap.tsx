@@ -238,9 +238,20 @@ export function WorldMap({
 }) {
   const navigate = useNavigate();
   const scroller = useRef<HTMLDivElement | null>(null);
+  const unlockCloseRef = useRef<HTMLButtonElement | null>(null);
   const [selectedWorld, setSelectedWorld] = useState<WorldDefinition | null>(null);
   const [toastWorld, setToastWorld] = useState<WorldDefinition | null>(null);
   const position = progressPosition(progress.completedGames);
+
+  useEffect(() => {
+    if (!selectedWorld) return;
+    unlockCloseRef.current?.focus();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedWorld(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [selectedWorld]);
 
   function scrollToWorld(worldId: number) {
     const target = scroller.current?.querySelector<HTMLElement>(
@@ -372,7 +383,14 @@ export function WorldMap({
                   ? "Open wereld"
                   : "Wereld vrijschakelen"}
             </button>
-            <button className={styles.unlockClose} onClick={() => setSelectedWorld(null)} type="button">Misschien later</button>
+            <button
+              className={styles.unlockClose}
+              onClick={() => setSelectedWorld(null)}
+              ref={unlockCloseRef}
+              type="button"
+            >
+              Misschien later
+            </button>
           </section>
         </div>
       )}
