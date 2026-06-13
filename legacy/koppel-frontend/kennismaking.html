@@ -5,151 +5,130 @@
 <script src="sd-client.js"></script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>Leer Elkaar Kennen ✦</title>
+<title>Leer elkaar kennen</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
+:root{
+  --ink:#f7efe2;
+  --muted:#c4b9a7;
+  --amber:#e3ad61;
+  --amber-soft:#f1c982;
+  --forest:#102018;
+  --panel:rgba(12,25,18,.88);
+  --panel-soft:rgba(21,36,27,.82);
+  --line:rgba(231,193,129,.22);
+  --good:#8fbd8a;
+  --bad:#df8d79;
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;background:#1a0a2e;color:#f0e6d3;font-family:'Inter',sans-serif;overflow:hidden;}
-
-/* ── Screens ───────────────────────────────── */
-.screen{display:none;position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;}
+html,body{height:100%;background:#08120d;color:var(--ink);font-family:'Inter',sans-serif;overflow:hidden;}
+body::before{content:'';position:fixed;inset:0;background:
+  linear-gradient(180deg,rgba(5,12,9,.34) 0%,rgba(5,12,9,.18) 42%,rgba(5,12,9,.48) 100%),
+  url('images/kennismaking-background.png') center center/cover no-repeat;z-index:0;}
+body::after{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse at 50% 55%,transparent 0%,rgba(3,10,7,.12) 48%,rgba(3,10,7,.48) 100%);z-index:0;pointer-events:none;}
+.screen{display:none;position:absolute;inset:0;z-index:1;overflow-y:auto;overflow-x:hidden;padding-bottom:108px;}
 .screen.active{display:flex;flex-direction:column;align-items:center;}
+.screen>.pad{margin:auto 0;}
 
-/* ── Bg gradient ───────────────────────────── */
-body::before{content:'';position:fixed;inset:0;
-  background:radial-gradient(ellipse at 30% 20%,#3d1050 0%,transparent 60%),
-             radial-gradient(ellipse at 70% 80%,#1a3050 0%,transparent 60%),
-             #0f0720;
-  z-index:0;}
-.screen{z-index:1;}
+h1,h2{font-family:'Playfair Display',serif;text-align:center;line-height:1.16;text-wrap:balance;}
+h1{font-size:1.9rem;font-weight:600;color:var(--amber-soft);text-shadow:0 2px 18px rgba(0,0,0,.55);}
+h2{font-size:1.42rem;font-weight:600;color:var(--ink);}
+.sub{color:var(--muted);font-size:.87rem;text-align:center;line-height:1.55;}
 
-/* ── Typography ────────────────────────────── */
-h1{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:600;
-   background:linear-gradient(135deg,#d4af37,#f0d060,#d4af37);
-   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-   text-align:center;line-height:1.2;}
-h2{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#f0e6d3;text-align:center;}
-.sub{color:#a090b8;font-size:0.85rem;text-align:center;line-height:1.5;}
+.btn{display:block;width:100%;padding:14px 20px;border:1px solid transparent;border-radius:13px;
+  font:600 .96rem/1.2 'Inter',sans-serif;cursor:pointer;transition:transform .18s,background .18s,border-color .18s;}
+.btn:active{transform:scale(.98);}
+.btn-gold{background:linear-gradient(180deg,#edbf70,#d99b4b);color:#182016;box-shadow:0 8px 22px rgba(0,0,0,.2);}
+.btn-outline{background:rgba(7,17,12,.42);border-color:rgba(227,173,97,.52);color:var(--amber-soft);}
+.btn-ghost{background:rgba(10,23,16,.64);color:var(--ink);border-color:rgba(255,255,255,.13);backdrop-filter:blur(10px);}
+.btn-sm{padding:10px 16px;font-size:.85rem;border-radius:10px;}
 
-/* ── Buttons ───────────────────────────────── */
-.btn{display:block;width:100%;padding:14px 20px;border:none;border-radius:14px;
-     font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;
-     font-family:'Inter',sans-serif;}
-.btn-gold{background:linear-gradient(135deg,#d4af37,#f0d060);color:#1a0a2e;}
-.btn-gold:active{transform:scale(0.97);}
-.btn-outline{background:transparent;border:1.5px solid #d4af3766;color:#d4af37;}
-.btn-outline:active{background:#d4af3715;}
-.btn-ghost{background:rgba(255,255,255,0.07);color:#f0e6d3;border:1px solid rgba(255,255,255,0.1);}
-.btn-ghost:active{background:rgba(255,255,255,0.12);}
-.btn-sm{padding:10px 16px;font-size:0.875rem;border-radius:10px;}
-
-/* ── Card ──────────────────────────────────── */
-.card-wrap{perspective:1000px;width:100%;max-width:340px;height:220px;cursor:pointer;}
-.card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d;}
+.card-wrap{perspective:1000px;width:100%;max-width:350px;height:232px;cursor:pointer;}
+.card-inner{position:relative;width:100%;height:100%;transition:transform .58s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d;}
 .card-wrap.flipped .card-inner{transform:rotateY(180deg);}
-.card-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:20px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
-.card-front{background:linear-gradient(135deg,#2d1b4e,#1e1040);
-  border:1.5px solid #d4af3740;
-  box-shadow:0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(212,175,55,0.2);}
-.card-back{background:linear-gradient(135deg,#1e3050,#2d1b4e);
-  border:1.5px solid #d4af3740;transform:rotateY(180deg);
-  box-shadow:0 8px 32px rgba(0,0,0,0.4);}
-.card-cat{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;
-  color:#d4af37;margin-bottom:12px;opacity:0.8;}
-.card-vraag{font-family:'Playfair Display',serif;font-size:1.05rem;color:#f0e6d3;
-  text-align:center;line-height:1.5;font-style:italic;}
-.card-followup{font-size:0.8rem;color:#a090b8;text-align:center;margin-top:10px;font-style:normal;}
-.card-tap{font-size:0.75rem;color:#d4af3788;text-align:center;}
-.card-icon{font-size:2rem;margin-bottom:8px;}
-.card-hint{font-size:0.78rem;color:#a090b8;margin-top:6px;text-align:center;}
+.card-face{position:absolute;inset:0;-webkit-backface-visibility:hidden;backface-visibility:hidden;border-radius:20px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:27px;border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.34);}
+.card-front{background:linear-gradient(145deg,rgba(30,49,35,.96),rgba(10,24,17,.97));transition:visibility 0s;}
+.card-wrap.flipped .card-front{visibility:hidden;transition-delay:.28s;}
+.card-front::before{content:'';width:48px;height:48px;margin-bottom:16px;border:1px solid rgba(227,173,97,.5);
+  border-radius:50%;background:radial-gradient(circle at 50% 66%,#df9a45 0 9%,transparent 10%),
+  linear-gradient(60deg,transparent 45%,#c97839 46% 53%,transparent 54%),
+  linear-gradient(-60deg,transparent 45%,#e6ad5d 46% 53%,transparent 54%);}
+.card-back{background:linear-gradient(145deg,rgba(23,42,30,.97),rgba(9,21,15,.98));transform:rotateY(180deg);}
+.card-cat{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin-bottom:14px;}
+.card-vraag{font-family:'Playfair Display',serif;font-size:1.13rem;color:var(--ink);text-align:center;line-height:1.5;}
+.card-followup{font-size:.8rem;color:var(--muted);text-align:center;margin-top:12px;}
+.card-tap{font-size:.75rem;color:var(--muted);letter-spacing:.04em;}
+.card-icon{display:none;}
+.card-hint{font-size:.78rem;color:var(--muted);margin-top:6px;text-align:center;}
 
-/* ── Progress dots ─────────────────────────── */
 .dots{display:flex;gap:6px;justify-content:center;}
-.dot{width:8px;height:8px;border-radius:50%;background:#ffffff20;transition:background .3s;}
-.dot.done{background:#d4af37;}
-.dot.active{background:#f0d060;box-shadow:0 0 6px #f0d06088;}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18);transition:background .3s;}
+.dot.done{background:#9e7545;}
+.dot.active{background:var(--amber-soft);}
+.cat-badge{display:inline-flex;align-items:center;padding:5px 11px;border-radius:20px;font-size:.68rem;
+  letter-spacing:.11em;text-transform:uppercase;background:rgba(13,29,20,.78);color:var(--amber-soft);border:1px solid var(--line);}
 
-/* ── Category badge ────────────────────────── */
-.cat-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;
-  border-radius:20px;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;
-  background:rgba(212,175,55,0.15);color:#d4af37;border:1px solid #d4af3730;}
+textarea,input[type=text]{width:100%;background:rgba(8,20,14,.82);border:1px solid rgba(255,255,255,.16);
+  border-radius:12px;color:var(--ink);font-size:1rem;padding:14px;font-family:'Inter',sans-serif;resize:none;outline:none;
+  transition:border-color .2s;backdrop-filter:blur(12px);}
+textarea:focus,input[type=text]:focus{border-color:var(--amber);}
+textarea{min-height:108px;}
+.choices{display:flex;flex-direction:column;gap:9px;width:100%;}
+.choice-btn{padding:14px 17px;background:rgba(10,23,16,.82);border:1px solid rgba(255,255,255,.14);
+  border-radius:12px;color:var(--ink);font-size:.91rem;text-align:left;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;
+  backdrop-filter:blur(12px);}
+.choice-btn:active,.choice-btn.selected{background:rgba(83,78,48,.9);border-color:var(--amber);color:#fff1d7;}
 
-/* ── Input ──────────────────────────────────── */
-textarea,input[type=text]{width:100%;background:rgba(255,255,255,0.07);
-  border:1.5px solid rgba(255,255,255,0.15);border-radius:12px;
-  color:#f0e6d3;font-size:1rem;padding:14px;font-family:'Inter',sans-serif;
-  resize:none;outline:none;transition:border-color .2s;}
-textarea:focus,input[type=text]:focus{border-color:#d4af37;}
-textarea{min-height:100px;}
-
-/* ── Choice buttons ─────────────────────────── */
-.choices{display:flex;flex-direction:column;gap:10px;width:100%;}
-.choice-btn{padding:14px 18px;background:rgba(255,255,255,0.06);
-  border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;
-  color:#f0e6d3;font-size:0.95rem;text-align:left;cursor:pointer;
-  transition:all .2s;font-family:'Inter',sans-serif;}
-.choice-btn:active,.choice-btn.selected{background:rgba(212,175,55,0.2);
-  border-color:#d4af37;color:#f0d060;}
-
-/* ── Score badge ────────────────────────────── */
-.score-ring{width:90px;height:90px;border-radius:50%;
-  background:conic-gradient(#d4af37 var(--pct,0%),rgba(255,255,255,0.1) 0%);
+.score-ring{width:90px;height:90px;border-radius:50%;background:conic-gradient(var(--amber) var(--pct,0%),rgba(255,255,255,.1) 0%);
   display:flex;align-items:center;justify-content:center;position:relative;}
-.score-ring::before{content:'';position:absolute;inset:6px;border-radius:50%;background:#1a0a2e;}
-.score-num{position:relative;font-family:'Playfair Display',serif;font-size:1.4rem;color:#f0d060;}
+.score-ring::before{content:'';position:absolute;inset:6px;border-radius:50%;background:var(--forest);}
+.score-num{position:relative;font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--amber-soft);}
+.level-pill{display:inline-flex;align-items:center;padding:6px 14px;border-radius:20px;font-size:.75rem;font-weight:600;
+  letter-spacing:.07em;text-transform:uppercase;background:rgba(12,28,19,.78);color:var(--amber-soft);border:1px solid var(--line);}
+.level-1,.level-2,.level-3{background:rgba(12,28,19,.78);color:var(--amber-soft);border:1px solid var(--line);}
 
-/* ── Level pill ─────────────────────────────── */
-.level-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;
-  border-radius:20px;font-size:0.8rem;font-weight:600;}
-.level-1{background:#1e3a2e;color:#5db882;border:1px solid #5db88240;}
-.level-2{background:#2e2a1e;color:#d4af37;border:1px solid #d4af3740;}
-.level-3{background:#2e1e2e;color:#c47ac4;border:1px solid #c47ac440;}
+.mode-card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:18px 18px 18px 68px;
+  cursor:pointer;transition:all .2s;text-align:left;box-shadow:0 14px 32px rgba(0,0,0,.22);backdrop-filter:blur(14px);}
+.mode-card:active{transform:scale(.985);background:rgba(34,50,36,.94);border-color:rgba(227,173,97,.55);}
+.mode-icon{position:absolute;left:18px;top:19px;width:34px;height:34px;border:1px solid rgba(227,173,97,.44);
+  border-radius:50%;display:grid;place-items:center;color:var(--amber-soft);font:600 .74rem 'Inter',sans-serif;letter-spacing:.05em;}
+.mode-title{font-family:'Playfair Display',serif;font-size:1.08rem;color:var(--ink);margin-bottom:5px;font-weight:600;}
+.mode-desc{font-size:.79rem;color:var(--muted);line-height:1.48;}
 
-/* ── Mode cards ─────────────────────────────── */
-.mode-card{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);
-  border-radius:18px;padding:20px;cursor:pointer;transition:all .2s;text-align:left;}
-.mode-card:active{transform:scale(0.98);background:rgba(212,175,55,0.1);border-color:#d4af37;}
-.mode-icon{font-size:2rem;margin-bottom:8px;}
-.mode-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:#f0d060;margin-bottom:4px;}
-.mode-desc{font-size:0.8rem;color:#a090b8;line-height:1.4;}
+.reveal-box{background:var(--panel);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:17px;width:100%;
+  box-shadow:0 12px 30px rgba(0,0,0,.18);backdrop-filter:blur(14px);}
+.reveal-label{font-size:.67rem;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-bottom:7px;}
+.reveal-answer{font-size:1rem;color:var(--ink);font-family:'Playfair Display',serif;font-style:italic;line-height:1.45;}
+.reveal-match{font-size:.8rem;margin-top:7px;}
+.match-yes{color:var(--good);}
+.match-no{color:var(--bad);}
 
-/* ── Reveal ──────────────────────────────────── */
-.reveal-box{background:rgba(255,255,255,0.05);border-radius:14px;padding:16px;width:100%;}
-.reveal-label{font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:#a090b8;margin-bottom:6px;}
-.reveal-answer{font-size:1rem;color:#f0e6d3;font-family:'Playfair Display',serif;font-style:italic;}
-.reveal-match{font-size:0.8rem;margin-top:6px;}
-.match-yes{color:#5db882;}
-.match-no{color:#e07070;}
-
-/* ── Waiting ─────────────────────────────────── */
+.waiting-mark{width:42px;height:42px;border:1px solid rgba(227,173,97,.32);border-radius:50%;position:relative;}
+.waiting-mark::after{content:'';position:absolute;inset:8px;border-radius:50%;border:2px solid transparent;border-top-color:var(--amber);animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
 .waiting-dots span{display:inline-block;animation:bounce 1.2s infinite;}
-.waiting-dots span:nth-child(2){animation-delay:.2s;}
-.waiting-dots span:nth-child(3){animation-delay:.4s;}
-@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+.waiting-dots span:nth-child(2){animation-delay:.2s}.waiting-dots span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.code-input{text-align:center;font-size:1.5rem;letter-spacing:.3em;text-transform:uppercase;font-weight:700;
+  background:rgba(8,20,14,.86);border:1px solid rgba(227,173,97,.5);border-radius:14px;padding:16px;color:var(--amber-soft);width:100%;}
+.big-code{font-size:2.1rem;letter-spacing:.35em;font-weight:700;color:var(--amber-soft);font-family:'Playfair Display',serif;text-align:center;}
 
-/* ── Koppel screen ───────────────────────────── */
-.code-input{text-align:center;font-size:1.6rem;letter-spacing:0.3em;text-transform:uppercase;
-  font-weight:700;background:rgba(255,255,255,0.08);border:2px solid rgba(212,175,55,0.4);
-  border-radius:14px;padding:16px;color:#f0d060;width:100%;}
-.big-code{font-size:2.2rem;letter-spacing:0.4em;font-weight:700;color:#f0d060;
-  font-family:'Playfair Display',serif;text-align:center;}
-
-/* ── Misc ────────────────────────────────────── */
-.pad{padding:24px 20px;}
-.gap{display:flex;flex-direction:column;gap:12px;}
-.gap-sm{display:flex;flex-direction:column;gap:8px;}
-.row{display:flex;gap:10px;}
-.row .btn{flex:1;}
+.pad{padding:30px 20px;width:100%;}
+.gap{display:flex;flex-direction:column;gap:13px;}
+.gap-sm{display:flex;flex-direction:column;gap:9px;}
+.row{display:flex;gap:10px}.row .btn{flex:1}
 .center{text-align:center;}
-.stars{color:#d4af37;font-size:1.1rem;}
-.divider{width:100%;height:1px;background:rgba(255,255,255,0.08);margin:8px 0;}
-.vonk{animation:vonkje .4s ease-out forwards;}
-@keyframes vonkje{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
-.back-btn{position:fixed;top:10px;left:10px;z-index:9999;background:rgba(0,0,0,0.45);
-  color:#d4af37;border:1px solid #d4af3755;border-radius:20px;padding:5px 12px;
-  font-size:0.75rem;text-decoration:none;font-family:serif;letter-spacing:0.05em;
-  backdrop-filter:blur(6px);}
+.stars{color:var(--amber);font-size:1.1rem;}
+.divider{width:100%;height:1px;background:rgba(255,255,255,.1);margin:8px 0;}
+.back-btn{position:fixed;top:10px;left:10px;z-index:9999;background:rgba(7,17,12,.76);color:var(--ink);
+  border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:7px 13px;font-size:.75rem;text-decoration:none;
+  font-family:'Inter',sans-serif;backdrop-filter:blur(10px);}
+@media (max-height:700px){
+  .screen>.pad{margin:0;}
+  .card-wrap{height:205px;}
+}
 </style>
 </head>
 <body>
@@ -162,12 +141,11 @@ textarea{min-height:100px;}
 <div id="screen-start" class="screen active">
   <div class="pad gap" style="width:100%;max-width:420px;padding-top:60px;">
     <div style="text-align:center;margin-bottom:8px;">
-      <div style="font-size:3rem;">💫</div>
       <h1>Leer Elkaar Kennen</h1>
-      <p class="sub" style="margin-top:8px;">Ontdek, verras en verbind.<br>Elk op je eigen telefoon.</p>
+      <p class="sub" style="margin-top:8px;">Neem plaats bij het vuur.<br>Ontdek wat jullie al weten en wat nog niet.</p>
     </div>
     <div class="divider"></div>
-    <button class="btn btn-gold" onclick="startKoppel('create')">✦ Maak een sessie aan</button>
+    <button class="btn btn-gold" onclick="startKoppel('create')">Maak een sessie aan</button>
     <button class="btn btn-outline" onclick="startKoppel('join')">Doe mee met koppelcode</button>
     <button class="btn btn-ghost" onclick="startSolo()">Solo bekijken</button>
   </div>
@@ -190,7 +168,7 @@ textarea{min-height:100px;}
       </div>
       <div id="both-connected-ui" style="display:none;margin-top:16px;">
         <p style="color:#5db882;margin-bottom:12px;">✓ Beide verbonden!</p>
-        <button class="btn btn-gold" onclick="goNiveau()">Begin ✦</button>
+        <button class="btn btn-gold" onclick="goNiveau()">Begin</button>
       </div>
     </div>
 
@@ -219,18 +197,18 @@ textarea{min-height:100px;}
     <h2>Hoe lang kennen jullie elkaar al?</h2>
     <p class="sub">We bewaren dit — nooit meer opnieuw invullen.</p>
     <div class="choices" id="duur-choices">
-      <button class="choice-btn" onclick="selectDuur(1,this)">🌱 Nog maar kort (minder dan 3 maanden)</button>
-      <button class="choice-btn" onclick="selectDuur(2,this)">🌿 Een tijdje (3 maanden – 1 jaar)</button>
-      <button class="choice-btn" onclick="selectDuur(3,this)">🌳 Al een tijd (meer dan 1 jaar)</button>
+      <button class="choice-btn" onclick="selectDuur(1,this)">Nog maar kort (minder dan 3 maanden)</button>
+      <button class="choice-btn" onclick="selectDuur(2,this)">Een tijdje (3 maanden – 1 jaar)</button>
+      <button class="choice-btn" onclick="selectDuur(3,this)">Al een tijd (meer dan 1 jaar)</button>
     </div>
     <div class="divider" style="margin-top:4px;"></div>
     <h2>En hoe goed kennen jullie elkaar?</h2>
     <div class="choices" id="kennis-choices">
-      <button class="choice-btn" onclick="selectKennis(1,this)">🔍 We beginnen net met ontdekken</button>
-      <button class="choice-btn" onclick="selectKennis(2,this)">🗺️ We kennen elkaars basisverhaal</button>
-      <button class="choice-btn" onclick="selectKennis(3,this)">🔮 We kennen elkaar goed maar blijven ontdekken</button>
+      <button class="choice-btn" onclick="selectKennis(1,this)">We beginnen net met ontdekken</button>
+      <button class="choice-btn" onclick="selectKennis(2,this)">We kennen elkaars basisverhaal</button>
+      <button class="choice-btn" onclick="selectKennis(3,this)">We kennen elkaar goed, maar blijven ontdekken</button>
     </div>
-    <button class="btn btn-gold" id="niveau-btn" onclick="confirmNiveau()" style="display:none;">Dit klopt ✦</button>
+    <button class="btn btn-gold" id="niveau-btn" onclick="confirmNiveau()" style="display:none;">Dit klopt</button>
   </div>
 </div>
 
@@ -241,30 +219,26 @@ textarea{min-height:100px;}
   <div class="pad gap" style="width:100%;max-width:420px;padding-top:50px;">
     <div style="text-align:center;">
       <div id="menu-level-badge"></div>
-      <h1 style="font-size:1.5rem;margin-top:8px;">Wat gaan jullie doen?</h1>
-      <p class="sub">Kies samen een modus</p>
+      <h1 style="font-size:1.5rem;margin-top:8px;">Gesprekken bij het vuur</h1>
+      <p class="sub">Kies samen hoe jullie willen beginnen</p>
     </div>
 
     <div class="mode-card" onclick="startMode('kaarten')">
-      <div class="mode-icon">🃏</div>
+      <div class="mode-icon">01</div>
       <div class="mode-title">Kennismakingskaarten</div>
       <div class="mode-desc">Draai een kaart om en bespreek samen de vraag. Warm, diep en verrassend.</div>
     </div>
 
     <div class="mode-card" onclick="startMode('quiz')">
-      <div class="mode-icon">🏆</div>
+      <div class="mode-icon">02</div>
       <div class="mode-title">Wie kent wie het beste?</div>
       <div class="mode-desc">Beide vullen antwoorden in over zichzelf — en raden wat de ander zei. Wie wint?</div>
     </div>
 
     <div class="mode-card" onclick="startMode('raad')">
-      <div class="mode-icon">🔮</div>
-      <div class="mode-title">Raad je partner</div>
-      <div class="mode-desc">Eén persoon antwoordt, de ander raadt. Hoe goed ken jij je geliefde?</div>
-    </div>
-
-    <div style="text-align:center;margin-top:4px;">
-      <p class="sub">🔥 <span id="vonkjes-count">0</span> vonkjes verzameld</p>
+      <div class="mode-icon">03</div>
+      <div class="mode-title">Hoe goed ken je elkaar?</div>
+      <div class="mode-desc">Eén persoon antwoordt, de ander maakt een inschatting. Daarna bekijken jullie het samen.</div>
     </div>
   </div>
 </div>
@@ -278,7 +252,7 @@ textarea{min-height:100px;}
     <div style="width:100%;display:flex;justify-content:space-between;align-items:center;">
       <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-menu')" style="width:auto;padding:8px 14px;">← Menu</button>
       <div class="dots" id="kaarten-dots"></div>
-      <div style="font-size:0.8rem;color:#a090b8;" id="kaarten-counter">1 / 10</div>
+      <div style="font-size:0.8rem;color:var(--muted);" id="kaarten-counter">1 / 10</div>
     </div>
 
     <div id="kaarten-cat" class="cat-badge" style="margin-top:4px;"></div>
@@ -286,7 +260,6 @@ textarea{min-height:100px;}
     <div class="card-wrap" id="kaart" onclick="flipCard()">
       <div class="card-inner">
         <div class="card-front">
-          <div class="card-icon">✦</div>
           <div class="card-tap">Tik om om te draaien</div>
         </div>
         <div class="card-back">
@@ -299,7 +272,6 @@ textarea{min-height:100px;}
 
     <div id="kaarten-btns" style="width:100%;display:none;" class="gap">
       <button class="btn btn-gold" onclick="nextKaart()">Volgende kaart ›</button>
-      <button class="btn btn-ghost btn-sm" onclick="addVonk()">🔥 Vonkje verdienen</button>
     </div>
   </div>
 </div>
@@ -311,16 +283,16 @@ textarea{min-height:100px;}
   <div class="pad gap" style="width:100%;max-width:420px;padding-top:50px;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <span class="cat-badge" id="quiz-cat"></span>
-      <span style="font-size:0.85rem;color:#a090b8;" id="quiz-ronde">Ronde 1/10</span>
+      <span style="font-size:0.85rem;color:var(--muted);" id="quiz-ronde">Ronde 1/10</span>
     </div>
 
     <div class="reveal-box">
       <div class="reveal-label">De vraag</div>
-      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:#f0e6d3;font-style:italic;" id="quiz-vraag-text">...</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--ink);font-style:italic;" id="quiz-vraag-text">...</div>
     </div>
 
     <div>
-      <p style="font-size:0.85rem;color:#a090b8;margin-bottom:8px;">Jouw eigen antwoord:</p>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:8px;">Jouw eigen antwoord:</p>
       <textarea id="quiz-eigen-input" placeholder="Schrijf hier jouw echte antwoord..."></textarea>
     </div>
 
@@ -335,15 +307,15 @@ textarea{min-height:100px;}
   <div class="pad gap" style="width:100%;max-width:420px;padding-top:50px;">
     <div class="reveal-box">
       <div class="reveal-label">De vraag</div>
-      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:#f0e6d3;font-style:italic;" id="quiz-raad-vraag">...</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--ink);font-style:italic;" id="quiz-raad-vraag">...</div>
     </div>
 
     <div>
-      <p style="font-size:0.85rem;color:#a090b8;margin-bottom:8px;">Wat denk jij dat je partner antwoordde? 🔮</p>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:8px;">Wat denk jij dat je partner antwoordde?</p>
       <textarea id="quiz-raad-input" placeholder="Raad het antwoord van je partner..."></textarea>
     </div>
 
-    <button class="btn btn-gold" onclick="submitRaad()">Insturen ✦</button>
+    <button class="btn btn-gold" onclick="submitRaad()">Insturen</button>
   </div>
 </div>
 
@@ -352,7 +324,7 @@ textarea{min-height:100px;}
 ════════════════════════════════════════════════ -->
 <div id="screen-quiz-wacht" class="screen">
   <div class="pad gap" style="width:100%;max-width:420px;padding-top:100px;align-items:center;text-align:center;">
-    <div style="font-size:3rem;">⌛</div>
+    <div class="waiting-mark" aria-hidden="true"></div>
     <h2>Wachten op je partner</h2>
     <p class="sub waiting-dots">Bijna<span>.</span><span>.</span><span>.</span></p>
   </div>
@@ -364,7 +336,7 @@ textarea{min-height:100px;}
 <div id="screen-quiz-reveal" class="screen">
   <div class="pad gap" style="width:100%;max-width:420px;padding-top:50px;">
     <div style="text-align:center;">
-      <h2>De onthulling 🎭</h2>
+      <h2>Jullie antwoorden</h2>
       <p class="sub" id="reveal-vraag-title" style="font-style:italic;margin-top:4px;"></p>
     </div>
 
@@ -373,13 +345,13 @@ textarea{min-height:100px;}
     <div class="divider"></div>
     <div style="display:flex;gap:16px;justify-content:center;align-items:center;" id="ronde-score">
       <div style="text-align:center;">
-        <div style="font-size:0.75rem;color:#a090b8;">Jij</div>
-        <div style="font-size:1.4rem;font-weight:700;color:#d4af37;" id="score-mij">0</div>
+        <div style="font-size:0.75rem;color:var(--muted);">Jij</div>
+        <div style="font-size:1.4rem;font-weight:700;color:var(--amber-soft);" id="score-mij">0</div>
       </div>
       <div style="font-size:1.5rem;">vs</div>
       <div style="text-align:center;">
-        <div style="font-size:0.75rem;color:#a090b8;">Partner</div>
-        <div style="font-size:1.4rem;font-weight:700;color:#d4af37;" id="score-partner">0</div>
+        <div style="font-size:0.75rem;color:var(--muted);">Partner</div>
+        <div style="font-size:1.4rem;font-weight:700;color:var(--amber-soft);" id="score-partner">0</div>
       </div>
     </div>
 
@@ -393,18 +365,18 @@ textarea{min-height:100px;}
 ════════════════════════════════════════════════ -->
 <div id="screen-quiz-eind" class="screen">
   <div class="pad gap" style="width:100%;max-width:420px;padding-top:60px;align-items:center;text-align:center;">
-    <div style="font-size:3rem;" id="eind-emoji">🏆</div>
+    <div class="level-pill">Ronde afgerond</div>
     <h1 id="eind-titel">Eindstand!</h1>
     <p class="sub" id="eind-sub"></p>
     <div style="display:flex;gap:24px;justify-content:center;margin:8px 0;">
       <div>
-        <div style="font-size:0.75rem;color:#a090b8;">Jij</div>
-        <div style="font-size:2.5rem;font-weight:700;color:#d4af37;" id="eind-score-mij">0</div>
+        <div style="font-size:0.75rem;color:var(--muted);">Jij</div>
+        <div style="font-size:2.5rem;font-weight:700;color:var(--amber-soft);" id="eind-score-mij">0</div>
       </div>
       <div style="font-size:2rem;align-self:center;">vs</div>
       <div>
-        <div style="font-size:0.75rem;color:#a090b8;">Partner</div>
-        <div style="font-size:2.5rem;font-weight:700;color:#d4af37;" id="eind-score-partner">0</div>
+        <div style="font-size:0.75rem;color:var(--muted);">Partner</div>
+        <div style="font-size:2.5rem;font-weight:700;color:var(--amber-soft);" id="eind-score-partner">0</div>
       </div>
     </div>
     <div class="divider" style="width:100%;"></div>
@@ -420,35 +392,35 @@ textarea{min-height:100px;}
   <div class="pad gap" style="width:100%;max-width:420px;padding-top:50px;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <button class="btn btn-ghost btn-sm" onclick="showScreen('screen-menu')" style="width:auto;padding:8px 14px;">← Menu</button>
-      <span style="font-size:0.85rem;color:#a090b8;" id="raad-ronde">1/8</span>
+      <span style="font-size:0.85rem;color:var(--muted);" id="raad-ronde">1/8</span>
     </div>
 
     <div id="raad-antwoorder-ui" style="display:none;" class="gap">
       <div class="reveal-box">
         <div class="reveal-label">Jouw beurt om te antwoorden</div>
-        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:#f0e6d3;font-style:italic;" id="raad-vraag-a">...</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--ink);font-style:italic;" id="raad-vraag-a">...</div>
       </div>
       <textarea id="raad-antwoord-input" placeholder="Jouw eerlijke antwoord..."></textarea>
       <button class="btn btn-gold" onclick="submitRaadAntwoord()">Ingestuurd, partner raadt nu ›</button>
     </div>
 
     <div id="raad-rader-ui" style="display:none;" class="gap">
-      <p class="sub" style="color:#d4af37;">Je partner heeft geantwoord...</p>
+      <p class="sub" style="color:var(--amber-soft);">Je partner heeft geantwoord...</p>
       <div class="reveal-box">
         <div class="reveal-label">De vraag aan je partner</div>
-        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:#f0e6d3;font-style:italic;" id="raad-vraag-r">...</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--ink);font-style:italic;" id="raad-vraag-r">...</div>
       </div>
       <textarea id="raad-gok-input" placeholder="Wat denk jij dat hij/zij zei?"></textarea>
       <button class="btn btn-gold" onclick="submitRaadGok()">Dit is mijn gok ›</button>
     </div>
 
     <div id="raad-wacht-ui" style="display:none;text-align:center;" class="gap">
-      <div style="font-size:2rem;">⌛</div>
+      <div class="waiting-mark" aria-hidden="true" style="margin:auto;"></div>
       <p class="sub waiting-dots">Wachten<span>.</span><span>.</span><span>.</span></p>
     </div>
 
     <div id="raad-reveal-ui" style="display:none;" class="gap">
-      <h2 style="text-align:center;">Reveal! 🎭</h2>
+      <h2 style="text-align:center;">Jullie antwoorden</h2>
       <div class="reveal-box">
         <div class="reveal-label">Het echte antwoord</div>
         <div class="reveal-answer" id="raad-echt-antwoord"></div>
@@ -459,7 +431,7 @@ textarea{min-height:100px;}
         <div class="reveal-match" id="raad-match-result"></div>
       </div>
       <div style="display:flex;gap:10px;">
-        <button class="btn btn-ghost btn-sm" onclick="raadSelfScore(false)" style="flex:1;">❌ Mis</button>
+        <button class="btn btn-ghost btn-sm" onclick="raadSelfScore(false)" style="flex:1;">Niet helemaal</button>
         <button class="btn btn-gold btn-sm" onclick="raadSelfScore(true)" style="flex:1;">✓ Raak!</button>
       </div>
     </div>
@@ -471,8 +443,7 @@ textarea{min-height:100px;}
 // TEKST (straks vervangen door i18n object)
 // ══════════════════════════════════════════════
 const TEKST = {
-  niveau_labels: ['','Niveau 1 — Ontdekkers','Niveau 2 — Verkenners','Niveau 3 — Diepduikers'],
-  niveau_emojis: ['','🌱','🌿','🔮'],
+  niveau_labels: ['','Luchtig','Persoonlijk','Verdiepend'],
 };
 
 // ══════════════════════════════════════════════
@@ -699,7 +670,6 @@ const QUIZ_VRAGEN = [
 const state = {
   niveau: 0, duur: 0, kennis: 0,
   player: '1', code: null, solo: false,
-  vonkjes: 0,
   // Kaarten
   kaartQueue: [], kaartIdx: 0,
   // Quiz
@@ -730,12 +700,13 @@ function shuffle(arr) {
   return a;
 }
 
-function catEmoji(cat) {
-  const map = {
-    humor:'😄', smaak:'🍷', dagelijks:'☀️', dromen:'🌙', waarden:'🌿',
-    jeugd:'🎈', liefde:'❤️', angst:'🌊', diepte:'🔮', werk:'💼',
+function catLabel(cat) {
+  const labels = {
+    humor:'Humor', smaak:'Smaak', dagelijks:'Dagelijks', dromen:'Dromen',
+    waarden:'Waarden', jeugd:'Jeugd', liefde:'Liefde', angst:'Kwetsbaarheid',
+    diepte:'Verdieping', werk:'Werk', karakter:'Karakter', relatie:'Relatie',
   };
-  return map[cat] || '✦';
+  return labels[cat] || cat;
 }
 
 function getNiveau() {
@@ -868,8 +839,7 @@ function confirmNiveau() {
 function goMenu() {
   const n = state.niveau || 1;
   const badge = document.getElementById('menu-level-badge');
-  badge.innerHTML = `<span class="level-pill level-${n}">${TEKST.niveau_emojis[n]} ${TEKST.niveau_labels[n]}</span>`;
-  document.getElementById('vonkjes-count').textContent = state.vonkjes;
+  badge.innerHTML = `<span class="level-pill level-${n}">${TEKST.niveau_labels[n]}</span>`;
   showScreen('screen-menu');
 }
 
@@ -905,8 +875,8 @@ function renderKaart() {
   document.getElementById('kaarten-btns').style.display = 'none';
 
   // Inhoud
-  document.getElementById('kaart-cat-back').textContent = `${catEmoji(q.cat)} ${q.cat}`;
-  document.getElementById('kaarten-cat').innerHTML = `${catEmoji(q.cat)} ${q.cat}`;
+  document.getElementById('kaart-cat-back').textContent = catLabel(q.cat);
+  document.getElementById('kaarten-cat').textContent = catLabel(q.cat);
   document.getElementById('kaart-vraag').textContent = q.v;
   document.getElementById('kaart-followup').textContent = q.f ? `→ ${q.f}` : '';
 
@@ -938,21 +908,10 @@ function nextKaart() {
   state.kaartIdx++;
   if (state.kaartIdx >= state.kaartQueue.length) {
     // Terug naar menu
-    state.vonkjes += 3;
     goMenu();
     return;
   }
   renderKaart();
-}
-
-function addVonk() {
-  state.vonkjes++;
-  document.getElementById('vonkjes-count').textContent = state.vonkjes;
-  const btn = event.target;
-  btn.classList.add('vonk');
-  setTimeout(() => btn.classList.remove('vonk'), 400);
-  btn.textContent = '🔥 +1 vonkje!';
-  setTimeout(() => btn.textContent = '🔥 Vonkje verdienen', 1500);
 }
 
 // ══════════════════════════════════════════════
@@ -973,7 +932,7 @@ function nextQuizRonde() {
     return;
   }
   const q = state.quizQueue[state.quizRonde];
-  document.getElementById('quiz-cat').innerHTML = `${catEmoji(q.cat)} ${q.cat}`;
+  document.getElementById('quiz-cat').textContent = catLabel(q.cat);
   document.getElementById('quiz-vraag-text').textContent = q.v;
   document.getElementById('quiz-raad-vraag').textContent = q.v;
   document.getElementById('quiz-ronde').textContent = `Ronde ${state.quizRonde+1}/10`;
@@ -1093,25 +1052,23 @@ function quizScore(mijGoed, partnerGoed) {
 function showQuizEind() {
   const mij = state.quizScoreMij;
   const partner = state.quizScorePartner;
-  let emoji, titel, sub;
+  let titel, sub;
 
   if (mij === partner) {
-    emoji = '🤝'; titel = 'Gelijkspel!';
+    titel = 'Gelijkspel';
     sub = 'Jullie kennen elkaar even goed. Dat is bijzonder mooi.';
   } else if (mij > partner) {
-    emoji = '🏆'; titel = 'Jij wint!';
+    titel = 'Jij wint';
     sub = `Jij kent je partner beter. ${mij} vs ${partner}. Maar het echte spel is altijd blijven ontdekken.`;
   } else {
-    emoji = '💫'; titel = 'Je partner wint!';
+    titel = 'Je partner wint';
     sub = `Partner weet meer over jou dan jij over hem/haar. ${partner} vs ${mij}. Goed gespreksstof!`;
   }
 
-  document.getElementById('eind-emoji').textContent = emoji;
   document.getElementById('eind-titel').textContent = titel;
   document.getElementById('eind-sub').textContent = sub;
   document.getElementById('eind-score-mij').textContent = mij;
   document.getElementById('eind-score-partner').textContent = partner;
-  state.vonkjes += mij + partner;
   showScreen('screen-quiz-eind');
 }
 
@@ -1196,8 +1153,7 @@ function showRaadReveal(echt, gok) {
 function raadSelfScore(raak) {
   if (raak) {
     state.raadScore++;
-    state.vonkjes += 2;
-    document.getElementById('raad-match-result').innerHTML = '<span class="match-yes">✓ Raak! +2 vonkjes 🔥</span>';
+    document.getElementById('raad-match-result').innerHTML = '<span class="match-yes">Dat was raak.</span>';
   } else {
     document.getElementById('raad-match-result').innerHTML = '<span class="match-no">Niet helemaal — mooi gespreksstof!</span>';
   }
@@ -1215,13 +1171,6 @@ function raadSelfScore(raak) {
 // ══════════════════════════════════════════════
 window.addEventListener('load', () => {
   if (window.ProfielClient) ProfielClient.init();
-  // Herstel vonkjes
-  try { state.vonkjes = parseInt(localStorage.getItem('km_vonkjes') || '0'); } catch(e){}
-});
-
-// Sla vonkjes op bij verlaten
-window.addEventListener('beforeunload', () => {
-  try { localStorage.setItem('km_vonkjes', state.vonkjes); } catch(e){}
 });
 </script>
 
