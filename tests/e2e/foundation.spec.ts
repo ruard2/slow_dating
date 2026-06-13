@@ -185,8 +185,8 @@ test("opens all seven world games inside the permanent icon shell", async ({
     } else if (game.id === "kennismaking") {
       await frame.locator("#duur-choices button").first().click();
       await frame.locator("#kennis-choices button").first().click();
-      await frame.getByRole("button", { name: "Dit klopt ✦" }).click();
-      await expect(frame.getByText("Wat gaan jullie doen?")).toBeVisible();
+      await frame.getByRole("button", { name: "Dit klopt" }).click();
+      await expect(frame.getByText("Gesprekken bij het vuur")).toBeVisible();
     } else if (game.id === "familiedorp") {
       await frame.getByRole("button", { name: "Bouw mijn dorp →" }).click();
     } else if (game.id === "kwaliteiten") {
