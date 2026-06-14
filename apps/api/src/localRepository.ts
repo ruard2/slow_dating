@@ -823,9 +823,10 @@ export class LocalRepository implements AppRepository {
   }
 
   async getWorldProgress(installationId: string): Promise<WorldProgress> {
-    const relationshipIds = this.state.pairs
-      .filter((pair) => pair.memberIds.includes(installationId))
-      .map((pair) => pair.id);
+    const relationships = this.state.pairs.filter((pair) =>
+      pair.memberIds.includes(installationId),
+    );
+    const relationshipIds = relationships.map((pair) => pair.id);
     const completedGameIds = new Set(
       this.state.gameRuns
         .filter(
@@ -838,6 +839,18 @@ export class LocalRepository implements AppRepository {
         .map((run) => run.gameId),
     );
     const completedGames = completedGameIds.size;
+    const developerMode = relationships.some(
+      (pair) => pair.developerMode && !pair.disconnectedAt,
+    );
+    if (developerMode) {
+      const allWorlds = [1, 2, 3, 4, 5];
+      return {
+        completedGames,
+        eligibleWorlds: allWorlds,
+        purchasedWorlds: allWorlds,
+        unlockedWorlds: allWorlds,
+      };
+    }
     const account = await this.getAccountForInstallation(installationId);
     const purchasedWorlds = [
       1,

@@ -309,12 +309,18 @@ describe("Slow Dating API", () => {
       .post("/api/game-runs")
       .set(auth)
       .send({ gameId: "waarden", mode: "couple", version: 2 });
+    const progress = await request(app).get("/api/progress").set(auth);
 
     expect(pair.status).toBe(201);
     expect(pair.body.developerMode).toBe(true);
     expect(pair.body.members.map((member: { displayName: string }) => member.displayName))
       .toContain("Testpartner");
     expect(run.body.state.readyInstallationIds).toHaveLength(2);
+    expect(progress.body).toMatchObject({
+      eligibleWorlds: [1, 2, 3, 4, 5],
+      purchasedWorlds: [1, 2, 3, 4, 5],
+      unlockedWorlds: [1, 2, 3, 4, 5],
+    });
   });
 
   it("rejects planned and profile entries as game runs", async () => {

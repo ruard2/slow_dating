@@ -896,7 +896,15 @@ export class PrismaRepository implements AppRepository {
   async getWorldProgress(installationId: string): Promise<WorldProgress> {
     const memberships = await this.prisma.pairMember.findMany({
       where: { installationId },
-      select: { pairId: true },
+      select: {
+        pairId: true,
+        pair: {
+          select: {
+            developerMode: true,
+            disconnectedAt: true,
+          },
+        },
+      },
     });
     const completedRuns = await this.prisma.gameRun.findMany({
       where: {
@@ -915,6 +923,18 @@ export class PrismaRepository implements AppRepository {
         .map((run) => run.gameId)
         .filter(isDiscoveryGameId),
     ).size;
+    const developerMode = memberships.some(
+      ({ pair }) => pair.developerMode && !pair.disconnectedAt,
+    );
+    if (developerMode) {
+      const allWorlds = [1, 2, 3, 4, 5];
+      return {
+        completedGames,
+        eligibleWorlds: allWorlds,
+        purchasedWorlds: allWorlds,
+        unlockedWorlds: allWorlds,
+      };
+    }
     const account = await this.getAccountForInstallation(installationId);
     const purchases = account
       ? await this.prisma.worldPurchase.findMany({
