@@ -8,4 +8,3 @@ export function serializeKernkwadrantenResult(state: KernkwadrantenState) {
     completedAt: new Date().toISOString(),
   };
 }
-

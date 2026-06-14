@@ -28,4 +28,3 @@ export const kernkwadrantenDefinition: GameDefinition<
 };
 
 kernkwadrantenDefinition.validateContent();
-

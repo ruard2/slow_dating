@@ -203,6 +203,16 @@ export const games: GameMetadata[] = [
     scoresDiscovery: true,
   },
   {
+    id: "stilteruisje",
+    title: "Stilteruisje",
+    description: "Ontdek welke voorwaarden jou helpen om je werkelijk te openen.",
+    legacyPath: null,
+    modes: ["couple"],
+    version: 1,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
     id: "profiel",
     title: "Jouw profiel",
     description: "Bekijk de inzichten die over spellen heen zijn opgebouwd.",
@@ -273,6 +283,12 @@ export const gamePlacements: GamePlacement[] = [
     gameId: "kernkwadranten",
     order: 1,
     position: { left: 11.5, top: 29.2, width: 27.5, height: 8.8 },
+  },
+  {
+    worldId: 2,
+    gameId: "stilteruisje",
+    order: 2,
+    position: { left: 3.7, top: 74.5, width: 23.5, height: 9.5 },
   },
 ];
 

@@ -20,4 +20,3 @@
 .progress{display:flex;gap:.35rem;margin:0 0 1rem}.progress i{height:.3rem;flex:1;border-radius:1rem;background:rgba(255,255,255,.12)}.progress i[data-done="true"]{background:#d9b965}
 @keyframes spin{to{rotate:360deg}}
 @media(max-width:620px){.game{padding-inline:.65rem}.explainGrid,.compare{grid-template-columns:1fr}.quadrant{gap:.4rem}.panel{padding:1rem}.chip,.option{font-size:.78rem}}
-

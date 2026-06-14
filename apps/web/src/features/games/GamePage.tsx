@@ -28,6 +28,14 @@ import {
   normalizeKernkwadrantenState,
 } from "./kernkwadranten/reducer";
 import { serializeKernkwadrantenResult } from "./kernkwadranten/result";
+import type { StilteruisjeAction } from "./stilteruisje/contracts";
+import { stilteruisjeDefinition } from "./stilteruisje/definition";
+import {
+  addDeveloperStilteruisjePartner,
+  normalizeStilteruisjeState,
+  stilteruisjeReducer,
+} from "./stilteruisje/reducer";
+import { serializeStilteruisjeResult } from "./stilteruisje/result";
 
 export function GamePage({
   developerPartnerArriving,
@@ -347,6 +355,83 @@ export function GamePage({
     [activeRun, gameId, navigate, pair, queryClient, send],
   );
 
+  const dispatchStilteruisjeAction = useCallback(
+    async (action: StilteruisjeAction) => {
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+
+        const apply = () => {
+          let nextState = stilteruisjeReducer(
+            normalizeStilteruisjeState(current!.state),
+            action,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              nextState = addDeveloperStilteruisjePartner(
+                nextState,
+                action,
+                partnerId,
+              );
+            }
+          }
+          const completesRun = action.type === "stilteruisje.game.completed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeStilteruisjeResult(nextState),
+                }
+              : {}),
+          });
+        };
+
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (action.type === "stilteruisje.game.completed") {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          navigate("/worlds/2");
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, gameId, navigate, pair, queryClient, send],
+  );
+
   useEffect(() => {
     function receiveLegacyMessage(event: MessageEvent) {
       if (
@@ -605,6 +690,36 @@ export function GamePage({
           priorAllergyOptions={priorAllergyOptions}
           priorQualityOptions={priorQualityOptions}
           state={normalizeKernkwadrantenState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (
+    game.status === "native" &&
+    game.id === stilteruisjeDefinition.id &&
+    run
+  ) {
+    const StilteruisjeComponent = stilteruisjeDefinition.Component;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="stilteruisje"
+      >
+        <StilteruisjeComponent
+          dispatch={dispatchStilteruisjeAction}
+          installationId={session?.installationId ?? ""}
+          memberIds={pair.members.map((member) => member.installationId)}
+          openCall={() => setDrawer("call")}
+          openChat={(text = "") => {
+            setChatContext(text, false);
+            setDrawer("chat");
+          }}
+          partnerName={partner?.displayName ?? "je partner"}
+          pending={nativePending}
+          state={normalizeStilteruisjeState(run.state)}
         />
       </main>
     );
