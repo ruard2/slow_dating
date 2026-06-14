@@ -573,6 +573,9 @@ export function GamePage({
           });
           if (completesRun) {
             await queryClient.invalidateQueries({ queryKey: ["progress"] });
+            await queryClient.invalidateQueries({
+              queryKey: ["relationship-results", pair?.id],
+            });
           }
         }).catch(() => {
             if (completesRun) completedRunRef.current = null;
@@ -674,7 +677,7 @@ export function GamePage({
     game.id === kernkwadrantenDefinition.id &&
     run
   ) {
-    if (relationshipResults.isLoading) return <LoadingScreen />;
+    if (relationshipResults.isFetching) return <LoadingScreen />;
     const KernkwadrantenComponent = kernkwadrantenDefinition.Component;
     const previous = relationshipResults.data?.find(
       ({ provenance }) => provenance.gameId === "kwaliteiten",

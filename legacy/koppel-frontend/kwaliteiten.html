@@ -1306,8 +1306,16 @@ function finishKwaliteiten() {
   };
   try { localStorage.removeItem('kwaliteiten_draft'); } catch(e) {}
   if (!S.adminMode) KoppelClient.done(result);
-  if (window.parent && window.parent !== window) window.parent.location.href = '/';
-  else window.location.href = 'world.html';
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({
+      source:'slow-dating-legacy',
+      legacyEvent:'session_complete',
+      data:result,
+    }, window.location.origin);
+    setTimeout(() => { window.parent.location.href = '/'; }, 350);
+  } else {
+    window.location.href = 'world.html';
+  }
 }
 
 // ══ INIT ═══════════════════════════════════════════════════════
