@@ -138,10 +138,29 @@ export function VrolijkeOpenPlekGame({
   }
 
   const winner = tictactoeWinner(state);
+  const myTurn =
+    memberIds[state.tictactoeTurn % memberIds.length] === installationId;
   const bothClaims = memberIds.every((id) => Boolean(state.bluffClaims[id]));
   const ownGuess = state.bluffGuesses[installationId];
   const bothDuel = memberIds.every((id) => Boolean(state.duelChoices[id]));
   const bothSetback = memberIds.every((id) => Boolean(state.setbackChoices[id]));
+  const duelLabels = {
+    rock: "steen",
+    paper: "papier",
+    scissors: "schaar",
+  } as const;
+  const ownDuel = state.duelChoices[installationId];
+  const partnerDuel = state.duelChoices[partnerId];
+  const duelResult =
+    ownDuel && partnerDuel
+      ? ownDuel === partnerDuel
+        ? "Gelijkspel"
+        : (ownDuel === "rock" && partnerDuel === "scissors") ||
+            (ownDuel === "paper" && partnerDuel === "rock") ||
+            (ownDuel === "scissors" && partnerDuel === "paper")
+          ? "Jij wint deze ronde"
+          : `${partnerName} wint deze ronde`
+      : "";
 
   if (!allReady) {
     if (ownReady) {
@@ -185,12 +204,20 @@ export function VrolijkeOpenPlekGame({
 
           {mission === "tictactoe" && (
             <div className={styles.playArea}>
-              <h2>{winner ? (winner === "draw" ? "Gelijkspel" : `${winner.toUpperCase()} wint`) : "Jullie beurt"}</h2>
+              <h2>
+                {winner
+                  ? winner === "draw"
+                    ? "Gelijkspel"
+                    : `${winner.toUpperCase()} wint`
+                  : myTurn
+                    ? "Jij bent aan de beurt"
+                    : `${partnerName} is aan de beurt`}
+              </h2>
               <div className={styles.board}>
                 {state.tictactoeBoard.map((mark, index) => (
                   <button
                     aria-label={`Vak ${index + 1}${mark ? `: ${mark}` : ""}`}
-                    disabled={Boolean(mark || winner)}
+                    disabled={Boolean(mark || winner || !myTurn)}
                     key={index}
                     onClick={() =>
                       dispatch({
@@ -272,8 +299,12 @@ export function VrolijkeOpenPlekGame({
                 </div>
               ) : !bothDuel ? <Waiting partnerName={partnerName} /> : (
                 <div className={styles.reveal}>
-                  <strong>Jij koos {state.duelChoices[installationId]}</strong>
-                  <p>{partnerName} koos {state.duelChoices[partnerId]}. Belangrijker dan de winnaar: wat deed je direct na de onthulling?</p>
+                  <strong>{duelResult}</strong>
+                  <p>
+                    Jij koos {duelLabels[ownDuel!]}, {partnerName} koos{" "}
+                    {duelLabels[partnerDuel!]}. Belangrijker dan de winnaar:
+                    wat deed je direct na de onthulling?
+                  </p>
                 </div>
               )}
             </div>
@@ -297,7 +328,19 @@ export function VrolijkeOpenPlekGame({
               </div>
               {bothSetback && (
                 <div className={styles.reveal}>
-                  <p>Jullie hoeven tegenslag dus niet hetzelfde op te vangen. Dat verschil kennen voorkomt onnodige irritatie.</p>
+                  <strong>Jullie herstelroute</strong>
+                  <p>
+                    Jij:{" "}
+                    {setbackOptions.find(
+                      ({ id }) => id === state.setbackChoices[installationId],
+                    )?.label}
+                    . {partnerName}:{" "}
+                    {setbackOptions.find(
+                      ({ id }) => id === state.setbackChoices[partnerId],
+                    )?.label}
+                    .
+                  </p>
+                  <p>Jullie hoeven tegenslag niet hetzelfde op te vangen. Dat verschil kennen voorkomt onnodige irritatie.</p>
                 </div>
               )}
             </div>

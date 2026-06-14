@@ -304,7 +304,7 @@ export const gamePlacements: GamePlacement[] = [
     worldId: 2,
     gameId: "vrolijke-open-plek",
     order: 3,
-    position: { left: 3.5, top: 49.5, width: 24.5, height: 8.7 },
+    position: { left: 3.8, top: 56.5, width: 20, height: 10 },
   },
 ];
 
