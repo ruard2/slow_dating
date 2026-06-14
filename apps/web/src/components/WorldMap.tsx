@@ -214,11 +214,9 @@ function WorldCard({
           )}
         </div>
       )}
-      {world.id > 1 && (
+      {world.id > 1 && !unlocked && (
         <button
-          aria-label={`${unlocked ? "Open" : "Bekijk"} wereld ${world.id}: ${
-            world.name
-          }`}
+          aria-label={`Bekijk wereld ${world.id}: ${world.name}`}
           className={styles.worldPortalButton}
           onClick={(event) => {
             event.currentTarget.blur();
