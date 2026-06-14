@@ -166,6 +166,25 @@ export function VrolijkeOpenPlekGame({
   } as const;
   const ownDuel = state.duelChoices[installationId];
   const partnerDuel = state.duelChoices[partnerId];
+  const raceActorId = memberIds[state.raceTurn % memberIds.length];
+  const raceIsMyTurn = raceActorId === installationId;
+  const raceWinnerName =
+    state.raceWinnerId === installationId ? "Jij" : partnerName;
+  const racePositions = [
+    [25, 76], [38, 82], [50, 84], [62, 82],
+    [75, 76], [82, 64], [85, 52], [82, 40],
+    [74, 29], [63, 20], [50, 16], [38, 20],
+    [27, 29], [18, 40], [15, 52], [18, 64],
+  ] as const;
+  const pawnPosition = (
+    actorId: string,
+    fallback: readonly [number, number],
+  ) => {
+    const progress = state.racePositions[actorId] ?? -1;
+    return progress < 0
+      ? fallback
+      : racePositions[progress % racePositions.length]!;
+  };
   const duelResult =
     ownDuel && partnerDuel
       ? ownDuel === partnerDuel
@@ -327,6 +346,75 @@ export function VrolijkeOpenPlekGame({
 
           {mission === "setback" && (
             <div className={styles.playArea}>
+              <h2>Mens erger je zacht</h2>
+              <p>
+                Race naar de finish. Land je op de steen van de ander, dan
+                stuur je die terug naar start. Een paddenstoelsteen zet jezelf
+                twee plaatsen terug.
+              </p>
+              <div className={styles.raceBoard}>
+                <img
+                  alt="Compact bosspelbord met een route van stapstenen"
+                  src="/assets/mens-erger-je-zacht-board.webp"
+                />
+                {memberIds.map((actorId, index) => {
+                  const [left, top] = pawnPosition(
+                    actorId,
+                    index === 0 ? [25, 76] : [75, 76],
+                  );
+                  return (
+                    <span
+                      className={styles.racePawn}
+                      data-partner={actorId !== installationId}
+                      key={actorId}
+                      style={{ left: `${left}%`, top: `${top}%` }}
+                    >
+                      {actorId === installationId ? "J" : "P"}
+                    </span>
+                  );
+                })}
+              </div>
+              <div className={styles.raceStatus}>
+                {state.raceWinnerId ? (
+                  <strong>{raceWinnerName} bereikt de finish.</strong>
+                ) : (
+                  <strong>
+                    {raceIsMyTurn
+                      ? "Jij bent aan de beurt"
+                      : `${partnerName} is aan de beurt`}
+                  </strong>
+                )}
+                {state.raceLastRoll && (
+                  <span>
+                    Laatste worp: {state.raceLastRoll}
+                    {state.raceLastHitActorId
+                      ? " - raak! De andere pion gaat terug naar start."
+                      : ""}
+                  </span>
+                )}
+              </div>
+              <button
+                className={styles.dieButton}
+                disabled={
+                  pending || !raceIsMyTurn || Boolean(state.raceWinnerId)
+                }
+                onClick={() =>
+                  dispatch({
+                    type: "vrolijke-open-plek.race.rolled",
+                    actorId: installationId,
+                    roll: Math.floor(Math.random() * 6) + 1,
+                  })
+                }
+                type="button"
+              >
+                <b>{state.raceLastRoll ?? "?"}</b>
+                <span>Gooi de dobbelsteen</span>
+              </button>
+            </div>
+          )}
+
+          {mission === "setback" && state.raceTurn < 0 && (
+            <div className={styles.playArea}>
               <h2>De pion stond één vak voor de winst… en moet terug naar start</h2>
               <p>Wat helpt jou het snelst om niet in de ergernis te blijven hangen?</p>
               <div className={styles.responseGrid}>
@@ -369,7 +457,7 @@ export function VrolijkeOpenPlekGame({
               (mission === "tictactoe" && !winner) ||
               (mission === "bluff" && ownGuess === undefined) ||
               (mission === "duel" && !bothDuel) ||
-              (mission === "setback" && !bothSetback)
+              (mission === "setback" && !state.raceWinnerId)
             }
             onClick={() => dispatch({ type: "vrolijke-open-plek.mission.ready", actorId: installationId })}
             type="button"

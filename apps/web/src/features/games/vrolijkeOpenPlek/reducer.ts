@@ -28,6 +28,13 @@ export function createInitialVrolijkeOpenPlekState(
     bluffGuesses: {},
     duelChoices: {},
     setbackChoices: {},
+    racePositions: {},
+    raceTurn: 0,
+    raceLastRoll: null,
+    raceLastActorId: null,
+    raceLastHitActorId: null,
+    raceHitCounts: {},
+    raceWinnerId: null,
     missionReadyIds: [],
     reflections: {},
     conversationDoneIds: [],
@@ -163,6 +170,44 @@ export function vrolijkeOpenPlekReducer(
     };
   }
 
+  if (action.type === "vrolijke-open-plek.race.rolled") {
+    if (state.raceWinnerId) return state;
+    const expectedActor = memberIds[state.raceTurn % memberIds.length];
+    if (expectedActor !== action.actorId) return state;
+
+    const start = state.racePositions[action.actorId] ?? -1;
+    let next = Math.min(24, start + action.roll);
+    if ([4, 9, 14].includes(next % 16) && next < 24) {
+      next = Math.max(0, next - 2);
+    }
+    const hitActorId = memberIds.find(
+      (id) =>
+        id !== action.actorId &&
+        (state.racePositions[id] ?? -1) >= 0 &&
+        (state.racePositions[id] ?? -1) % 16 === next % 16,
+    );
+    const racePositions = {
+      ...state.racePositions,
+      [action.actorId]: next,
+      ...(hitActorId ? { [hitActorId]: -1 } : {}),
+    };
+    return {
+      ...state,
+      racePositions,
+      raceTurn: state.raceTurn + 1,
+      raceLastRoll: action.roll,
+      raceLastActorId: action.actorId,
+      raceLastHitActorId: hitActorId ?? null,
+      raceHitCounts: hitActorId
+        ? {
+            ...state.raceHitCounts,
+            [action.actorId]: (state.raceHitCounts[action.actorId] ?? 0) + 1,
+          }
+        : state.raceHitCounts,
+      raceWinnerId: next >= 24 ? action.actorId : null,
+    };
+  }
+
   if (action.type === "vrolijke-open-plek.mission.ready") {
     return {
       ...state,
@@ -195,6 +240,13 @@ export function vrolijkeOpenPlekReducer(
       bluffGuesses: {},
       duelChoices: {},
       setbackChoices: {},
+      racePositions: {},
+      raceTurn: 0,
+      raceLastRoll: null,
+      raceLastActorId: null,
+      raceLastHitActorId: null,
+      raceHitCounts: {},
+      raceWinnerId: null,
       missionReadyIds: [],
     };
   }
@@ -272,6 +324,18 @@ export function addDeveloperVrolijkeOpenPlekPartner(
     return vrolijkeOpenPlekReducer(
       state,
       { ...action, actorId: partnerId, choice: "comfort" },
+      memberIds,
+    );
+  }
+  if (action.type === "vrolijke-open-plek.race.rolled" && !state.raceWinnerId) {
+    const rolls = [3, 5, 2, 6, 4, 1];
+    return vrolijkeOpenPlekReducer(
+      state,
+      {
+        ...action,
+        actorId: partnerId,
+        roll: rolls[state.raceTurn % rolls.length]!,
+      },
       memberIds,
     );
   }

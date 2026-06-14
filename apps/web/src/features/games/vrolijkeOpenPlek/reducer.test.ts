@@ -141,6 +141,50 @@ describe("vrolijke open plek reducer", () => {
     expect(state.setbackChoices.b).toBe("pause");
   });
 
+  it("stuurt een geraakte racepion telkens terug naar start", () => {
+    let state: VrolijkeOpenPlekState = {
+      ...createInitialVrolijkeOpenPlekState(members),
+      racePositions: { a: 2, b: 5 },
+      raceTurn: 0,
+    };
+    state = reduce(state, {
+      type: "vrolijke-open-plek.race.rolled",
+      actorId: "a",
+      roll: 3,
+    });
+    expect(state.racePositions).toEqual({ a: 5, b: -1 });
+    expect(state.raceHitCounts.a).toBe(1);
+    expect(state.raceLastHitActorId).toBe("b");
+  });
+
+  it("houdt beurtvolgorde, paddenstoelterugslag en finish bij", () => {
+    let state = createInitialVrolijkeOpenPlekState(members);
+    state = reduce(state, {
+      type: "vrolijke-open-plek.race.rolled",
+      actorId: "b",
+      roll: 6,
+    });
+    expect(state.racePositions.b).toBeUndefined();
+
+    state = reduce(state, {
+      type: "vrolijke-open-plek.race.rolled",
+      actorId: "a",
+      roll: 5,
+    });
+    expect(state.racePositions.a).toBe(2);
+    state = {
+      ...state,
+      racePositions: { ...state.racePositions, b: 22 },
+    };
+    state = reduce(state, {
+      type: "vrolijke-open-plek.race.rolled",
+      actorId: "b",
+      roll: 4,
+    });
+    expect(state.racePositions.b).toBe(24);
+    expect(state.raceWinnerId).toBe("b");
+  });
+
   it("registreert gezamenlijk afronden zonder persoonlijke reflecties te mengen", () => {
     let state = createInitialVrolijkeOpenPlekState(members);
     state = reduce(state, {
