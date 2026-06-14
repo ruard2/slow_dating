@@ -64,7 +64,7 @@ export const worlds: WorldDefinition[] = [
     description: "Jullie ontdekken elkaar steeds dieper.",
     requiredDiscoveries: 5,
     priceCents: 200,
-    image: "/assets/kaart2-v3.webp",
+    image: "/assets/kaart2-v4.webp",
     imageAspectRatio: 3764 / 6688,
   },
   {
@@ -303,25 +303,25 @@ export const gamePlacements: GamePlacement[] = [
     worldId: 2,
     gameId: "kernkwadranten",
     order: 1,
-    position: { left: 16.5, top: 32.1, width: 23.2, height: 7.7 },
+    position: { left: 11.4, top: 32.2, width: 21.5, height: 7.2 },
   },
   {
     worldId: 2,
     gameId: "stilteruisje",
     order: 2,
-    position: { left: 11.3, top: 74, width: 17.7, height: 8.5 },
+    position: { left: 4.2, top: 73.6, width: 18.2, height: 8.2 },
   },
   {
     worldId: 2,
     gameId: "vrolijke-open-plek",
     order: 3,
-    position: { left: 10.8, top: 57.8, width: 17.3, height: 8.8 },
+    position: { left: 3.8, top: 57.2, width: 18.2, height: 8.5 },
   },
   {
     worldId: 2,
     gameId: "oude-eik",
     order: 4,
-    position: { left: 73.4, top: 38.2, width: 17.5, height: 8.2 },
+    position: { left: 80, top: 37.7, width: 17.5, height: 8.2 },
   },
 ];
 
