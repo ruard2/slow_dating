@@ -10,6 +10,7 @@ export interface GameComponentProps<TState, TAction = unknown> {
   pending: boolean;
   priorQualityOptions?: string[];
   priorAllergyOptions?: string[];
+  priorFamilyData?: Record<string, unknown> | null;
   openChat?(text?: string): void;
   openCall?(): void;
   dispatch(action: TAction): Promise<void>;

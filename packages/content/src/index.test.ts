@@ -18,7 +18,7 @@ describe("world and game registry", () => {
       expect(games.some((game) => game.id === placement.gameId)).toBe(true);
     }
     expect(getWorldPlacements(1)).toHaveLength(7);
-    expect(getWorldPlacements(2)).toHaveLength(3);
+    expect(getWorldPlacements(2)).toHaveLength(4);
   });
 
   it("only exposes available games and discovery scoring explicitly", () => {
@@ -34,5 +34,6 @@ describe("world and game registry", () => {
     expect(worldPathForGame("kernkwadranten")).toBe("/worlds/2");
     expect(worldPathForGame("stilteruisje")).toBe("/worlds/2");
     expect(worldPathForGame("vrolijke-open-plek")).toBe("/worlds/2");
+    expect(worldPathForGame("oude-eik")).toBe("/worlds/2");
   });
 });

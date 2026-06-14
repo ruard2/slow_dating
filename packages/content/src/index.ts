@@ -64,8 +64,8 @@ export const worlds: WorldDefinition[] = [
     description: "Jullie ontdekken elkaar steeds dieper.",
     requiredDiscoveries: 5,
     priceCents: 200,
-    image: "/assets/kaart2.webp",
-    imageAspectRatio: 4096 / 6140,
+    image: "/assets/kaart2-v3.webp",
+    imageAspectRatio: 3764 / 6688,
   },
   {
     id: 3,
@@ -223,6 +223,17 @@ export const games: GameMetadata[] = [
     scoresDiscovery: true,
   },
   {
+    id: "oude-eik",
+    title: "Oude Eik",
+    description:
+      "Onderzoek met mildheid welke familieboodschappen, rollen en beschermingsreacties je meeneemt.",
+    legacyPath: null,
+    modes: ["couple"],
+    version: 1,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
     id: "profiel",
     title: "Jouw profiel",
     description: "Bekijk de inzichten die over spellen heen zijn opgebouwd.",
@@ -292,19 +303,25 @@ export const gamePlacements: GamePlacement[] = [
     worldId: 2,
     gameId: "kernkwadranten",
     order: 1,
-    position: { left: 11.5, top: 29.2, width: 27.5, height: 8.8 },
+    position: { left: 16.5, top: 32.1, width: 23.2, height: 7.7 },
   },
   {
     worldId: 2,
     gameId: "stilteruisje",
     order: 2,
-    position: { left: 3.7, top: 74.5, width: 23.5, height: 9.5 },
+    position: { left: 11.3, top: 74, width: 17.7, height: 8.5 },
   },
   {
     worldId: 2,
     gameId: "vrolijke-open-plek",
     order: 3,
-    position: { left: 3.8, top: 56.5, width: 20, height: 10 },
+    position: { left: 10.8, top: 57.8, width: 17.3, height: 8.8 },
+  },
+  {
+    worldId: 2,
+    gameId: "oude-eik",
+    order: 4,
+    position: { left: 73.4, top: 38.2, width: 17.5, height: 8.2 },
   },
 ];
 

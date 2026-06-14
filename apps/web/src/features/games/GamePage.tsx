@@ -44,6 +44,14 @@ import {
   vrolijkeOpenPlekReducer,
 } from "./vrolijkeOpenPlek/reducer";
 import { serializeVrolijkeOpenPlekResult } from "./vrolijkeOpenPlek/result";
+import type { OudeEikAction } from "./oudeEik/contracts";
+import { oudeEikDefinition } from "./oudeEik/definition";
+import {
+  addDeveloperOudeEikPartner,
+  normalizeOudeEikState,
+  oudeEikReducer,
+} from "./oudeEik/reducer";
+import { serializeOudeEikResult } from "./oudeEik/result";
 
 export function GamePage({
   developerPartnerArriving,
@@ -550,6 +558,81 @@ export function GamePage({
     [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
   );
 
+  const dispatchOudeEikAction = useCallback(
+    async (action: OudeEikAction) => {
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+        const apply = () => {
+          let nextState = oudeEikReducer(
+            normalizeOudeEikState(current!.state),
+            action,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              nextState = addDeveloperOudeEikPartner(
+                nextState,
+                action,
+                partnerId,
+              );
+            }
+          }
+          const completesRun = action.type === "oude-eik.game.completed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeOudeEikResult(nextState),
+                }
+              : {}),
+          });
+        };
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (action.type === "oude-eik.game.completed") {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          navigate(worldPath);
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
+  );
+
   useEffect(() => {
     function receiveLegacyMessage(event: MessageEvent) {
       if (
@@ -915,6 +998,52 @@ export function GamePage({
           partnerName={partner?.displayName ?? "je partner"}
           pending={nativePending}
           state={normalizeVrolijkeOpenPlekState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (
+    game.status === "native" &&
+    game.id === oudeEikDefinition.id &&
+    run
+  ) {
+    if (relationshipResults.isFetching) return <LoadingScreen />;
+    const OudeEikComponent = oudeEikDefinition.Component;
+    const familyResult =
+      relationshipResults.data?.find(
+        ({ provenance }) => provenance.gameId === "familiedorp",
+      )?.result ?? null;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="oude-eik"
+      >
+        {pair.developerMode && (
+          <button
+            className={styles.developerRestartGame}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
+        <OudeEikComponent
+          dispatch={dispatchOudeEikAction}
+          installationId={session?.installationId ?? ""}
+          memberIds={pair.members.map((member) => member.installationId)}
+          openCall={() => setDrawer("call")}
+          openChat={(text = "") => {
+            setChatContext(text, false);
+            setDrawer("chat");
+          }}
+          partnerName={partner?.displayName ?? "je partner"}
+          pending={nativePending}
+          priorFamilyData={familyResult}
+          state={normalizeOudeEikState(run.state)}
         />
       </main>
     );
