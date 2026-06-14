@@ -178,6 +178,11 @@ export const api = {
     }),
   getActiveGameRun: (gameId: string) =>
     request(`/api/game-runs/active/${encodeURIComponent(gameId)}`, gameRunSchema.nullable()),
+  abandonGameRun: (runId: string) =>
+    request(`/api/game-runs/${runId}`, gameRunSchema, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "abandoned" }),
+    }),
   applyGameAction: (
     runId: string,
     input: {

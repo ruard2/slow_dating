@@ -6,6 +6,7 @@ import {
   games,
   getWorldPlacements,
   isDiscoveryGameId,
+  worldPathForGame,
   worlds,
 } from "./index.js";
 
@@ -26,5 +27,11 @@ describe("world and game registry", () => {
     expect(findPlayableGame("profiel")).toBeUndefined();
     expect(isDiscoveryGameId("waarden")).toBe(true);
     expect(isDiscoveryGameId("profiel")).toBe(false);
+  });
+
+  it("returns the owning world route for every game", () => {
+    expect(worldPathForGame("waarden")).toBe("/");
+    expect(worldPathForGame("kernkwadranten")).toBe("/worlds/2");
+    expect(worldPathForGame("stilteruisje")).toBe("/worlds/2");
   });
 });

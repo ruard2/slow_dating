@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 
 import type { GameRun, Pair } from "@slow-dating/contracts";
-import { findPlayableGame } from "@slow-dating/content";
+import { findPlayableGame, worldPathForGame } from "@slow-dating/content";
 
 import styles from "../../App.module.css";
 import { LoadingScreen } from "../../app/LoadingScreen";
@@ -63,6 +63,7 @@ export function GamePage({
   const setDrawer = useAppStore((state) => state.setDrawer);
   const setChatContext = useAppStore((state) => state.setChatContext);
   const game = findPlayableGame(gameId);
+  const worldPath = worldPathForGame(gameId);
   const relationshipResults = useQuery({
     queryKey: ["relationship-results", pair?.id],
     queryFn: () => api.getRelationshipResults(pair!.id),
@@ -80,6 +81,23 @@ export function GamePage({
     onSuccess: (run) => {
       queryClient.setQueryData(["active-game-run", pair?.id, gameId], run);
       send("game.lobby.enter", { gameId, gameRunId: run.id });
+    },
+  });
+  const restartRun = useMutation({
+    mutationFn: async () => {
+      if (runRef.current) {
+        await api.abandonGameRun(runRef.current.id);
+      }
+      return api.createGameRun(gameId, game?.version ?? 1);
+    },
+    onSuccess: (freshRun) => {
+      runRef.current = freshRun;
+      setArrivalComplete(false);
+      queryClient.setQueryData(
+        ["active-game-run", pair?.id, gameId],
+        freshRun,
+      );
+      send("game.lobby.enter", { gameId, gameRunId: freshRun.id });
     },
   });
   const run = activeRun.data ?? enterRun.data;
@@ -262,7 +280,7 @@ export function GamePage({
         });
         if (action.type === "waarden.game.completed") {
           await queryClient.invalidateQueries({ queryKey: ["progress"] });
-          navigate("/");
+          navigate(worldPath);
         }
       });
       actionQueueRef.current = queued.catch(() => undefined);
@@ -272,7 +290,7 @@ export function GamePage({
         setNativePending(false);
       }
     },
-    [activeRun, gameId, navigate, pair, queryClient, send],
+    [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
   );
 
   const dispatchKernkwadrantenAction = useCallback(
@@ -342,7 +360,7 @@ export function GamePage({
           await queryClient.invalidateQueries({
             queryKey: ["relationship-results", pair?.id],
           });
-          navigate("/worlds/2");
+          navigate(worldPath);
         }
       });
       actionQueueRef.current = queued.catch(() => undefined);
@@ -352,7 +370,7 @@ export function GamePage({
         setNativePending(false);
       }
     },
-    [activeRun, gameId, navigate, pair, queryClient, send],
+    [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
   );
 
   const dispatchStilteruisjeAction = useCallback(
@@ -419,7 +437,7 @@ export function GamePage({
           await queryClient.invalidateQueries({
             queryKey: ["relationship-results", pair?.id],
           });
-          navigate("/worlds/2");
+          navigate(worldPath);
         }
       });
       actionQueueRef.current = queued.catch(() => undefined);
@@ -429,7 +447,7 @@ export function GamePage({
         setNativePending(false);
       }
     },
-    [activeRun, gameId, navigate, pair, queryClient, send],
+    [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
   );
 
   useEffect(() => {
@@ -583,7 +601,7 @@ export function GamePage({
       <main className={styles.gameWelcome}>
         <button
           className={styles.backButton}
-          onClick={() => navigate("/")}
+          onClick={() => navigate(worldPath)}
           type="button"
         >
           Terug naar de kaart
@@ -629,6 +647,16 @@ export function GamePage({
         data-game-run-id={run.id}
         data-native-game="waarden"
       >
+        {pair.developerMode && (
+          <button
+            className={styles.developerRestartGame}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
         <WaardenComponent
           dispatch={dispatchWaardenAction}
           installationId={session?.installationId ?? ""}
@@ -676,6 +704,16 @@ export function GamePage({
         data-game-run-id={run.id}
         data-native-game="kernkwadranten"
       >
+        {pair.developerMode && (
+          <button
+            className={styles.developerRestartGame}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
         <KernkwadrantenComponent
           dispatch={dispatchKernkwadrantenAction}
           installationId={session?.installationId ?? ""}
@@ -708,6 +746,16 @@ export function GamePage({
         data-game-run-id={run.id}
         data-native-game="stilteruisje"
       >
+        {pair.developerMode && (
+          <button
+            className={styles.developerRestartGame}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
         <StilteruisjeComponent
           dispatch={dispatchStilteruisjeAction}
           installationId={session?.installationId ?? ""}

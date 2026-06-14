@@ -324,6 +324,13 @@ export function isDiscoveryGameId(gameId: string) {
   return Boolean(findGame(gameId)?.scoresDiscovery);
 }
 
+export function worldPathForGame(gameId: string) {
+  const worldId = gamePlacements.find(
+    (placement) => placement.gameId === gameId,
+  )?.worldId;
+  return worldId && worldId > 1 ? `/worlds/${worldId}` : "/";
+}
+
 export function getWorldPlacements(worldId: number) {
   return gamePlacements
     .filter((placement) => placement.worldId === worldId)

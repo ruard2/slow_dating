@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import type { Message } from "@slow-dating/contracts";
+import { worldPathForGame } from "@slow-dating/content";
 
 import styles from "../App.module.css";
 import { AccountGate } from "../features/account/AccountPages";
@@ -91,6 +92,8 @@ export function AppShell() {
   const callAllowed = Boolean(callAccess.data?.unlocked);
   const callActive = call.status !== "idle";
   const inGame = location.pathname.startsWith("/games/");
+  const currentGameId = inGame ? location.pathname.split("/")[2] ?? "" : "";
+  const currentWorldPath = worldPathForGame(currentGameId);
 
   useEffect(() => {
     if (lastEvent?.type !== "chat.message") return;
@@ -154,7 +157,7 @@ export function AppShell() {
           aria-label="Terug naar de kaart"
           className={styles.gameBackButton!}
           onClick={() => setDrawer(null)}
-          to="/"
+          to={currentWorldPath}
         >
           <ShellIcon name="back" />
         </NavLink>
