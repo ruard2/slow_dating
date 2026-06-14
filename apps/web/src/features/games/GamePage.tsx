@@ -85,7 +85,16 @@ export function GamePage({
       query.state.data?.status === "completed" ? false : 1_500,
   });
   const enterRun = useMutation({
-    mutationFn: () => api.createGameRun(gameId, game?.version ?? 1),
+    mutationFn: async () => {
+      if (
+        pair?.developerMode &&
+        gameId === vrolijkeOpenPlekDefinition.id
+      ) {
+        const current = await api.getActiveGameRun(gameId);
+        if (current) await api.abandonGameRun(current.id);
+      }
+      return api.createGameRun(gameId, game?.version ?? 1);
+    },
     onSuccess: (run) => {
       queryClient.setQueryData(["active-game-run", pair?.id, gameId], run);
       send("game.lobby.enter", { gameId, gameRunId: run.id });
@@ -896,6 +905,7 @@ export function GamePage({
         <VrolijkeOpenPlekComponent
           dispatch={dispatchVrolijkeOpenPlekAction}
           installationId={session?.installationId ?? ""}
+          key={run.id}
           memberIds={pair.members.map((member) => member.installationId)}
           openCall={() => setDrawer("call")}
           openChat={(text = "") => {

@@ -168,7 +168,39 @@ describe("vrolijke open plek reducer", () => {
     } satisfies VrolijkeOpenPlekAction;
     state = reduce(state, action);
     state = addDeveloperVrolijkeOpenPlekPartner(state, action, "b", members);
-    expect(state.missionChoices.b).toEqual(["bluff", "duel", "video"]);
+    expect(state.missionChoices.b).toEqual(["video", "tictactoe", "setback"]);
     expect(selectedMission(state, members)).toBe("video");
+  });
+
+  it("laat in developer mode iedere opdracht als eerste keuze testen", () => {
+    for (const mission of [
+      "video",
+      "tictactoe",
+      "bluff",
+      "duel",
+      "setback",
+    ] as const) {
+      let state = createInitialVrolijkeOpenPlekState(members);
+      const alternatives = [
+        "video",
+        "tictactoe",
+        "bluff",
+        "duel",
+        "setback",
+      ].filter((id) => id !== mission).slice(0, 2) as typeof mission[];
+      const action = {
+        type: "vrolijke-open-plek.missions.chosen",
+        actorId: "a",
+        missions: [mission, ...alternatives],
+      } satisfies VrolijkeOpenPlekAction;
+      state = reduce(state, action);
+      state = addDeveloperVrolijkeOpenPlekPartner(
+        state,
+        action,
+        "b",
+        members,
+      );
+      expect(selectedMission(state, members)).toBe(mission);
+    }
   });
 });

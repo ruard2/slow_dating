@@ -50,12 +50,27 @@ export function selectedMission(
   memberIds: string[],
 ): MissionId | null {
   if (!memberIds.every((id) => state.missionChoices[id])) return null;
-  return (
-    missions.find(({ id }) =>
+  const common = missions
+    .map(({ id }) => id)
+    .filter((id) =>
       memberIds.every((memberId) =>
         state.missionChoices[memberId]?.includes(id),
       ),
-    )?.id ?? null
+    );
+  return (
+    common.sort(
+      (left, right) =>
+        memberIds.reduce(
+          (score, memberId) =>
+            score + (state.missionChoices[memberId]?.indexOf(left) ?? 99),
+          0,
+        ) -
+        memberIds.reduce(
+          (score, memberId) =>
+            score + (state.missionChoices[memberId]?.indexOf(right) ?? 99),
+          0,
+        ),
+    )[0] ?? null
   );
 }
 
@@ -170,7 +185,7 @@ export function addDeveloperVrolijkeOpenPlekPartner(
       {
         ...action,
         actorId: partnerId,
-        missions: ["bluff", "duel", "video"],
+        missions: action.missions,
       },
       memberIds,
     );
