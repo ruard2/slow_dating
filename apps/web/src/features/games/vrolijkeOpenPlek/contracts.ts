@@ -19,6 +19,9 @@ export const vrolijkeOpenPlekStateSchema = z.object({
   schemaVersion: z.literal(1),
   readyInstallationIds: z.array(z.string()).default([]),
   missionChoices: z.record(z.string(), z.array(missionIdSchema).length(3)).default({}),
+  activeMissionId: missionIdSchema.nullable().default(null),
+  completedMissionIds: z.array(missionIdSchema).default([]),
+  missionsFinished: z.boolean().default(false),
   videoUrl: z.string().default(""),
   tictactoeBoard: z.array(z.enum(["x", "o"]).nullable()).length(9).default(
     Array.from({ length: 9 }, () => null),
@@ -80,6 +83,11 @@ export const vrolijkeOpenPlekActionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("vrolijke-open-plek.mission.ready"),
     actorId: z.string(),
+  }),
+  z.object({
+    type: z.literal("vrolijke-open-plek.mission.next"),
+    actorId: z.string(),
+    missionId: missionIdSchema.nullable(),
   }),
   z.object({
     type: z.literal("vrolijke-open-plek.reflection.submitted"),

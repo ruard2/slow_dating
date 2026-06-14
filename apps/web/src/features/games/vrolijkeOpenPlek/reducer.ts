@@ -18,6 +18,9 @@ export function createInitialVrolijkeOpenPlekState(
     schemaVersion: 1,
     readyInstallationIds,
     missionChoices: {},
+    activeMissionId: null,
+    completedMissionIds: [],
+    missionsFinished: false,
     videoUrl: "",
     tictactoeBoard: Array.from({ length: 9 }, () => null),
     tictactoeTurn: 0,
@@ -49,16 +52,26 @@ export function selectedMission(
   state: VrolijkeOpenPlekState,
   memberIds: string[],
 ): MissionId | null {
+  if (state.missionsFinished) return null;
+  if (state.activeMissionId) return state.activeMissionId;
   if (!memberIds.every((id) => state.missionChoices[id])) return null;
-  const common = missions
+  const common = availableCommonMissions(state, memberIds);
+  return common[0] ?? null;
+}
+
+export function availableCommonMissions(
+  state: VrolijkeOpenPlekState,
+  memberIds: string[],
+): MissionId[] {
+  if (!memberIds.every((id) => state.missionChoices[id])) return [];
+  return missions
     .map(({ id }) => id)
     .filter((id) =>
-      memberIds.every((memberId) =>
-        state.missionChoices[memberId]?.includes(id),
-      ),
-    );
-  return (
-    common.sort(
+      !state.completedMissionIds.includes(id) &&
+      id !== state.activeMissionId &&
+      memberIds.every((memberId) => state.missionChoices[memberId]?.includes(id)),
+    )
+    .sort(
       (left, right) =>
         memberIds.reduce(
           (score, memberId) =>
@@ -70,8 +83,7 @@ export function selectedMission(
             score + (state.missionChoices[memberId]?.indexOf(right) ?? 99),
           0,
         ),
-    )[0] ?? null
-  );
+    );
 }
 
 export function tictactoeWinner(state: VrolijkeOpenPlekState) {
@@ -155,6 +167,35 @@ export function vrolijkeOpenPlekReducer(
     return {
       ...state,
       missionReadyIds: [...new Set([...state.missionReadyIds, action.actorId])],
+    };
+  }
+
+  if (action.type === "vrolijke-open-plek.mission.next") {
+    const currentMission = selectedMission(state, memberIds);
+    const allReady = memberIds.every((id) => state.missionReadyIds.includes(id));
+    if (!currentMission || !allReady) return state;
+    if (
+      action.missionId &&
+      (action.missionId === currentMission ||
+        state.completedMissionIds.includes(action.missionId))
+    ) {
+      return state;
+    }
+    return {
+      ...state,
+      activeMissionId: action.missionId,
+      completedMissionIds: [
+        ...new Set([...state.completedMissionIds, currentMission]),
+      ],
+      missionsFinished: action.missionId === null,
+      videoUrl: "",
+      tictactoeBoard: Array.from({ length: 9 }, () => null),
+      tictactoeTurn: 0,
+      bluffClaims: {},
+      bluffGuesses: {},
+      duelChoices: {},
+      setbackChoices: {},
+      missionReadyIds: [],
     };
   }
 

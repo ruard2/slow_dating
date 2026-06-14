@@ -8,6 +8,7 @@ export function serializeVrolijkeOpenPlekResult(
   return {
     schemaVersion: 1,
     selectedMission: selectedMission(state, memberIds),
+    completedMissionIds: state.completedMissionIds,
     missionChoices: state.missionChoices,
     reflections: state.reflections,
     playSignals: {

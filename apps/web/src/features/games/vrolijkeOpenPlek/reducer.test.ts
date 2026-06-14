@@ -159,6 +159,53 @@ describe("vrolijke open plek reducer", () => {
     expect(state.conversationDoneIds).toEqual(["a"]);
   });
 
+  it("doorloopt gezamenlijke opdrachten zonder een late klik te laten overslaan", () => {
+    let state = createInitialVrolijkeOpenPlekState(members);
+    for (const actorId of members) {
+      state = reduce(state, {
+        type: "vrolijke-open-plek.missions.chosen",
+        actorId,
+        missions: ["tictactoe", "video", "bluff"],
+      });
+      state = reduce(state, {
+        type: "vrolijke-open-plek.mission.ready",
+        actorId,
+      });
+    }
+
+    state = reduce(state, {
+      type: "vrolijke-open-plek.mission.next",
+      actorId: "a",
+      missionId: "video",
+    });
+    expect(state.completedMissionIds).toEqual(["tictactoe"]);
+    expect(selectedMission(state, members)).toBe("video");
+    expect(state.missionReadyIds).toEqual([]);
+
+    const afterLateClick = reduce(state, {
+      type: "vrolijke-open-plek.mission.next",
+      actorId: "b",
+      missionId: "bluff",
+    });
+    expect(afterLateClick).toEqual(state);
+  });
+
+  it("kan na de laatste opdracht bewust naar de reflectie", () => {
+    let state: VrolijkeOpenPlekState = {
+      ...createInitialVrolijkeOpenPlekState(members),
+      activeMissionId: "duel",
+      missionReadyIds: [...members],
+    };
+    state = reduce(state, {
+      type: "vrolijke-open-plek.mission.next",
+      actorId: "a",
+      missionId: null,
+    });
+    expect(state.completedMissionIds).toEqual(["duel"]);
+    expect(state.missionsFinished).toBe(true);
+    expect(selectedMission(state, members)).toBeNull();
+  });
+
   it("simuleert een complete maar afwijkende testpartner", () => {
     let state = createInitialVrolijkeOpenPlekState(members);
     const action = {

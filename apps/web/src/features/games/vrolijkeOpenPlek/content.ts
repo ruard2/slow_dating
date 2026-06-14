@@ -71,6 +71,83 @@ export const supportOptions = [
   { id: "soften", label: "Maak het kleiner en zachter" },
 ] as const;
 
+const sharedSupportOptions = supportOptions.map(({ id, label }) => ({ id, label }));
+
+export const reflectionOptionsByMission = {
+  video: {
+    relief: [
+      { id: "absurdity", label: "De onverwachte of absurde humor" },
+      { id: "challenge", label: "Samen iets nieuws ontdekken" },
+      { id: "together", label: "Samen naar hetzelfde kijken" },
+      { id: "seen", label: "Elkaars gevoel voor humor beter kennen" },
+    ],
+    pressure: [
+      { id: "laugh", label: "Ik lach gemakkelijk mee" },
+      { id: "focus", label: "Ik let vooral op wat ik echt grappig vind" },
+      { id: "tease", label: "Ik plaag de ander met onze verschillen" },
+      { id: "withdraw", label: "Ik houd mijn reactie eerder voor mezelf" },
+    ],
+    support: sharedSupportOptions,
+  },
+  tictactoe: {
+    relief: [
+      { id: "absurdity", label: "De kleine missers en verrassingen" },
+      { id: "challenge", label: "De korte tactische uitdaging" },
+      { id: "together", label: "Samen helemaal in het spel zitten" },
+      { id: "seen", label: "Merken hoe mijn partner op mij reageert" },
+    ],
+    pressure: pressureOptions.map(({ id, label }) => ({ id, label })),
+    support: sharedSupportOptions,
+  },
+  bluff: {
+    relief: [
+      { id: "absurdity", label: "De onverwachte verhalen" },
+      { id: "challenge", label: "Proberen de waarheid te ontdekken" },
+      { id: "together", label: "Samen in het verhaal meegaan" },
+      { id: "seen", label: "Iets nieuws van elkaar leren kennen" },
+    ],
+    pressure: [
+      { id: "laugh", label: "Ik maak mijn verhaal grappiger" },
+      { id: "focus", label: "Ik let scherp op kleine signalen" },
+      { id: "tease", label: "Ik probeer de ander speels te misleiden" },
+      { id: "withdraw", label: "Ik vind het spannend om iets te vertellen" },
+    ],
+    support: sharedSupportOptions,
+  },
+  duel: {
+    relief: [
+      { id: "absurdity", label: "De willekeur en verrassing" },
+      { id: "challenge", label: "Het korte duel" },
+      { id: "together", label: "Samen direct in actie komen" },
+      { id: "seen", label: "Elkaars spontane reactie zien" },
+    ],
+    pressure: pressureOptions.map(({ id, label }) => ({ id, label })),
+    support: sharedSupportOptions,
+  },
+  setback: {
+    relief: [
+      { id: "absurdity", label: "De tegenslag kleiner kunnen maken" },
+      { id: "challenge", label: "Weer een nieuwe poging zien" },
+      { id: "together", label: "De tegenvaller samen opvangen" },
+      { id: "seen", label: "Mijn reactie serieus genomen voelen" },
+    ],
+    pressure: [
+      { id: "laugh", label: "Ik probeer er snel om te lachen" },
+      { id: "focus", label: "Ik wil het direct opnieuw proberen" },
+      { id: "tease", label: "Ik maak er samen iets speels van" },
+      { id: "withdraw", label: "Ik heb eerst even afstand nodig" },
+    ],
+    support: sharedSupportOptions,
+  },
+} satisfies Record<
+  MissionId,
+  {
+    relief: ReadonlyArray<{ id: string; label: string }>;
+    pressure: ReadonlyArray<{ id: string; label: string }>;
+    support: ReadonlyArray<{ id: string; label: string }>;
+  }
+>;
+
 export const conversationQuestions = [
   "Wanneer helpt humor jou echt, en wanneer gebruik je humor om iets niet te voelen?",
   "Wat zag je vandaag bij mij dat je nog niet zo duidelijk kende?",

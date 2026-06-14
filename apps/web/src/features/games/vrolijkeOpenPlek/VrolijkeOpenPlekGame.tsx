@@ -11,13 +11,15 @@ import {
   conversationQuestions,
   isYouTubeUrl,
   missions,
-  pressureOptions,
-  reliefOptions,
+  reflectionOptionsByMission,
   setbackOptions,
-  supportOptions,
   type MissionId,
 } from "./content";
-import { selectedMission, tictactoeWinner } from "./reducer";
+import {
+  availableCommonMissions,
+  selectedMission,
+  tictactoeWinner,
+} from "./reducer";
 import styles from "./VrolijkeOpenPlekGame.module.css";
 
 function Waiting({ partnerName, text }: { partnerName: string; text?: string }) {
@@ -75,6 +77,19 @@ export function VrolijkeOpenPlekGame({
   const allConversationDone = memberIds.every((id) =>
     state.conversationDoneIds.includes(id),
   );
+  const remainingCommonMissions = availableCommonMissions(
+    state,
+    memberIds,
+  ).filter((id) => id !== mission);
+  const otherUnplayedMissions = missions.filter(
+    ({ id }) =>
+      id !== mission &&
+      !state.completedMissionIds.includes(id) &&
+      !remainingCommonMissions.includes(id),
+  );
+  const reflectionMission =
+    state.completedMissionIds.at(-1) ?? mission ?? "tictactoe";
+  const reflectionOptions = reflectionOptionsByMission[reflectionMission];
 
   function toggleMission(id: MissionId) {
     setChoices((current) =>
@@ -162,7 +177,7 @@ export function VrolijkeOpenPlekGame({
           : `${partnerName} wint deze ronde`
       : "";
 
-  if (!allReady) {
+  if (!state.missionsFinished && !allReady) {
     if (ownReady) {
       return <section className={styles.game}><div className={styles.panel}><Waiting partnerName={partnerName} text="Jouw speelronde is klaar. Zodra jullie allebei gereed zijn, kijken we wat dit over jullie zegt." /></div></section>;
     }
@@ -359,7 +374,108 @@ export function VrolijkeOpenPlekGame({
             onClick={() => dispatch({ type: "vrolijke-open-plek.mission.ready", actorId: installationId })}
             type="button"
           >
-            Dit gaf lucht
+            Verder
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  if (!state.missionsFinished && allReady) {
+    const completedTitle = missions.find(({ id }) => id === mission)?.title;
+    return (
+      <section className={styles.game}>
+        <div className={styles.panel}>
+          <span className={styles.kicker}>Opdracht afgerond</span>
+          <h1>{completedTitle} zit erop</h1>
+          <p className={styles.lead}>
+            Willen jullie de open plek nog even houden, of is dit genoeg voor
+            vandaag?
+          </p>
+
+          {remainingCommonMissions.length > 0 ? (
+            <div className={styles.nextMissionBlock}>
+              <h2>
+                {remainingCommonMissions.length === 1
+                  ? "Deze kozen jullie ook allebei"
+                  : "Jullie andere gezamenlijke keuzes"}
+              </h2>
+              <p>
+                Jullie kunnen de andere gezamenlijke keuzes nu ook spelen.
+              </p>
+              <div className={styles.nextMissionGrid}>
+                {remainingCommonMissions.map((id) => {
+                  const option = missions.find((item) => item.id === id)!;
+                  return (
+                    <button
+                      disabled={pending}
+                      key={id}
+                      onClick={() =>
+                        dispatch({
+                          type: "vrolijke-open-plek.mission.next",
+                          actorId: installationId,
+                          missionId: id,
+                        })
+                      }
+                      type="button"
+                    >
+                      <b>{option.icon}</b>
+                      <span>
+                        <strong>{option.title}</strong>
+                        <small>{option.summary}</small>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            otherUnplayedMissions.length > 0 && (
+              <div className={styles.nextMissionBlock}>
+                <h2>Nog eentje doen?</h2>
+                <p>
+                  Jullie hadden geen andere gezamenlijke keuze. Kies samen nog
+                  één opdracht, of rond de open plek af.
+                </p>
+                <div className={styles.nextMissionGrid}>
+                  {otherUnplayedMissions.map((option) => (
+                    <button
+                      disabled={pending}
+                      key={option.id}
+                      onClick={() =>
+                        dispatch({
+                          type: "vrolijke-open-plek.mission.next",
+                          actorId: installationId,
+                          missionId: option.id,
+                        })
+                      }
+                      type="button"
+                    >
+                      <b>{option.icon}</b>
+                      <span>
+                        <strong>{option.title}</strong>
+                        <small>{option.summary}</small>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          )}
+
+          <button
+            className={styles.primary}
+            disabled={pending}
+            onClick={() =>
+              dispatch({
+                type: "vrolijke-open-plek.mission.next",
+                actorId: installationId,
+                missionId: null,
+              })
+            }
+            type="button"
+          >
+            Naar de afronding
           </button>
         </div>
       </section>
@@ -381,9 +497,9 @@ export function VrolijkeOpenPlekGame({
             <div>{[1,2,3,4,5].map((value) => <button data-selected={lighter === value} key={value} onClick={() => setLighter(value)} type="button">{value}</button>)}</div>
           </div>
           {[
-            ["Wat gaf vooral lucht?", reliefOptions, relief, setRelief],
-            ["Wat doe jij zodra er speelspanning ontstaat?", pressureOptions, pressure, setPressure],
-            ["Wat helpt jou dan van je partner?", supportOptions, support, setSupport],
+            ["Wat gaf vooral lucht?", reflectionOptions.relief, relief, setRelief],
+            ["Wat deed jij tijdens het spelen?", reflectionOptions.pressure, pressure, setPressure],
+            ["Wat helpt jou dan van je partner?", reflectionOptions.support, support, setSupport],
           ].map(([title, options, value, setter]) => (
             <div className={styles.reflectionBlock} key={String(title)}>
               <h2>{String(title)}</h2>
@@ -413,7 +529,7 @@ export function VrolijkeOpenPlekGame({
             }
             type="button"
           >
-            Bewaar mijn luchtmakers
+            Verder
           </button>
         </div>
       </section>
