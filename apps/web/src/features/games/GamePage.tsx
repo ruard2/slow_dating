@@ -576,6 +576,7 @@ export function GamePage({
             await queryClient.invalidateQueries({
               queryKey: ["relationship-results", pair?.id],
             });
+            navigate(worldPath);
           }
         }).catch(() => {
             if (completesRun) completedRunRef.current = null;
@@ -595,6 +596,8 @@ export function GamePage({
     send,
     setChatContext,
     setDrawer,
+    navigate,
+    worldPath,
   ]);
 
   if (!game) return <Navigate replace to="/" />;
