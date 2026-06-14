@@ -213,6 +213,16 @@ export const games: GameMetadata[] = [
     scoresDiscovery: true,
   },
   {
+    id: "vrolijke-open-plek",
+    title: "Vrolijke Open Plek",
+    description: "Speel, ontspan en ontdek wat jullie werkelijk lucht geeft.",
+    legacyPath: null,
+    modes: ["couple"],
+    version: 1,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
     id: "profiel",
     title: "Jouw profiel",
     description: "Bekijk de inzichten die over spellen heen zijn opgebouwd.",
@@ -289,6 +299,12 @@ export const gamePlacements: GamePlacement[] = [
     gameId: "stilteruisje",
     order: 2,
     position: { left: 3.7, top: 74.5, width: 23.5, height: 9.5 },
+  },
+  {
+    worldId: 2,
+    gameId: "vrolijke-open-plek",
+    order: 3,
+    position: { left: 3.5, top: 49.5, width: 24.5, height: 8.7 },
   },
 ];
 

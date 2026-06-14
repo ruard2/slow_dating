@@ -36,6 +36,14 @@ import {
   stilteruisjeReducer,
 } from "./stilteruisje/reducer";
 import { serializeStilteruisjeResult } from "./stilteruisje/result";
+import type { VrolijkeOpenPlekAction } from "./vrolijkeOpenPlek/contracts";
+import { vrolijkeOpenPlekDefinition } from "./vrolijkeOpenPlek/definition";
+import {
+  addDeveloperVrolijkeOpenPlekPartner,
+  normalizeVrolijkeOpenPlekState,
+  vrolijkeOpenPlekReducer,
+} from "./vrolijkeOpenPlek/reducer";
+import { serializeVrolijkeOpenPlekResult } from "./vrolijkeOpenPlek/result";
 
 export function GamePage({
   developerPartnerArriving,
@@ -450,6 +458,89 @@ export function GamePage({
     [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
   );
 
+  const dispatchVrolijkeOpenPlekAction = useCallback(
+    async (action: VrolijkeOpenPlekAction) => {
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+
+        const apply = () => {
+          let nextState = vrolijkeOpenPlekReducer(
+            normalizeVrolijkeOpenPlekState(current!.state),
+            action,
+            memberIds,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              nextState = addDeveloperVrolijkeOpenPlekPartner(
+                nextState,
+                action,
+                partnerId,
+                memberIds,
+              );
+            }
+          }
+          const completesRun =
+            action.type === "vrolijke-open-plek.game.completed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeVrolijkeOpenPlekResult(
+                    nextState,
+                    memberIds,
+                  ),
+                }
+              : {}),
+          });
+        };
+
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (action.type === "vrolijke-open-plek.game.completed") {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          navigate(worldPath);
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
+  );
+
   useEffect(() => {
     function receiveLegacyMessage(event: MessageEvent) {
       if (
@@ -774,6 +865,46 @@ export function GamePage({
           partnerName={partner?.displayName ?? "je partner"}
           pending={nativePending}
           state={normalizeStilteruisjeState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (
+    game.status === "native" &&
+    game.id === vrolijkeOpenPlekDefinition.id &&
+    run
+  ) {
+    const VrolijkeOpenPlekComponent = vrolijkeOpenPlekDefinition.Component;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="vrolijke-open-plek"
+      >
+        {pair.developerMode && (
+          <button
+            className={styles.developerRestartGame}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
+        <VrolijkeOpenPlekComponent
+          dispatch={dispatchVrolijkeOpenPlekAction}
+          installationId={session?.installationId ?? ""}
+          memberIds={pair.members.map((member) => member.installationId)}
+          openCall={() => setDrawer("call")}
+          openChat={(text = "") => {
+            setChatContext(text, false);
+            setDrawer("chat");
+          }}
+          partnerName={partner?.displayName ?? "je partner"}
+          pending={nativePending}
+          state={normalizeVrolijkeOpenPlekState(run.state)}
         />
       </main>
     );
