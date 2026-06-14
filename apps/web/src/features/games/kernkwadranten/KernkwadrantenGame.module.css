@@ -1,0 +1,23 @@
+.game{position:absolute;inset:0;overflow:auto;padding:5.2rem 1rem 7rem;color:#f4ecd8;background:linear-gradient(rgba(5,13,8,.74),rgba(5,13,8,.92)),url("/assets/kaart2.webp") center top/cover fixed;font-family:system-ui,sans-serif}
+.panel{width:min(56rem,100%);margin:auto;padding:clamp(1.15rem,4vw,2rem);border:1px solid rgba(220,190,111,.28);border-radius:1.4rem;background:rgba(11,28,18,.92);box-shadow:0 1.5rem 5rem rgba(0,0,0,.48);backdrop-filter:blur(14px)}
+.kicker{color:#d9b965;font-size:.7rem;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+.panel h1,.panel h2{margin:.35rem 0 .65rem;font-family:Georgia,serif;font-weight:500}.panel h1{font-size:clamp(2rem,7vw,3.5rem)}.panel h2{font-size:clamp(1.45rem,5vw,2.3rem)}
+.lead{max-width:44rem;margin:0 0 1.25rem;color:#c0cbbb;line-height:1.6}
+.section{margin:1rem 0;padding:1rem;border:1px solid rgba(255,255,255,.08);border-radius:1rem;background:rgba(255,255,255,.035)}
+.section h3{margin:0 0 .7rem;color:#efd99f;font:500 1rem Georgia,serif}
+.chips,.options,.actions{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip,.option,.primary,.secondary{padding:.7rem .9rem;border:1px solid rgba(219,191,112,.25);border-radius:.8rem;color:#e8eee4;background:rgba(255,255,255,.055);font:inherit;cursor:pointer}
+.chip[data-selected="true"],.option[data-selected="true"]{border-color:#d9b965;color:#162010;background:#d9b965;font-weight:800}
+.primary{border:0;color:#17200e;background:linear-gradient(135deg,#d2ad55,#f0d88e);font-weight:900}.secondary{background:rgba(128,166,91,.14)}
+.primary:disabled,.secondary:disabled{opacity:.45;cursor:not-allowed}
+.explainGrid,.compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.explainGrid article,.quadrant{padding:1rem;border-radius:1rem;background:rgba(255,255,255,.045)}
+.explainGrid strong{display:block;margin-bottom:.35rem;color:#edce7d}.explainGrid p{margin:0;color:#bdc8b8;font-size:.82rem;line-height:1.45}
+.step{display:grid;grid-template-columns:2rem 1fr;gap:.75rem;align-items:start;margin:.8rem 0}.step span{width:2rem;height:2rem;display:grid;place-items:center;border:1px solid #d9b965;border-radius:50%;color:#efd88e;font-family:Georgia,serif}
+.field{margin:1rem 0}.field>strong{display:block;margin-bottom:.5rem;color:#edce7d}
+.quadrant{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem}.quadrant div{padding:.75rem;border:1px solid rgba(255,255,255,.08);border-radius:.75rem;background:rgba(0,0,0,.16)}.quadrant small{display:block;color:#b59d62;text-transform:uppercase;letter-spacing:.09em}.quadrant strong{display:block;margin-top:.25rem}
+.compare article h3{margin:.1rem 0 .75rem;color:#efd99f;font-family:Georgia,serif}.question{margin:1rem 0;padding:1rem;border-left:3px solid #d9b965;border-radius:0 .8rem .8rem 0;background:rgba(217,185,101,.08);font:italic 1.05rem/1.5 Georgia,serif}
+.waiting{text-align:center;padding:3rem 1rem}.waiting i{display:block;width:2.5rem;height:2.5rem;margin:0 auto 1rem;border:2px solid rgba(217,185,101,.2);border-top-color:#d9b965;border-radius:50%;animation:spin 1s linear infinite}
+.progress{display:flex;gap:.35rem;margin:0 0 1rem}.progress i{height:.3rem;flex:1;border-radius:1rem;background:rgba(255,255,255,.12)}.progress i[data-done="true"]{background:#d9b965}
+@keyframes spin{to{rotate:360deg}}
+@media(max-width:620px){.game{padding-inline:.65rem}.explainGrid,.compare{grid-template-columns:1fr}.quadrant{gap:.4rem}.panel{padding:1rem}.chip,.option{font-size:.78rem}}
+

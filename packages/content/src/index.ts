@@ -194,13 +194,13 @@ export const games: GameMetadata[] = [
   },
   {
     id: "kernkwadranten",
-    title: "Kernkwadranten",
-    description: "Ontdek kwaliteit, valkuil, uitdaging en allergie.",
-    legacyPath: "kernkwadranten.html",
+    title: "Kernkwaliteitenhut",
+    description: "Bouw persoonlijke kernkwadranten en leg ze naast elkaar.",
+    legacyPath: null,
     modes: ["couple"],
-    version: 1,
-    status: "planned",
-    scoresDiscovery: false,
+    version: 2,
+    status: "native",
+    scoresDiscovery: true,
   },
   {
     id: "profiel",
@@ -267,6 +267,12 @@ export const gamePlacements: GamePlacement[] = [
     gameId: "brug-ontdekking",
     order: 7,
     position: { left: 71.7, top: 72.8, width: 22, height: 7.3 },
+  },
+  {
+    worldId: 2,
+    gameId: "kernkwadranten",
+    order: 1,
+    position: { left: 11.5, top: 29.2, width: 27.5, height: 8.8 },
   },
 ];
 

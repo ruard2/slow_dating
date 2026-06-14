@@ -142,10 +142,17 @@ export function relationshipGameResults(
   return completedRuns
     .map((run) => {
       const semantic = parseSemanticResult(run);
-      if (!semantic) return null;
+      if (!run.result) return null;
+      const schemaVersion =
+        typeof run.result.schemaVersion === "number" &&
+        Number.isInteger(run.result.schemaVersion) &&
+        run.result.schemaVersion > 0
+          ? run.result.schemaVersion
+          : 1;
       return relationshipGameResultSchema.parse({
-        provenance: semantic.provenance,
-        result: semantic.result,
+        provenance:
+          semantic?.provenance ?? provenanceFor(run, schemaVersion),
+        result: semantic?.result ?? run.result,
       });
     })
     .filter((result): result is RelationshipGameResult => result !== null)

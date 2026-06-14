@@ -20,6 +20,14 @@ import {
   waardenReducer,
 } from "./waarden/reducer";
 import { serializeWaardenResult } from "./waarden/result";
+import type { KernkwadrantenAction } from "./kernkwadranten/contracts";
+import { kernkwadrantenDefinition } from "./kernkwadranten/definition";
+import {
+  addDeveloperKernkwadrantenPartner,
+  kernkwadrantenReducer,
+  normalizeKernkwadrantenState,
+} from "./kernkwadranten/reducer";
+import { serializeKernkwadrantenResult } from "./kernkwadranten/result";
 
 export function GamePage({
   developerPartnerArriving,
@@ -47,6 +55,11 @@ export function GamePage({
   const setDrawer = useAppStore((state) => state.setDrawer);
   const setChatContext = useAppStore((state) => state.setChatContext);
   const game = findPlayableGame(gameId);
+  const relationshipResults = useQuery({
+    queryKey: ["relationship-results", pair?.id],
+    queryFn: () => api.getRelationshipResults(pair!.id),
+    enabled: Boolean(pair?.id),
+  });
   const activeRun = useQuery({
     queryKey: ["active-game-run", pair?.id, gameId],
     queryFn: () => api.getActiveGameRun(gameId),
@@ -242,6 +255,86 @@ export function GamePage({
         if (action.type === "waarden.game.completed") {
           await queryClient.invalidateQueries({ queryKey: ["progress"] });
           navigate("/");
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, gameId, navigate, pair, queryClient, send],
+  );
+
+  const dispatchKernkwadrantenAction = useCallback(
+    async (action: KernkwadrantenAction) => {
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+
+        const apply = () => {
+          let nextState = kernkwadrantenReducer(
+            normalizeKernkwadrantenState(current!.state),
+            action,
+            memberIds,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              nextState = addDeveloperKernkwadrantenPartner(
+                nextState,
+                action,
+                partnerId,
+                memberIds,
+              );
+            }
+          }
+          const completesRun =
+            action.type === "kernkwadranten.game.completed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeKernkwadrantenResult(nextState),
+                }
+              : {}),
+          });
+        };
+
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (action.type === "kernkwadranten.game.completed") {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          navigate("/worlds/2");
         }
       });
       actionQueueRef.current = queued.catch(() => undefined);
@@ -458,6 +551,60 @@ export function GamePage({
           partnerName={partner?.displayName ?? "je partner"}
           pending={nativePending}
           state={normalizeWaardenState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (
+    game.status === "native" &&
+    game.id === kernkwadrantenDefinition.id &&
+    run
+  ) {
+    if (relationshipResults.isLoading) return <LoadingScreen />;
+    const KernkwadrantenComponent = kernkwadrantenDefinition.Component;
+    const previous = relationshipResults.data?.find(
+      ({ provenance }) => provenance.gameId === "kwaliteiten",
+    )?.result;
+    const own =
+      previous?.own && typeof previous.own === "object"
+        ? (previous.own as Record<string, unknown>)
+        : {};
+    const partnerResult =
+      previous?.partner && typeof previous.partner === "object"
+        ? (previous.partner as Record<string, unknown>)
+        : {};
+    const priorQualityOptions = [
+      ...(Array.isArray(own.kwaliteiten) ? own.kwaliteiten : []),
+      ...(Array.isArray(partnerResult.kwaliteiten)
+        ? partnerResult.kwaliteiten
+        : []),
+    ].filter((value): value is string => typeof value === "string");
+    const priorAllergyOptions = [
+      own.allergie,
+      partnerResult.allergie,
+    ].filter((value): value is string => typeof value === "string");
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="kernkwadranten"
+      >
+        <KernkwadrantenComponent
+          dispatch={dispatchKernkwadrantenAction}
+          installationId={session?.installationId ?? ""}
+          memberIds={pair.members.map((member) => member.installationId)}
+          openCall={() => setDrawer("call")}
+          openChat={(text = "") => {
+            setChatContext(text, false);
+            setDrawer("chat");
+          }}
+          partnerName={partner?.displayName ?? "je partner"}
+          pending={nativePending}
+          priorAllergyOptions={priorAllergyOptions}
+          priorQualityOptions={priorQualityOptions}
+          state={normalizeKernkwadrantenState(run.state)}
         />
       </main>
     );

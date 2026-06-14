@@ -8,6 +8,10 @@ export interface GameComponentProps<TState, TAction = unknown> {
   memberIds: string[];
   partnerName: string;
   pending: boolean;
+  priorQualityOptions?: string[];
+  priorAllergyOptions?: string[];
+  openChat?(text?: string): void;
+  openCall?(): void;
   dispatch(action: TAction): Promise<void>;
 }
 

@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import type { GameRun, WaitingStats } from "@slow-dating/contracts";
 
-import { buildProfileInsights } from "./profileInsights.js";
+import {
+  buildProfileInsights,
+  relationshipGameResults,
+} from "./profileInsights.js";
 
 const ownerId = "11111111-1111-4111-8111-111111111111";
 const oldPartnerId = "22222222-2222-4222-8222-222222222222";
@@ -130,5 +133,43 @@ describe("buildProfileInsights", () => {
 
     expect(insights.personal.completedRuns).toBe(0);
     expect(insights.personal.values).toEqual([]);
+  });
+});
+
+describe("relationshipGameResults", () => {
+  it("bewaart ook gevalideerde provenance voor andere spelresultaten", () => {
+    const run = completedWaardenRun(
+      "99999999-9999-4999-8999-999999999999",
+      newPairId,
+      newPartnerId,
+      "2026-06-13T10:00:00.000Z",
+    );
+    run.gameId = "kernkwadranten";
+    run.version = 2;
+    run.result = {
+      schemaVersion: 1,
+      profiles: {
+        [ownerId]: {
+          qualities: ["Daadkracht", "Empathie"],
+          allergy: "Passiviteit",
+        },
+      },
+      rounds: [],
+      completedAt: "2026-06-13T10:00:00.000Z",
+    };
+
+    expect(relationshipGameResults([run])).toEqual([
+      {
+        provenance: {
+          gameRunId: run.id,
+          gameId: "kernkwadranten",
+          gameVersion: 2,
+          resultSchemaVersion: 1,
+          pairId: newPairId,
+          completedAt: "2026-06-13T10:00:00.000Z",
+        },
+        result: run.result,
+      },
+    ]);
   });
 });

@@ -17,7 +17,7 @@ describe("world and game registry", () => {
       expect(games.some((game) => game.id === placement.gameId)).toBe(true);
     }
     expect(getWorldPlacements(1)).toHaveLength(7);
-    expect(getWorldPlacements(2)).toEqual([]);
+    expect(getWorldPlacements(2)).toHaveLength(1);
   });
 
   it("only exposes available games and discovery scoring explicitly", () => {
