@@ -129,6 +129,8 @@ function WorldCard({
       onPointerUp={pointerUp}
       onWheel={wheel}
       style={{
+        width: "100vw",
+        height: `max(100dvh, calc(100vw / ${world.imageAspectRatio}))`,
         touchAction: zoomable && transform.scale > 1 ? "none" : "pan-y",
       }}
     >
@@ -140,6 +142,7 @@ function WorldCard({
             : `world-${world.id}-map-inner`
         }
         style={{
+          height: `calc(100vw / ${world.imageAspectRatio})`,
           transform: `translate3d(${transform.x}px,${transform.y}px,0) scale(${transform.scale})`,
         }}
       >
@@ -217,7 +220,10 @@ function WorldCard({
             world.name
           }`}
           className={styles.worldPortalButton}
-          onClick={() => activate(world)}
+          onClick={(event) => {
+            event.currentTarget.blur();
+            activate(world);
+          }}
           type="button"
         />
       )}

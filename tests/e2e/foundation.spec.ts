@@ -38,17 +38,23 @@ test("loads the world map without console errors", async ({ page }) => {
     const imageBox = image?.getBoundingClientRect();
     const hotspotBox = hotspot?.getBoundingClientRect();
     return {
-      cardRatio: cardBox.width / cardBox.height,
       imageRatio: imageBox ? imageBox.width / imageBox.height : 0,
+      naturalImageRatio:
+        image?.naturalWidth && image.naturalHeight
+          ? image.naturalWidth / image.naturalHeight
+          : 0,
       hotspotInside:
         Boolean(hotspotBox) &&
-        (hotspotBox?.left ?? 0) >= cardBox.left &&
-        (hotspotBox?.right ?? 0) <= cardBox.right &&
-        (hotspotBox?.top ?? 0) >= cardBox.top &&
-        (hotspotBox?.bottom ?? 0) <= cardBox.bottom,
+        Boolean(imageBox) &&
+        (hotspotBox?.left ?? 0) >= (imageBox?.left ?? cardBox.left) &&
+        (hotspotBox?.right ?? 0) <= (imageBox?.right ?? cardBox.right) &&
+        (hotspotBox?.top ?? 0) >= (imageBox?.top ?? cardBox.top) &&
+        (hotspotBox?.bottom ?? 0) <= (imageBox?.bottom ?? cardBox.bottom),
     };
   });
-  expect(Math.abs(geometry.cardRatio - geometry.imageRatio)).toBeLessThan(0.001);
+  expect(
+    Math.abs(geometry.naturalImageRatio - geometry.imageRatio),
+  ).toBeLessThan(0.001);
   expect(geometry.hotspotInside).toBe(true);
   await page.getByRole("button", { name: "Inzoomen" }).click();
   await expect(page.getByTestId("world-one-map-inner")).toHaveAttribute(

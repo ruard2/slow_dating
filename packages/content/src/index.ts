@@ -21,6 +21,7 @@ export const worldDefinitionSchema = z.object({
   requiredDiscoveries: z.number().int().nonnegative(),
   priceCents: z.number().int().nonnegative(),
   image: z.string().min(1),
+  imageAspectRatio: z.number().positive(),
 });
 
 export const gameMetadataSchema = z.object({
@@ -54,6 +55,7 @@ export const worlds: WorldDefinition[] = [
     requiredDiscoveries: 0,
     priceCents: 0,
     image: "/assets/kaart1.webp",
+    imageAspectRatio: 3764 / 6688,
   },
   {
     id: 2,
@@ -63,6 +65,7 @@ export const worlds: WorldDefinition[] = [
     requiredDiscoveries: 5,
     priceCents: 200,
     image: "/assets/kaart2.webp",
+    imageAspectRatio: 4096 / 6140,
   },
   {
     id: 3,
@@ -72,6 +75,7 @@ export const worlds: WorldDefinition[] = [
     requiredDiscoveries: 10,
     priceCents: 300,
     image: "/assets/kaart3.webp",
+    imageAspectRatio: 3792 / 6636,
   },
   {
     id: 4,
@@ -81,6 +85,7 @@ export const worlds: WorldDefinition[] = [
     requiredDiscoveries: 15,
     priceCents: 400,
     image: "/assets/kaart4.webp",
+    imageAspectRatio: 4096 / 6144,
   },
   {
     id: 5,
@@ -90,6 +95,7 @@ export const worlds: WorldDefinition[] = [
     requiredDiscoveries: 20,
     priceCents: 500,
     image: "/assets/kaart5.webp",
+    imageAspectRatio: 4096 / 6144,
   },
 ];
 
