@@ -1,8 +1,19 @@
 import { createServer } from "node:http";
+import { fileURLToPath } from "node:url";
 
 import { Server } from "socket.io";
 
 import { loadServerConfig } from "@slow-dating/config";
+
+// Laad een lokale .env (repo-root of apps/api) indien aanwezig, zodat geheimen
+// zoals OPENAI_API_KEY niet in de shell of in git hoeven te staan.
+for (const relative of ["../.env", "../../../.env"]) {
+  try {
+    process.loadEnvFile(fileURLToPath(new URL(relative, import.meta.url)));
+  } catch {
+    // Geen .env op dit pad — prima.
+  }
+}
 
 import { createApp } from "./app.js";
 import { createAuth } from "./auth.js";

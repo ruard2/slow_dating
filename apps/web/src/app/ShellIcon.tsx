@@ -1,10 +1,13 @@
 export function ShellIcon({
   name,
 }: {
-  name: "back" | "call" | "callLocked" | "chat" | "settings";
+  name: "back" | "call" | "callLocked" | "chat" | "heart" | "settings";
 }) {
   const paths = {
     back: <path d="M15 18l-6-6 6-6M9 12h11" />,
+    heart: (
+      <path d="M12 20.3 4.4 12.6a4.6 4.6 0 0 1 6.5-6.5l1.1 1.1 1.1-1.1a4.6 4.6 0 1 1 6.5 6.5Z" />
+    ),
     call: <path d="M7.2 3.8l2.1 4.6-2.2 1.8a15 15 0 0 0 6.7 6.7l1.8-2.2 4.6 2.1-.8 3.1c-.3 1.1-1.4 1.8-2.5 1.6C9.3 20.2 3.8 14.7 2.5 7.1c-.2-1.1.5-2.2 1.6-2.5l3.1-.8Z" />,
     callLocked: (
       <>

@@ -1,3 +1,4 @@
+
 import { fileURLToPath } from "node:url";
 
 import cors from "cors";
@@ -24,6 +25,10 @@ import {
   registerAccountSchema,
   requestPasswordResetSchema,
   relationshipGameResultSchema,
+  createBlockSchema,
+  createReportSchema,
+  createRouteInvitationSchema,
+  respondRouteInvitationSchema,
   sendMessageSchema,
   updateGameRunSchema,
   updateProfileSchema,
@@ -32,6 +37,8 @@ import {
   waitingSessionRequestSchema,
 } from "@slow-dating/contracts";
 import { findPlayableGame } from "@slow-dating/content";
+
+import { aiProfileEnabled, augmentInsightsWithAi } from "./aiProfile.js";
 
 import type { AuthenticatedRequest } from "./auth.js";
 import type { ReturnTypeCreateAuth } from "./types.js";
@@ -223,16 +230,7 @@ export function createApp({
   });
 
   app.patch("/api/profile", auth.requireAuth, async (request, response) => {
-    const input = updateProfileSchema.parse(request.body);
-    const changes = {
-      ...(input.displayName === undefined
-        ? {}
-        : { displayName: input.displayName }),
-      ...(input.bio === undefined ? {} : { bio: input.bio }),
-      ...(input.avatarColor === undefined
-        ? {}
-        : { avatarColor: input.avatarColor }),
-    };
+    const changes = updateProfileSchema.parse(request.body);
     response.json(
       await repository.updateProfile(installationId(request), changes),
     );
@@ -243,11 +241,122 @@ export function createApp({
   });
 
   app.get("/api/profile/insights", auth.requireAuth, async (request, response) => {
+    const ownerId = installationId(request);
+    let insights = await repository.getProfileInsights(ownerId);
+    if (aiProfileEnabled()) {
+      const pair = await repository.getPairForInstallation(ownerId);
+      if (pair && pair.members.length === 2) {
+        const owner = pair.members.find((m) => m.installationId === ownerId);
+        const partner = pair.members.find((m) => m.installationId !== ownerId);
+        const results = await repository.listRelationshipGameResults(
+          ownerId,
+          pair.id,
+        );
+        const tempo = await repository.getPairTempo(pair.id);
+        const facts = (p: {
+          coreValues: string[];
+          interests: string[];
+          relationIntention: string | null;
+          lifeStage: string | null;
+          christianLayer: boolean;
+        }) => ({
+          kernwaarden: p.coreValues,
+          interesses: p.interests,
+          relatie_intentie: p.relationIntention,
+          levensfase: p.lifeStage,
+          christelijke_laag: p.christianLayer,
+        });
+        const ownerProfile = await repository.getProfile(ownerId);
+        const partnerProfile = partner
+          ? await repository.getProfile(partner.installationId)
+          : null;
+        const partnerId = partner?.installationId ?? "";
+        const ownerFacts = facts(ownerProfile);
+        const partnerFacts = partnerProfile ? facts(partnerProfile) : undefined;
+        insights = await augmentInsightsWithAi(insights, results, {
+          ownerId,
+          ownerName: owner?.displayName ?? "jij",
+          partnerId,
+          partnerName: partner?.displayName ?? "je partner",
+          tempo,
+          ownerProfile: ownerFacts,
+          ...(partnerFacts ? { partnerProfile: partnerFacts } : {}),
+        });
+      }
+    }
+    response.json(profileInsightsSchema.parse(insights));
+  });
+
+  app.get("/api/introductions", auth.requireAuth, async (request, response) => {
     response.json(
-      profileInsightsSchema.parse(
-        await repository.getProfileInsights(installationId(request)),
-      ),
+      await repository.suggestIntroductions(installationId(request)),
     );
+  });
+
+  app.get(
+    "/api/route-invitations",
+    auth.requireAuth,
+    async (request, response) => {
+      response.json(
+        await repository.listRouteInvitations(installationId(request)),
+      );
+    },
+  );
+
+  app.post(
+    "/api/route-invitations",
+    auth.requireAuth,
+    async (request, response) => {
+      const input = createRouteInvitationSchema.parse(request.body);
+      response.status(201).json(
+        await repository.createRouteInvitation(
+          installationId(request),
+          input.toInstallationId,
+          input.message,
+        ),
+      );
+    },
+  );
+
+  app.post(
+    "/api/route-invitations/:id/respond",
+    auth.requireAuth,
+    async (request, response) => {
+      const input = respondRouteInvitationSchema.parse(request.body);
+      response.json(
+        await repository.respondToRouteInvitation(
+          installationId(request),
+          String(request.params.id),
+          input.accept,
+        ),
+      );
+    },
+  );
+
+  app.get("/api/blocks", auth.requireAuth, async (request, response) => {
+    response.json(
+      await repository.listBlockedInstallationIds(installationId(request)),
+    );
+  });
+
+  app.post("/api/blocks", auth.requireAuth, async (request, response) => {
+    const input = createBlockSchema.parse(request.body);
+    await repository.blockInstallation(
+      installationId(request),
+      input.installationId,
+    );
+    response.status(204).end();
+  });
+
+  app.post("/api/reports", auth.requireAuth, async (request, response) => {
+    const input = createReportSchema.parse(request.body);
+    await repository.reportInstallation(
+      installationId(request),
+      input.installationId,
+      input.reason,
+      input.note,
+    );
+    response.status(204).end();
   });
 
   app.get("/api/profile/export", auth.requireAuth, async (request, response) => {

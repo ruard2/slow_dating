@@ -11,6 +11,21 @@ export const healthResponseSchema = z.object({
 
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 
+export const relationIntentionSchema = z.enum([
+  "verkennen",
+  "serieus",
+  "vriendschap",
+]);
+export type RelationIntention = z.infer<typeof relationIntentionSchema>;
+
+export const lifeStageSchema = z.enum([
+  "kinderwens",
+  "ooit-misschien",
+  "geen-kinderwens",
+  "heeft-kinderen",
+]);
+export type LifeStage = z.infer<typeof lifeStageSchema>;
+
 export const profileSchema = z.object({
   id: idSchema,
   displayName: z.string().trim().min(1).max(40),
@@ -18,6 +33,18 @@ export const profileSchema = z.object({
   avatarColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+  // Dating-profiel (opgeslagen in Profile.legacyData; geen migratie nodig).
+  photoUrl: z.string().trim().max(600).nullable().default(null),
+  birthYear: z.number().int().min(1900).max(2100).nullable().default(null),
+  city: z.string().trim().max(80).default(""),
+  interests: z.array(z.string().trim().min(1).max(40)).max(12).default([]),
+  coreValues: z.array(z.string().trim().min(1).max(60)).max(8).default([]),
+  relationIntention: relationIntentionSchema.nullable().default(null),
+  lifeStage: lifeStageSchema.nullable().default(null),
+  prefAgeMin: z.number().int().min(18).max(120).nullable().default(null),
+  prefAgeMax: z.number().int().min(18).max(120).nullable().default(null),
+  prefMaxDistanceKm: z.number().int().min(1).max(2000).nullable().default(null),
+  christianLayer: z.boolean().default(false),
 });
 
 export type Profile = z.infer<typeof profileSchema>;
@@ -36,11 +63,103 @@ export const updateProfileSchema = profileSchema
     displayName: true,
     bio: true,
     avatarColor: true,
+    photoUrl: true,
+    birthYear: true,
+    city: true,
+    interests: true,
+    coreValues: true,
+    relationIntention: true,
+    lifeStage: true,
+    prefAgeMin: true,
+    prefAgeMax: true,
+    prefMaxDistanceKm: true,
+    christianLayer: true,
   })
   .partial()
   .refine((value) => Object.keys(value).length > 0, {
     message: "Geef minimaal één profielveld op.",
   });
+
+export type ProfileUpdate = z.infer<typeof updateProfileSchema>;
+
+// --- Slow-dating kennismakingen (§5A) ---
+export const introductionSchema = z.object({
+  installationId: z.string().min(1),
+  profile: profileSchema,
+  score: z.number().min(0).max(1),
+  reasons: z.array(z.string()),
+});
+export type Introduction = z.infer<typeof introductionSchema>;
+
+export const routeInvitationStatusSchema = z.enum([
+  "pending",
+  "accepted",
+  "declined",
+  "expired",
+]);
+export type RouteInvitationStatus = z.infer<typeof routeInvitationStatusSchema>;
+
+export const routeInvitationSchema = z.object({
+  id: idSchema,
+  fromInstallationId: z.string().min(1),
+  toInstallationId: z.string().min(1),
+  message: z.string(),
+  status: routeInvitationStatusSchema,
+  pairId: idSchema.nullable(),
+  createdAt: z.string().datetime(),
+  respondedAt: z.string().datetime().nullable(),
+});
+export type RouteInvitation = z.infer<typeof routeInvitationSchema>;
+
+export const routeInvitationViewSchema = z.object({
+  invitation: routeInvitationSchema,
+  counterpart: introductionSchema,
+});
+export type RouteInvitationView = z.infer<typeof routeInvitationViewSchema>;
+
+export const routeInvitationsListSchema = z.object({
+  incoming: z.array(routeInvitationViewSchema),
+  outgoing: z.array(routeInvitationViewSchema),
+  weeklyRemaining: z.number().int().nonnegative(),
+});
+export type RouteInvitationsList = z.infer<typeof routeInvitationsListSchema>;
+
+export const createRouteInvitationSchema = z.object({
+  toInstallationId: z.string().min(1),
+  message: z.string().trim().max(400).default(""),
+});
+
+export const respondRouteInvitationSchema = z.object({
+  accept: z.boolean(),
+});
+
+export const respondRouteInvitationResultSchema = z.object({
+  invitation: routeInvitationSchema,
+  pairId: idSchema.nullable(),
+});
+export type RespondRouteInvitationResult = z.infer<
+  typeof respondRouteInvitationResultSchema
+>;
+
+// --- Veiligheid: blokkeren & rapporteren ---
+export const reportReasonSchema = z.enum([
+  "ongepast",
+  "nep-profiel",
+  "grensoverschrijdend",
+  "spam",
+  "anders",
+]);
+export type ReportReason = z.infer<typeof reportReasonSchema>;
+
+export const createBlockSchema = z.object({
+  installationId: z.string().min(1),
+});
+
+export const createReportSchema = z.object({
+  installationId: z.string().min(1),
+  reason: reportReasonSchema,
+  note: z.string().trim().max(600).default(""),
+});
 
 export const guestSessionRequestSchema = z.object({
   installationSecret: z.string().min(32).max(256),
@@ -102,6 +221,8 @@ export const pairSchema = z.object({
   createdAt: z.string().datetime(),
   disconnectedAt: z.string().datetime().nullable().default(null),
   members: z.array(pairMemberSchema).max(2),
+  // Christelijke verdiepingslaag: alleen actief als beide partners die kozen.
+  christianLayer: z.boolean().default(false),
 });
 
 export type Pair = z.infer<typeof pairSchema>;
@@ -240,11 +361,27 @@ export const recordActivitySchema = z.object({
 
 export type ActivityEvent = z.infer<typeof activityEventSchema>;
 
+export const nabijheidSchema = z.object({
+  fraction: z.number().min(0).max(1),
+  growthLines: z.literal(9),
+  // Interne groeilijnen (onder de ene zichtbare balk): aantal afgeronde
+  // discovery-spellen per soort groei.
+  lines: z.object({
+    kennis: z.number().int().nonnegative(),
+    vertrouwen: z.number().int().nonnegative(),
+    zorg: z.number().int().nonnegative(),
+    richting: z.number().int().nonnegative(),
+  }),
+});
+
+export type Nabijheid = z.infer<typeof nabijheidSchema>;
+
 export const worldProgressSchema = z.object({
   completedGames: z.number().int().nonnegative(),
   eligibleWorlds: z.array(z.number().int().min(1).max(5)),
   unlockedWorlds: z.array(z.number().int().min(1).max(5)),
   purchasedWorlds: z.array(z.number().int().min(1).max(5)),
+  nabijheid: nabijheidSchema,
 });
 
 export type WorldProgress = z.infer<typeof worldProgressSchema>;
@@ -300,6 +437,59 @@ export const relationshipInsightsSchema = z.object({
 
 export type RelationshipInsights = z.infer<typeof relationshipInsightsSchema>;
 
+export const profileEvidenceSchema = z.object({
+  id: z.string().min(1),
+  sourceGameId: z.string().min(1),
+  sourceGameTitle: z.string().min(1),
+  sourceRunId: idSchema,
+  observedAt: z.string().datetime(),
+  label: z.string().min(1),
+});
+
+export type ProfileEvidence = z.infer<typeof profileEvidenceSchema>;
+
+export const profileNarrativeCardSchema = z.object({
+  id: z.string().min(1),
+  kind: z.enum([
+    "portrait",
+    "direction",
+    "connection",
+    "partner-view",
+    "shared",
+    "difference",
+    "surprise",
+    "challenge",
+    "conversation",
+    "unknown",
+  ]),
+  scope: z.enum(["personal", "relationship"]),
+  title: z.string().min(1),
+  body: z.string().min(1),
+  confidence: z.enum(["observation", "pattern", "strong"]),
+  evidence: z.array(profileEvidenceSchema),
+  chatPrompt: z.string().min(1).optional(),
+  isNew: z.boolean(),
+});
+
+export type ProfileNarrativeCard = z.infer<
+  typeof profileNarrativeCardSchema
+>;
+
+export const profileChapterSchema = z.object({
+  world: z.number().int().min(1).max(5),
+  title: z.string().min(1),
+  subtitle: z.string().min(1),
+  available: z.boolean(),
+  status: z.enum(["locked", "provisional", "complete"]),
+  requiredGames: z.number().int().positive(),
+  completedGameIds: z.array(z.string().min(1)),
+  completedGameCount: z.number().int().nonnegative(),
+  generatedAt: z.string().datetime(),
+  cards: z.array(profileNarrativeCardSchema),
+});
+
+export type ProfileChapter = z.infer<typeof profileChapterSchema>;
+
 export const profileInsightsSchema = z.object({
   schemaVersion: z.literal(1),
   generatedAt: z.string().datetime(),
@@ -310,6 +500,7 @@ export const profileInsightsSchema = z.object({
     provenance: z.array(resultProvenanceSchema),
   }),
   currentRelationship: relationshipInsightsSchema.nullable(),
+  chapters: z.array(profileChapterSchema),
 });
 
 export type ProfileInsights = z.infer<typeof profileInsightsSchema>;

@@ -1,3 +1,9 @@
+export const christianPrompts = [
+  "Wat heb je nodig om je ook vóór God open en eerlijk te durven uitspreken?",
+  "Hoe kan stilte en gebed samen helpen om de ruis van alledag zachter te zetten?",
+  "Welke uitnodiging van de ander voelt als Gods zachtheid die jou ruimte geeft?",
+] as const;
+
 export const needs = [
   {
     id: "safety",

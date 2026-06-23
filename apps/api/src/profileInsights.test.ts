@@ -134,6 +134,54 @@ describe("buildProfileInsights", () => {
     expect(insights.personal.completedRuns).toBe(0);
     expect(insights.personal.values).toEqual([]);
   });
+
+  it("unlocks profile one after five different games from world one", () => {
+    const gameIds = [
+      "waarden",
+      "lach-samen",
+      "kennismaking",
+      "familiedorp",
+      "kwaliteiten",
+    ];
+    const runs = gameIds.map((gameId, index) => {
+      const run = completedWaardenRun(
+        `${index + 1}0000000-0000-4000-8000-00000000000${index + 1}`,
+        newPairId,
+        newPartnerId,
+        `2026-06-${10 + index}T10:00:00.000Z`,
+      );
+      run.gameId = gameId;
+      if (gameId !== "waarden") {
+        run.version = 1;
+        run.result = { schemaVersion: 1, choice: `keuze-${index + 1}` };
+      }
+      return run;
+    });
+
+    const insights = buildProfileInsights({
+      installationId: ownerId,
+      completedRuns: runs,
+      waiting,
+      currentPair: {
+        id: newPairId,
+        memberIds: [ownerId, newPartnerId],
+        partnerName: "Nieuwe partner",
+      },
+      generatedAt: "2026-06-15T12:00:00.000Z",
+    });
+
+    expect(insights.chapters[0]).toMatchObject({
+      world: 1,
+      available: true,
+      status: "provisional",
+      completedGameCount: 5,
+    });
+    expect(insights.chapters[0]?.cards.length).toBeGreaterThan(3);
+    expect(insights.chapters[1]).toMatchObject({
+      world: 2,
+      available: false,
+    });
+  });
 });
 
 describe("relationshipGameResults", () => {

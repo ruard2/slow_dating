@@ -8,6 +8,7 @@ export interface GameComponentProps<TState, TAction = unknown> {
   memberIds: string[];
   partnerName: string;
   pending: boolean;
+  christianLayer?: boolean;
   priorQualityOptions?: string[];
   priorAllergyOptions?: string[];
   priorFamilyData?: Record<string, unknown> | null;

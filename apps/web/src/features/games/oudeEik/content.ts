@@ -43,6 +43,12 @@ export const needOptions = [
   { id: "reliability", label: "Merken dat woorden en afspraken betrouwbaar zijn" },
 ] as const;
 
+export const christianPrompts = [
+  "Welk oud familiepatroon wil je biddend bij God neerleggen, zodat het niet meebeweegt in jullie relatie?",
+  "Waar mag vergeving — ontvangen of gegeven — iets losmaken dat je al lang meedraagt?",
+  "Welke zegen uit je familie of geloof wil je bewust doorgeven aan wat jullie samen opbouwen?",
+] as const;
+
 export const conversationQuestions = [
   "Wat aan deze reactie herken je al tussen ons, zonder dat iemand de schuld krijgt?",
   "Wat probeerde jouw oude rol vroeger voor jou of je gezin te beschermen?",

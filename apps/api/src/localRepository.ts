@@ -1,21 +1,35 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import type {
   ActivityEvent,
   CallAccess,
   GameRun,
+  Introduction,
   Message,
   Pair,
   Profile,
   ProfileInsights,
+  ProfileUpdate,
   RelationshipArchive,
   RelationshipGameResult,
+  ReportReason,
+  RouteInvitation,
+  RouteInvitationsList,
   WorldProgress,
 } from "@slow-dating/contracts";
+import { profileSchema } from "@slow-dating/contracts";
 import { isDiscoveryGameId } from "@slow-dating/content";
+
+import { computeCoreProgress } from "./progress.js";
+import {
+  overlapScore,
+  withinDistance,
+  SUGGESTION_LIMIT,
+  WEEK_MS,
+  WEEKLY_INVITATION_LIMIT,
+} from "./matching.js";
 
 import {
   type AccountRecord,
@@ -23,8 +37,11 @@ import {
   type AuthTokenRecord,
   type DataState,
   DomainError,
+  type BlockRecord,
   type InstallationRecord,
   type PairRecord,
+  type ReportRecord,
+  type RouteInvitationRecord,
 } from "./domain.js";
 import {
   buildProfileInsights,
@@ -45,13 +62,13 @@ const EMPTY_STATE: DataState = {
   waitingSessions: [],
   waitingAnswers: [],
   activityEvents: [],
+  routeInvitations: [],
+  blocks: [],
+  reports: [],
   gameActions: [],
 };
 
 const CODE_CHARACTERS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-const LEGACY_DATA_DIRECTORY = fileURLToPath(
-  new URL("../../../legacy/koppel-backend/data/", import.meta.url),
-);
 
 function now() {
   return new Date().toISOString();
@@ -104,7 +121,6 @@ export class LocalRepository implements AppRepository {
     } catch {
       await this.persist();
     }
-    await this.importLegacyArchive();
   }
 
   async close() {}
@@ -127,14 +143,14 @@ export class LocalRepository implements AppRepository {
       createdAt: timestamp,
       lastSeenAt: timestamp,
     };
-    const profile: Profile = {
+    const profile: Profile = profileSchema.parse({
       id: installation.id,
       displayName: "Nieuwe bezoeker",
       bio: "",
       avatarColor: "#B9D67A",
       createdAt: timestamp,
       updatedAt: timestamp,
-    };
+    });
     this.state.installations.push(installation);
     this.state.profiles.push(profile);
     await this.persist();
@@ -298,13 +314,10 @@ export class LocalRepository implements AppRepository {
     if (!profile) {
       throw new DomainError("Profiel niet gevonden.", 404);
     }
-    return structuredClone(profile);
+    return profileSchema.parse(profile);
   }
 
-  async updateProfile(
-    installationId: string,
-    changes: Partial<Pick<Profile, "avatarColor" | "bio" | "displayName">>,
-  ) {
+  async updateProfile(installationId: string, changes: ProfileUpdate) {
     const profile = this.state.profiles.find(
       (candidate) => candidate.id === installationId,
     );
@@ -313,7 +326,337 @@ export class LocalRepository implements AppRepository {
     }
     Object.assign(profile, changes, { updatedAt: now() });
     await this.persist();
-    return structuredClone(profile);
+    return profileSchema.parse(profile);
+  }
+
+  private installationsInActivePair() {
+    const inPair = new Set<string>();
+    for (const pair of this.state.pairs) {
+      if (!pair.disconnectedAt) pair.memberIds.forEach((id) => inPair.add(id));
+    }
+    return inPair;
+  }
+
+  private blockedIdsFor(installationId: string) {
+    const ids = new Set<string>();
+    for (const block of this.state.blocks) {
+      if (block.byInstallationId === installationId) {
+        ids.add(block.blockedInstallationId);
+      }
+      if (block.blockedInstallationId === installationId) {
+        ids.add(block.byInstallationId);
+      }
+    }
+    return ids;
+  }
+
+  async blockInstallation(
+    installationId: string,
+    targetInstallationId: string,
+  ): Promise<void> {
+    if (installationId === targetInstallationId) {
+      throw new DomainError("Je kunt jezelf niet blokkeren.", 400);
+    }
+    const already = this.state.blocks.some(
+      (block) =>
+        block.byInstallationId === installationId &&
+        block.blockedInstallationId === targetInstallationId,
+    );
+    if (!already) {
+      const block: BlockRecord = {
+        id: randomUUID(),
+        byInstallationId: installationId,
+        blockedInstallationId: targetInstallationId,
+        createdAt: now(),
+      };
+      this.state.blocks.push(block);
+    }
+    // Openstaande kennismakingen tussen beiden vervallen.
+    for (const invitation of this.state.routeInvitations) {
+      if (invitation.status !== "pending") continue;
+      const between =
+        (invitation.fromInstallationId === installationId &&
+          invitation.toInstallationId === targetInstallationId) ||
+        (invitation.fromInstallationId === targetInstallationId &&
+          invitation.toInstallationId === installationId);
+      if (between) {
+        invitation.status = "expired";
+        invitation.respondedAt = now();
+      }
+    }
+    // Delen jullie een actieve route? Dan stopt die respectvol.
+    const sharedPair = this.state.pairs.find(
+      (pair) =>
+        !pair.disconnectedAt &&
+        pair.memberIds.includes(installationId) &&
+        pair.memberIds.includes(targetInstallationId),
+    );
+    if (sharedPair) {
+      await this.disconnectPair(installationId);
+    } else {
+      await this.persist();
+    }
+  }
+
+  async listBlockedInstallationIds(installationId: string): Promise<string[]> {
+    return this.state.blocks
+      .filter((block) => block.byInstallationId === installationId)
+      .map((block) => block.blockedInstallationId);
+  }
+
+  async reportInstallation(
+    installationId: string,
+    targetInstallationId: string,
+    reason: ReportReason,
+    note: string,
+  ): Promise<void> {
+    if (installationId === targetInstallationId) {
+      throw new DomainError("Je kunt jezelf niet rapporteren.", 400);
+    }
+    const report: ReportRecord = {
+      id: randomUUID(),
+      byInstallationId: installationId,
+      targetInstallationId,
+      reason,
+      note: note.trim(),
+      createdAt: now(),
+    };
+    this.state.reports.push(report);
+    await this.persist();
+  }
+
+  private weeklyOutgoingCount(installationId: string) {
+    const since = Date.now() - WEEK_MS;
+    return this.state.routeInvitations.filter(
+      (invitation) =>
+        invitation.fromInstallationId === installationId &&
+        Date.parse(invitation.createdAt) >= since,
+    ).length;
+  }
+
+  private weeklyIncomingCount(installationId: string) {
+    const since = Date.now() - WEEK_MS;
+    return this.state.routeInvitations.filter(
+      (invitation) =>
+        invitation.toInstallationId === installationId &&
+        Date.parse(invitation.createdAt) >= since,
+    ).length;
+  }
+
+  private buildIntroduction(
+    viewer: Profile,
+    candidate: Profile,
+    nowYear: number,
+  ): Introduction {
+    const { score, reasons } = overlapScore(viewer, candidate, nowYear);
+    return { installationId: candidate.id, profile: candidate, score, reasons };
+  }
+
+  async suggestIntroductions(installationId: string) {
+    if (await this.getPairForInstallation(installationId)) return [];
+    const viewer = await this.getProfile(installationId);
+    const nowYear = new Date().getFullYear();
+    const inPair = this.installationsInActivePair();
+    const blocked = new Set<string>([installationId]);
+    for (const invitation of this.state.routeInvitations) {
+      if (
+        invitation.status !== "pending" &&
+        invitation.status !== "accepted"
+      ) {
+        continue;
+      }
+      if (invitation.fromInstallationId === installationId) {
+        blocked.add(invitation.toInstallationId);
+      }
+      if (invitation.toInstallationId === installationId) {
+        blocked.add(invitation.fromInstallationId);
+      }
+    }
+    for (const id of this.blockedIdsFor(installationId)) blocked.add(id);
+    return this.state.profiles
+      .filter(
+        (candidate) =>
+          candidate.id !== installationId &&
+          !inPair.has(candidate.id) &&
+          !blocked.has(candidate.id),
+      )
+      .map((candidate) => profileSchema.parse(candidate))
+      .filter((candidate) => withinDistance(viewer, candidate))
+      .map((candidate) => this.buildIntroduction(viewer, candidate, nowYear))
+      .sort((left, right) => right.score - left.score)
+      .slice(0, SUGGESTION_LIMIT);
+  }
+
+  async listRouteInvitations(
+    installationId: string,
+  ): Promise<RouteInvitationsList> {
+    const viewer = await this.getProfile(installationId);
+    const nowYear = new Date().getFullYear();
+    const view = (record: RouteInvitationRecord, otherId: string) => {
+      const other = this.state.profiles.find(
+        (candidate) => candidate.id === otherId,
+      );
+      if (!other) return null;
+      return {
+        invitation: { ...record },
+        counterpart: this.buildIntroduction(
+          viewer,
+          profileSchema.parse(other),
+          nowYear,
+        ),
+      };
+    };
+    const incoming = this.state.routeInvitations
+      .filter(
+        (invitation) =>
+          invitation.toInstallationId === installationId &&
+          invitation.status === "pending",
+      )
+      .map((invitation) => view(invitation, invitation.fromInstallationId))
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+    const outgoing = this.state.routeInvitations
+      .filter(
+        (invitation) =>
+          invitation.fromInstallationId === installationId &&
+          invitation.status === "pending",
+      )
+      .map((invitation) => view(invitation, invitation.toInstallationId))
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+    return {
+      incoming,
+      outgoing,
+      weeklyRemaining: Math.max(
+        0,
+        WEEKLY_INVITATION_LIMIT - this.weeklyOutgoingCount(installationId),
+      ),
+    };
+  }
+
+  async createRouteInvitation(
+    installationId: string,
+    toInstallationId: string,
+    message: string,
+  ): Promise<RouteInvitation> {
+    if (installationId === toInstallationId) {
+      throw new DomainError("Je kunt jezelf niet uitnodigen.", 400);
+    }
+    if (await this.getPairForInstallation(installationId)) {
+      throw new DomainError("Je hebt al een actieve route.", 409);
+    }
+    const target = this.state.profiles.find(
+      (candidate) => candidate.id === toInstallationId,
+    );
+    if (!target) throw new DomainError("Deze persoon bestaat niet.", 404);
+    if (this.blockedIdsFor(installationId).has(toInstallationId)) {
+      throw new DomainError("Deze kennismaking is niet mogelijk.", 403);
+    }
+    const inPair = this.installationsInActivePair();
+    if (inPair.has(toInstallationId)) {
+      throw new DomainError("Deze persoon is al op route.", 409);
+    }
+    if (this.weeklyOutgoingCount(installationId) >= WEEKLY_INVITATION_LIMIT) {
+      throw new DomainError(
+        "Je kennismakingen voor deze week zijn op. Neem even rust.",
+        429,
+      );
+    }
+    if (this.weeklyIncomingCount(toInstallationId) >= WEEKLY_INVITATION_LIMIT) {
+      throw new DomainError(
+        "Deze persoon heeft deze week al genoeg kennismakingen.",
+        409,
+      );
+    }
+    const existing = this.state.routeInvitations.find(
+      (invitation) =>
+        invitation.status === "pending" &&
+        ((invitation.fromInstallationId === installationId &&
+          invitation.toInstallationId === toInstallationId) ||
+          (invitation.fromInstallationId === toInstallationId &&
+            invitation.toInstallationId === installationId)),
+    );
+    if (existing) {
+      throw new DomainError("Er loopt al een kennismaking.", 409);
+    }
+    const record: RouteInvitationRecord = {
+      id: randomUUID(),
+      fromInstallationId: installationId,
+      toInstallationId,
+      message: message.trim(),
+      status: "pending",
+      pairId: null,
+      createdAt: now(),
+      respondedAt: null,
+    };
+    this.state.routeInvitations.push(record);
+    await this.persist();
+    return { ...record };
+  }
+
+  async respondToRouteInvitation(
+    installationId: string,
+    invitationId: string,
+    accept: boolean,
+  ): Promise<{ invitation: RouteInvitation; pairId: string | null }> {
+    const record = this.state.routeInvitations.find(
+      (invitation) => invitation.id === invitationId,
+    );
+    if (!record) throw new DomainError("Kennismaking niet gevonden.", 404);
+    if (record.toInstallationId !== installationId) {
+      throw new DomainError("Dit is niet jouw kennismaking.", 403);
+    }
+    if (record.status !== "pending") {
+      throw new DomainError("Deze kennismaking is al beantwoord.", 409);
+    }
+    record.respondedAt = now();
+    if (!accept) {
+      record.status = "declined";
+      await this.persist();
+      return { invitation: { ...record }, pairId: null };
+    }
+    const inPair = this.installationsInActivePair();
+    if (
+      inPair.has(installationId) ||
+      inPair.has(record.fromInstallationId)
+    ) {
+      throw new DomainError("Eén van jullie is al op route.", 409);
+    }
+    let code = createCode();
+    while (this.state.pairs.some((pair) => pair.code === code)) {
+      code = createCode();
+    }
+    const pair: PairRecord = {
+      id: randomUUID(),
+      code,
+      createdAt: now(),
+      disconnectedAt: null,
+      memberIds: [record.fromInstallationId, record.toInstallationId],
+      sharedSeconds: 0,
+      bothOnlineSince: null,
+      callUnlocked: false,
+      callRequestedBy: null,
+      callConsent: {},
+      callCooldownUntil: null,
+    };
+    this.state.pairs.push(pair);
+    record.status = "accepted";
+    record.pairId = pair.id;
+    // Overige openstaande kennismakingen van beiden vervallen (exclusiviteit).
+    for (const other of this.state.routeInvitations) {
+      if (other.id === record.id || other.status !== "pending") continue;
+      const involved = [
+        record.fromInstallationId,
+        record.toInstallationId,
+      ];
+      if (
+        involved.includes(other.fromInstallationId) ||
+        involved.includes(other.toInstallationId)
+      ) {
+        other.status = "expired";
+        other.respondedAt = now();
+      }
+    }
+    await this.persist();
+    return { invitation: { ...record }, pairId: pair.id };
   }
 
   async createPair(installationId: string) {
@@ -362,14 +705,16 @@ export class LocalRepository implements AppRepository {
         lastSeenAt: now(),
       };
       this.state.installations.push(developer);
-      this.state.profiles.push({
-        id: developer.id,
-        displayName: "Testpartner",
-        bio: "Lokale computerpartner voor ontwikkeling.",
-        avatarColor: "#8FD069",
-        createdAt: now(),
-        updatedAt: now(),
-      });
+      this.state.profiles.push(
+        profileSchema.parse({
+          id: developer.id,
+          displayName: "Testpartner",
+          bio: "Lokale computerpartner voor ontwikkeling.",
+          avatarColor: "#8FD069",
+          createdAt: now(),
+          updatedAt: now(),
+        }),
+      );
     }
     let code = createCode();
     while (this.state.pairs.some((pair) => pair.code === code)) {
@@ -822,6 +1167,30 @@ export class LocalRepository implements AppRepository {
     });
   }
 
+  async getPairTempo(pairId: string) {
+    const out: Record<
+      string,
+      { madeWaitSeconds: number; madeWaitCount: number }
+    > = {};
+    const pair = this.state.pairs.find((p) => p.id === pairId);
+    if (!pair) return out;
+    for (const member of pair.memberIds) {
+      out[member] = { madeWaitSeconds: 0, madeWaitCount: 0 };
+    }
+    for (const session of this.state.waitingSessions) {
+      if (session.pairId !== pairId || !session.endedAt) continue;
+      const slow = pair.memberIds.find((m) => m !== session.userId);
+      if (!slow || !out[slow]) continue;
+      const dur =
+        (Date.parse(session.endedAt) - Date.parse(session.startedAt)) / 1000;
+      if (dur > 0) {
+        out[slow].madeWaitSeconds += Math.round(dur);
+        out[slow].madeWaitCount += 1;
+      }
+    }
+    return out;
+  }
+
   async getWorldProgress(installationId: string): Promise<WorldProgress> {
     const relationships = this.state.pairs.filter((pair) =>
       pair.memberIds.includes(installationId),
@@ -838,7 +1207,17 @@ export class LocalRepository implements AppRepository {
         )
         .map((run) => run.gameId),
     );
-    const completedGames = completedGameIds.size;
+    const activeRuns = this.state.gameRuns
+      .filter(
+        (run) =>
+          run.status !== "completed" &&
+          isDiscoveryGameId(run.gameId) &&
+          (run.installationId === installationId ||
+            (run.pairId ? relationshipIds.includes(run.pairId) : false)),
+      )
+      .map((run) => ({ gameId: run.gameId, revision: run.revision }));
+    const core = computeCoreProgress([...completedGameIds], activeRuns);
+    const { completedGames, eligibleWorlds, nabijheid } = core;
     const developerMode = relationships.some(
       (pair) => pair.developerMode && !pair.disconnectedAt,
     );
@@ -849,6 +1228,7 @@ export class LocalRepository implements AppRepository {
         eligibleWorlds: allWorlds,
         purchasedWorlds: allWorlds,
         unlockedWorlds: allWorlds,
+        nabijheid,
       };
     }
     const account = await this.getAccountForInstallation(installationId);
@@ -858,9 +1238,6 @@ export class LocalRepository implements AppRepository {
         .filter((purchase) => purchase.accountId === account?.id)
         .map((purchase) => purchase.world),
     ];
-    const eligibleWorlds = [1, 2, 3, 4, 5].filter(
-      (world) => world === 1 || completedGames >= (world - 1) * 5,
-    );
     return {
       completedGames,
       eligibleWorlds,
@@ -868,6 +1245,7 @@ export class LocalRepository implements AppRepository {
       unlockedWorlds: eligibleWorlds.filter((world) =>
         purchasedWorlds.includes(world),
       ),
+      nabijheid,
     };
   }
 
@@ -1279,6 +1657,9 @@ export class LocalRepository implements AppRepository {
         role: index === 0 ? "creator" : "partner",
         online: false,
       })),
+      christianLayer:
+        pair.memberIds.length === 2 &&
+        profiles.every((profile) => profile.christianLayer),
     };
   }
 
@@ -1289,27 +1670,5 @@ export class LocalRepository implements AppRepository {
       await rename(temporaryPath, this.filePath);
     });
     return this.writeQueue;
-  }
-
-  private async importLegacyArchive() {
-    if (this.state.legacyArchive) {
-      return;
-    }
-    const readJson = async (name: string) => {
-      try {
-        return JSON.parse(
-          await readFile(resolve(LEGACY_DATA_DIRECTORY, name), "utf8"),
-        ) as unknown;
-      } catch {
-        return {};
-      }
-    };
-    this.state.legacyArchive = {
-      importedAt: now(),
-      profiles: await readJson("profiles.json"),
-      callingStates: await readJson("calling_states.json"),
-      coupleProgress: await readJson("couple_progress.json"),
-    };
-    await this.persist();
   }
 }

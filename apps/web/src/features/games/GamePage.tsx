@@ -52,7 +52,38 @@ import {
   oudeEikReducer,
 } from "./oudeEik/reducer";
 import { serializeOudeEikResult } from "./oudeEik/result";
-
+import type { SpiegelvijverAction } from "./spiegelvijver/contracts";
+import { spiegelvijverDefinition } from "./spiegelvijver/definition";
+import {
+  addDeveloperSpiegelvijverPartner,
+  normalizeSpiegelvijverState,
+  spiegelvijverReducer,
+} from "./spiegelvijver/reducer";
+import { serializeSpiegelvijverResult } from "./spiegelvijver/result";
+import type { GrenzenTempoAction } from "./grenzenTempo/contracts";
+import { grenzenTempoDefinition } from "./grenzenTempo/definition";
+import {
+  addDeveloperGrenzenTempoPartner,
+  grenzenTempoReducer,
+  normalizeGrenzenTempoState,
+} from "./grenzenTempo/reducer";
+import { serializeGrenzenTempoResult } from "./grenzenTempo/result";
+import type { KruispuntReactiesAction } from "./kruispuntReacties/contracts";
+import { kruispuntReactiesDefinition } from "./kruispuntReacties/definition";
+import {
+  addDeveloperKruispuntPartner,
+  kruispuntReactiesReducer,
+  normalizeKruispuntReactiesState,
+} from "./kruispuntReacties/reducer";
+import { serializeKruispuntReactiesResult } from "./kruispuntReacties/result";
+import type { HuishoudtafelAction } from "./huishoudtafel/contracts";
+import { huishoudtafelDefinition } from "./huishoudtafel/definition";
+import {
+  addDeveloperHuishoudtafelPartner,
+  huishoudtafelReducer,
+  normalizeHuishoudtafelState,
+} from "./huishoudtafel/reducer";
+import { serializeHuishoudtafelResult } from "./huishoudtafel/result";
 export function GamePage({
   developerPartnerArriving,
   developerPartnerPresent,
@@ -633,6 +664,309 @@ export function GamePage({
     [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
   );
 
+  const dispatchSpiegelvijverAction = useCallback(
+    async (action: SpiegelvijverAction) => {
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+        const apply = () => {
+          let nextState = spiegelvijverReducer(
+            normalizeSpiegelvijverState(current!.state),
+            action,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              nextState = addDeveloperSpiegelvijverPartner(
+                nextState,
+                action,
+                partnerId,
+              );
+            }
+          }
+          const completesRun = action.type === "spiegelvijver.game.completed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeSpiegelvijverResult(nextState),
+                }
+              : {}),
+          });
+        };
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (action.type === "spiegelvijver.game.completed") {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          navigate(worldPath);
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
+  );
+
+  const dispatchGrenzenTempoAction = useCallback(
+    async (action: GrenzenTempoAction) => {
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+        const apply = () => {
+          let nextState = grenzenTempoReducer(
+            normalizeGrenzenTempoState(current!.state),
+            action,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              nextState = addDeveloperGrenzenTempoPartner(
+                nextState,
+                action,
+                partnerId,
+              );
+            }
+          }
+          const completesRun = action.type === "grenzen-tempo.game.completed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeGrenzenTempoResult(nextState),
+                }
+              : {}),
+          });
+        };
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (action.type === "grenzen-tempo.game.completed") {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          navigate(worldPath);
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
+  );
+
+  const dispatchKruispuntReactiesAction = useCallback(
+    async (action: KruispuntReactiesAction) => {
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+        const apply = () => {
+          let nextState = kruispuntReactiesReducer(
+            normalizeKruispuntReactiesState(current!.state),
+            action,
+            memberIds,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              nextState = addDeveloperKruispuntPartner(
+                nextState,
+                action,
+                partnerId,
+                memberIds,
+              );
+            }
+          }
+          const completesRun =
+            action.type === "kruispunt-reacties.game.completed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeKruispuntReactiesResult(nextState),
+                }
+              : {}),
+          });
+        };
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (action.type === "kruispunt-reacties.game.completed") {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          navigate(worldPath);
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
+  );
+
+  const dispatchHuishoudtafelAction = useCallback(
+    async (action: HuishoudtafelAction) => {
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+        const apply = () => {
+          let nextState = huishoudtafelReducer(
+            normalizeHuishoudtafelState(current!.state),
+            action,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              nextState = addDeveloperHuishoudtafelPartner(
+                nextState,
+                action,
+                partnerId,
+              );
+            }
+          }
+          const completesRun = action.type === "huishoudtafel.game.completed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeHuishoudtafelResult(nextState),
+                }
+              : {}),
+          });
+        };
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (action.type === "huishoudtafel.game.completed") {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          navigate(worldPath);
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
+  );
+
   useEffect(() => {
     function receiveLegacyMessage(event: MessageEvent) {
       if (
@@ -796,7 +1130,7 @@ export function GamePage({
           Terug naar de kaart
         </button>
         <div className={styles.gameWelcomeCard}>
-          <span>Ontdekking</span>
+          <span>Samen ontdekken</span>
           <h1>{game.title}</h1>
           <p>Dit spel speel je uitsluitend samen. Koppel eerst met je partner.</p>
           <button
@@ -851,6 +1185,7 @@ export function GamePage({
           installationId={session?.installationId ?? ""}
           memberIds={pair.members.map((member) => member.installationId)}
           partnerName={partner?.displayName ?? "je partner"}
+          christianLayer={pair.christianLayer}
           pending={nativePending}
           state={normalizeWaardenState(run.state)}
         />
@@ -913,6 +1248,7 @@ export function GamePage({
             setDrawer("chat");
           }}
           partnerName={partner?.displayName ?? "je partner"}
+          christianLayer={pair.christianLayer}
           pending={nativePending}
           priorAllergyOptions={priorAllergyOptions}
           priorQualityOptions={priorQualityOptions}
@@ -955,6 +1291,7 @@ export function GamePage({
             setDrawer("chat");
           }}
           partnerName={partner?.displayName ?? "je partner"}
+          christianLayer={pair.christianLayer}
           pending={nativePending}
           state={normalizeStilteruisjeState(run.state)}
         />
@@ -996,6 +1333,7 @@ export function GamePage({
             setDrawer("chat");
           }}
           partnerName={partner?.displayName ?? "je partner"}
+          christianLayer={pair.christianLayer}
           pending={nativePending}
           state={normalizeVrolijkeOpenPlekState(run.state)}
         />
@@ -1041,9 +1379,168 @@ export function GamePage({
             setDrawer("chat");
           }}
           partnerName={partner?.displayName ?? "je partner"}
+          christianLayer={pair.christianLayer}
           pending={nativePending}
           priorFamilyData={familyResult}
           state={normalizeOudeEikState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (
+    game.status === "native" &&
+    game.id === spiegelvijverDefinition.id &&
+    run
+  ) {
+    const SpiegelvijverComponent = spiegelvijverDefinition.Component;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="spiegelvijver"
+      >
+        {pair.developerMode && (
+          <button
+            className={styles.developerRestartGame}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
+        <SpiegelvijverComponent
+          dispatch={dispatchSpiegelvijverAction}
+          installationId={session?.installationId ?? ""}
+          key={run.id}
+          memberIds={pair.members.map((member) => member.installationId)}
+          partnerName={partner?.displayName ?? "je partner"}
+          christianLayer={pair.christianLayer}
+          pending={nativePending}
+          state={normalizeSpiegelvijverState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (
+    game.status === "native" &&
+    game.id === grenzenTempoDefinition.id &&
+    run
+  ) {
+    const GrenzenTempoComponent = grenzenTempoDefinition.Component;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="grenzen-tempo"
+      >
+        {pair.developerMode && (
+          <button
+            className={styles.developerRestartGame}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
+        <GrenzenTempoComponent
+          dispatch={dispatchGrenzenTempoAction}
+          installationId={session?.installationId ?? ""}
+          key={run.id}
+          memberIds={pair.members.map((member) => member.installationId)}
+          openCall={() => setDrawer("call")}
+          openChat={(text = "") => {
+            setChatContext(text, false);
+            setDrawer("chat");
+          }}
+          partnerName={partner?.displayName ?? "je partner"}
+          christianLayer={pair.christianLayer}
+          pending={nativePending}
+          state={normalizeGrenzenTempoState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (
+    game.status === "native" &&
+    game.id === kruispuntReactiesDefinition.id &&
+    run
+  ) {
+    const KruispuntReactiesComponent = kruispuntReactiesDefinition.Component;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="kruispunt-reacties"
+      >
+        {pair.developerMode && (
+          <button
+            className={styles.developerRestartGame}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
+        <KruispuntReactiesComponent
+          dispatch={dispatchKruispuntReactiesAction}
+          installationId={session?.installationId ?? ""}
+          key={run.id}
+          memberIds={pair.members.map((member) => member.installationId)}
+          partnerName={partner?.displayName ?? "je partner"}
+          christianLayer={pair.christianLayer}
+          pending={nativePending}
+          state={normalizeKruispuntReactiesState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (
+    game.status === "native" &&
+    game.id === huishoudtafelDefinition.id &&
+    run
+  ) {
+    const HuishoudtafelComponent = huishoudtafelDefinition.Component;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="huishoudtafel"
+      >
+        {pair.developerMode && (
+          <button
+            className={styles.developerRestartGame}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
+        <HuishoudtafelComponent
+          dispatch={dispatchHuishoudtafelAction}
+          installationId={session?.installationId ?? ""}
+          key={run.id}
+          memberIds={pair.members.map((member) => member.installationId)}
+          openCall={() => setDrawer("call")}
+          openChat={(text = "") => {
+            setChatContext(text, false);
+            setDrawer("chat");
+          }}
+          partnerName={partner?.displayName ?? "je partner"}
+          christianLayer={pair.christianLayer}
+          pending={nativePending}
+          state={normalizeHuishoudtafelState(run.state)}
         />
       </main>
     );

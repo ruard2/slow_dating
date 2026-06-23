@@ -4,11 +4,17 @@ import type {
   CallAccess,
   GameRun,
   Message,
+  Introduction,
   Pair,
   Profile,
   ProfileInsights,
+  ProfileUpdate,
   RelationshipArchive,
   RelationshipGameResult,
+  ReportReason,
+  RouteInvitation,
+  RouteInvitationsList,
+  RouteInvitationStatus,
   WaitingStats,
   WorldProgress,
 } from "@slow-dating/contracts";
@@ -49,6 +55,33 @@ export interface PairRecord {
   callRequestedBy?: string | null;
   callConsent?: Record<string, "yes" | "no" | null>;
   callCooldownUntil?: string | null;
+}
+
+export interface RouteInvitationRecord {
+  id: string;
+  fromInstallationId: string;
+  toInstallationId: string;
+  message: string;
+  status: RouteInvitationStatus;
+  pairId: string | null;
+  createdAt: string;
+  respondedAt: string | null;
+}
+
+export interface BlockRecord {
+  id: string;
+  byInstallationId: string;
+  blockedInstallationId: string;
+  createdAt: string;
+}
+
+export interface ReportRecord {
+  id: string;
+  byInstallationId: string;
+  targetInstallationId: string;
+  reason: ReportReason;
+  note: string;
+  createdAt: string;
 }
 
 export interface DataState {
@@ -92,6 +125,9 @@ export interface DataState {
     createdAt: string;
   }>;
   activityEvents: ActivityEvent[];
+  routeInvitations: RouteInvitationRecord[];
+  blocks: BlockRecord[];
+  reports: ReportRecord[];
   gameActions: Array<{
     id: string;
     gameRunId: string;
@@ -145,8 +181,33 @@ export interface AppRepository {
   getProfile(installationId: string): Promise<Profile>;
   updateProfile(
     installationId: string,
-    changes: Partial<Pick<Profile, "avatarColor" | "bio" | "displayName">>,
+    changes: ProfileUpdate,
   ): Promise<Profile>;
+  suggestIntroductions(installationId: string): Promise<Introduction[]>;
+  listRouteInvitations(
+    installationId: string,
+  ): Promise<RouteInvitationsList>;
+  createRouteInvitation(
+    installationId: string,
+    toInstallationId: string,
+    message: string,
+  ): Promise<RouteInvitation>;
+  respondToRouteInvitation(
+    installationId: string,
+    invitationId: string,
+    accept: boolean,
+  ): Promise<{ invitation: RouteInvitation; pairId: string | null }>;
+  blockInstallation(
+    installationId: string,
+    targetInstallationId: string,
+  ): Promise<void>;
+  listBlockedInstallationIds(installationId: string): Promise<string[]>;
+  reportInstallation(
+    installationId: string,
+    targetInstallationId: string,
+    reason: ReportReason,
+    note: string,
+  ): Promise<void>;
   createPair(installationId: string): Promise<Pair>;
   activateDeveloperPair(installationId: string): Promise<Pair>;
   joinPair(installationId: string, code: string): Promise<Pair>;
@@ -207,6 +268,10 @@ export interface AppRepository {
   ): Promise<ActivityEvent>;
   listActivity(installationId: string): Promise<ActivityEvent[]>;
   getProfileInsights(installationId: string): Promise<ProfileInsights>;
+  /** Per koppel-lid: hoe vaak/lang er op die persoon werd gewacht (tempo). */
+  getPairTempo(
+    pairId: string,
+  ): Promise<Record<string, { madeWaitSeconds: number; madeWaitCount: number }>>;
   getWorldProgress(installationId: string): Promise<WorldProgress>;
   startWaitingSession(installationId: string, gameRunId: string): Promise<void>;
   endWaitingSession(installationId: string, gameRunId: string): Promise<void>;

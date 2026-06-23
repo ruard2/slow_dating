@@ -361,6 +361,172 @@ describe("Slow Dating API", () => {
     expect(updated.body.id).toBe(session.body.installationId);
   });
 
+  it("laat twee ja's samen een route starten (kennismaking)", async () => {
+    const app = await createTestApp();
+    const initiator = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "m".repeat(64) });
+    const receiver = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "n".repeat(64) });
+    const authA = { authorization: `Bearer ${initiator.body.accessToken}` };
+    const authB = { authorization: `Bearer ${receiver.body.accessToken}` };
+
+    const invite = await request(app)
+      .post("/api/route-invitations")
+      .set(authA)
+      .send({
+        toInstallationId: receiver.body.installationId,
+        message: "Ik zou je graag beter leren kennen.",
+      });
+    expect(invite.status).toBe(201);
+    expect(invite.body.status).toBe("pending");
+
+    const incoming = await request(app)
+      .get("/api/route-invitations")
+      .set(authB);
+    expect(incoming.body.incoming).toHaveLength(1);
+    expect(incoming.body.incoming[0].counterpart.installationId).toBe(
+      initiator.body.installationId,
+    );
+
+    const accepted = await request(app)
+      .post(`/api/route-invitations/${invite.body.id}/respond`)
+      .set(authB)
+      .send({ accept: true });
+    expect(accepted.status).toBe(200);
+    expect(accepted.body.pairId).toBeTruthy();
+
+    // Eén ja is verbruikt: opnieuw beantwoorden kan niet meer.
+    const again = await request(app)
+      .post(`/api/route-invitations/${invite.body.id}/respond`)
+      .set(authB)
+      .send({ accept: true });
+    expect(again.status).toBe(409);
+  });
+
+  it("zet de christelijke laag alleen aan als beide partners die kozen", async () => {
+    const app = await createTestApp();
+    const a = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "g".repeat(64) });
+    const b = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "h".repeat(64) });
+    const authA = { authorization: `Bearer ${a.body.accessToken}` };
+    const authB = { authorization: `Bearer ${b.body.accessToken}` };
+
+    await request(app)
+      .patch("/api/profile")
+      .set(authA)
+      .send({ christianLayer: true });
+    await request(app)
+      .patch("/api/profile")
+      .set(authB)
+      .send({ christianLayer: true });
+
+    const invite = await request(app)
+      .post("/api/route-invitations")
+      .set(authA)
+      .send({ toInstallationId: b.body.installationId });
+    await request(app)
+      .post(`/api/route-invitations/${invite.body.id}/respond`)
+      .set(authB)
+      .send({ accept: true });
+
+    const pair = await request(app).get("/api/pairs/current").set(authA);
+    expect(pair.body.christianLayer).toBe(true);
+  });
+
+  it("weigert een uitnodiging aan jezelf", async () => {
+    const app = await createTestApp();
+    const session = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "o".repeat(64) });
+    const self = await request(app)
+      .post("/api/route-invitations")
+      .set("authorization", `Bearer ${session.body.accessToken}`)
+      .send({ toInstallationId: session.body.installationId });
+    expect(self.status).toBe(400);
+  });
+
+  it("blokkeren verbergt iemand en verhindert kennismaking", async () => {
+    const app = await createTestApp();
+    const a = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "x".repeat(64) });
+    const b = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "y".repeat(64) });
+    const authA = { authorization: `Bearer ${a.body.accessToken}` };
+    const authB = { authorization: `Bearer ${b.body.accessToken}` };
+
+    const before = await request(app).get("/api/introductions").set(authA);
+    expect(
+      before.body.some(
+        (intro: { installationId: string }) =>
+          intro.installationId === b.body.installationId,
+      ),
+    ).toBe(true);
+
+    const blocked = await request(app)
+      .post("/api/blocks")
+      .set(authA)
+      .send({ installationId: b.body.installationId });
+    expect(blocked.status).toBe(204);
+
+    const after = await request(app).get("/api/introductions").set(authA);
+    expect(
+      after.body.some(
+        (intro: { installationId: string }) =>
+          intro.installationId === b.body.installationId,
+      ),
+    ).toBe(false);
+
+    // Geblokkeerd in beide richtingen: B kan A niet uitnodigen.
+    const invite = await request(app)
+      .post("/api/route-invitations")
+      .set(authB)
+      .send({ toInstallationId: a.body.installationId });
+    expect(invite.status).toBe(403);
+  });
+
+  it("bewaart en herleest de dating-profielvelden", async () => {
+    const app = await createTestApp();
+    const session = await request(app)
+      .post("/api/auth/guest")
+      .send({ installationSecret: "d".repeat(64) });
+    const auth = { authorization: `Bearer ${session.body.accessToken}` };
+
+    const saved = await request(app)
+      .patch("/api/profile")
+      .set(auth)
+      .send({
+        city: "Utrecht",
+        birthYear: 1995,
+        relationIntention: "serieus",
+        interests: ["wandelen", "koken"],
+        coreValues: ["eerlijkheid"],
+        christianLayer: true,
+        prefAgeMin: 25,
+        prefAgeMax: 38,
+      });
+
+    expect(saved.status).toBe(200);
+    expect(saved.body.city).toBe("Utrecht");
+    expect(saved.body.birthYear).toBe(1995);
+    expect(saved.body.relationIntention).toBe("serieus");
+    expect(saved.body.interests).toEqual(["wandelen", "koken"]);
+    expect(saved.body.christianLayer).toBe(true);
+
+    const reread = await request(app).get("/api/profile").set(auth);
+    expect(reread.body.city).toBe("Utrecht");
+    expect(reread.body.coreValues).toEqual(["eerlijkheid"]);
+    expect(reread.body.prefAgeMin).toBe(25);
+    // ongewijzigde basisvelden blijven behouden
+    expect(reread.body.displayName).toBe("Nieuwe bezoeker");
+  });
+
   it("registers an account and rotates its refresh session", async () => {
     const app = await createTestApp();
     const agent = request.agent(app);

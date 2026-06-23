@@ -37,6 +37,61 @@ model Installation {
   waitingAnswers WaitingAnswer[]
   activityEvents ActivityEvent[]
   gameActions    GameAction[]
+  invitationsSent     RouteInvitation[] @relation("InvitationsSent")
+  invitationsReceived RouteInvitation[] @relation("InvitationsReceived")
+  blocksMade     Block[]  @relation("BlocksMade")
+  blocksReceived Block[]  @relation("BlocksReceived")
+  reportsMade    Report[] @relation("ReportsMade")
+  reportsAbout   Report[] @relation("ReportsAbout")
+}
+
+enum RouteInvitationStatus {
+  pending
+  accepted
+  declined
+  expired
+}
+
+model RouteInvitation {
+  id                 String                @id @default(uuid())
+  fromInstallationId String
+  toInstallationId   String
+  message            String                @default("")
+  status             RouteInvitationStatus @default(pending)
+  pairId             String?
+  createdAt          DateTime              @default(now())
+  respondedAt        DateTime?
+  from Installation @relation("InvitationsSent", fields: [fromInstallationId], references: [id], onDelete: Cascade)
+  to   Installation @relation("InvitationsReceived", fields: [toInstallationId], references: [id], onDelete: Cascade)
+
+  @@index([toInstallationId, status])
+  @@index([fromInstallationId, status])
+}
+
+model Block {
+  id                    String       @id @default(uuid())
+  byInstallationId      String
+  blockedInstallationId String
+  createdAt             DateTime     @default(now())
+  by      Installation @relation("BlocksMade", fields: [byInstallationId], references: [id], onDelete: Cascade)
+  blocked Installation @relation("BlocksReceived", fields: [blockedInstallationId], references: [id], onDelete: Cascade)
+
+  @@unique([byInstallationId, blockedInstallationId])
+  @@index([byInstallationId])
+  @@index([blockedInstallationId])
+}
+
+model Report {
+  id                   String       @id @default(uuid())
+  byInstallationId     String
+  targetInstallationId String
+  reason               String
+  note                 String       @default("")
+  createdAt            DateTime     @default(now())
+  by     Installation @relation("ReportsMade", fields: [byInstallationId], references: [id], onDelete: Cascade)
+  target Installation @relation("ReportsAbout", fields: [targetInstallationId], references: [id], onDelete: Cascade)
+
+  @@index([targetInstallationId])
 }
 
 model Account {

@@ -64,7 +64,7 @@ export const worlds: WorldDefinition[] = [
     description: "Jullie ontdekken elkaar steeds dieper.",
     requiredDiscoveries: 5,
     priceCents: 200,
-    image: "/assets/kaart2-v4.webp",
+    image: "/assets/kaart2-v6.webp",
     imageAspectRatio: 3764 / 6688,
   },
   {
@@ -234,6 +234,49 @@ export const games: GameMetadata[] = [
     scoresDiscovery: true,
   },
   {
+    id: "spiegelvijver",
+    title: "Onder de oppervlakte",
+    description:
+      "Leg je eigen zelfbeeld naast wat de ander werkelijk ziet, laag voor laag.",
+    legacyPath: null,
+    modes: ["couple"],
+    version: 1,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
+    id: "grenzen-tempo",
+    title: "Grenzen & tempo",
+    description:
+      "Ontdek hoe jullie nabijheid, tempo en een kleine nee zorgvuldig afstemmen.",
+    legacyPath: null,
+    modes: ["couple"],
+    version: 1,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
+    id: "kruispunt-reacties",
+    title: "Kruispunt van Reacties",
+    description:
+      "Kies onder tijdsdruk een reactie op grappige en spannende situaties en vergelijk jullie eerste impuls.",
+    legacyPath: null,
+    modes: ["couple"],
+    version: 1,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
+    id: "huishoudtafel",
+    title: "De Huishoudtafel",
+    description: "Ontdek hoe jullie kijken naar taken, verantwoordelijkheid en mentale last.",
+    legacyPath: null,
+    modes: ["couple"],
+    version: 1,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
     id: "profiel",
     title: "Jouw profiel",
     description: "Bekijk de inzichten die over spellen heen zijn opgebouwd.",
@@ -323,6 +366,30 @@ export const gamePlacements: GamePlacement[] = [
     order: 4,
     position: { left: 80, top: 37.7, width: 17.5, height: 8.2 },
   },
+  {
+    worldId: 2,
+    gameId: "spiegelvijver",
+    order: 5,
+    position: { left: 38, top: 48.5, width: 24, height: 7 },
+  },
+  {
+    worldId: 2,
+    gameId: "grenzen-tempo",
+    order: 6,
+    position: { left: 78.5, top: 15.8, width: 18.5, height: 8.5 },
+  },
+  {
+    worldId: 2,
+    gameId: "kruispunt-reacties",
+    order: 7,
+    position: { left: 78.5, top: 62.4, width: 18.5, height: 6.8 },
+  },
+  {
+    worldId: 3,
+    gameId: "huishoudtafel",
+    order: 1,
+    position: { left: 11.4, top: 32.2, width: 21.5, height: 7.2 },
+  },
 ];
 
 worlds.forEach((world) => worldDefinitionSchema.parse(world));
@@ -355,6 +422,41 @@ export function findPlayableGame(gameId: string) {
 
 export function isDiscoveryGameId(gameId: string) {
   return Boolean(findGame(gameId)?.scoresDiscovery);
+}
+
+/** Aantal discovery-spellen dat per landschap meetelt voor de nabijheidsgroei. */
+export const GAMES_PER_WORLD = 5;
+
+/** Interne groeilijnen onder de ene zichtbare nabijheidsbalk. */
+export type GrowthLine = "kennis" | "vertrouwen" | "zorg" | "richting";
+
+const GROWTH_LINE_BY_GAME: Record<string, GrowthLine> = {
+  waarden: "richting",
+  "lach-samen": "kennis",
+  kennismaking: "kennis",
+  familiedorp: "kennis",
+  kwaliteiten: "vertrouwen",
+  "stille-vijver": "vertrouwen",
+  "brug-ontdekking": "kennis",
+  kernkwadranten: "vertrouwen",
+  stilteruisje: "zorg",
+  "vrolijke-open-plek": "kennis",
+  "oude-eik": "vertrouwen",
+  spiegelvijver: "vertrouwen",
+  "grenzen-tempo": "zorg",
+  "kruispunt-reacties": "vertrouwen",
+  huishoudtafel: "zorg",
+};
+
+/** Welke interne groeilijn een spel voedt. Onbekend → 'kennis'. */
+export function growthLineForGame(gameId: string): GrowthLine {
+  return GROWTH_LINE_BY_GAME[gameId] ?? "kennis";
+}
+
+/** Het landschap (wereld-id) waar een spel geplaatst is, of undefined. */
+export function worldIdForGame(gameId: string) {
+  return gamePlacements.find((placement) => placement.gameId === gameId)
+    ?.worldId;
 }
 
 export function worldPathForGame(gameId: string) {

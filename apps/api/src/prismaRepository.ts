@@ -7,15 +7,29 @@ import type {
   CallAccess,
   GameRun,
   Message,
+  Introduction,
   Pair,
   Profile,
   ProfileInsights,
+  ProfileUpdate,
   RelationshipArchive,
   RelationshipGameResult,
+  ReportReason,
+  RouteInvitation,
+  RouteInvitationsList,
   WorldProgress,
 } from "@slow-dating/contracts";
+import { profileSchema } from "@slow-dating/contracts";
 import { isDiscoveryGameId } from "@slow-dating/content";
 
+import { computeCoreProgress } from "./progress.js";
+import {
+  overlapScore,
+  withinDistance,
+  SUGGESTION_LIMIT,
+  WEEK_MS,
+  WEEKLY_INVITATION_LIMIT,
+} from "./matching.js";
 import { PrismaClient, type Prisma } from "./generated/prisma/client.js";
 import {
   type AccountRecord,
@@ -44,16 +58,48 @@ function toProfile(profile: {
   displayName: string;
   bio: string;
   avatarColor: string;
+  legacyData?: unknown;
   createdAt: Date;
   updatedAt: Date;
 }): Profile {
-  return {
+  const legacy =
+    profile.legacyData &&
+    typeof profile.legacyData === "object" &&
+    !Array.isArray(profile.legacyData)
+      ? (profile.legacyData as Record<string, unknown>)
+      : {};
+  // Dating-profielvelden leven in legacyData; profileSchema vult ontbrekende
+  // velden aan met hun standaardwaarden.
+  return profileSchema.parse({
+    ...legacy,
     id: profile.installationId,
     displayName: profile.displayName,
     bio: profile.bio,
     avatarColor: profile.avatarColor,
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
+  });
+}
+
+function toRouteInvitation(row: {
+  id: string;
+  fromInstallationId: string;
+  toInstallationId: string;
+  message: string;
+  status: "pending" | "accepted" | "declined" | "expired";
+  pairId: string | null;
+  createdAt: Date;
+  respondedAt: Date | null;
+}): RouteInvitation {
+  return {
+    id: row.id,
+    fromInstallationId: row.fromInstallationId,
+    toInstallationId: row.toInstallationId,
+    message: row.message,
+    status: row.status,
+    pairId: row.pairId,
+    createdAt: row.createdAt.toISOString(),
+    respondedAt: row.respondedAt ? row.respondedAt.toISOString() : null,
   };
 }
 
@@ -282,15 +328,376 @@ export class PrismaRepository implements AppRepository {
     return toProfile(profile);
   }
 
-  async updateProfile(
-    installationId: string,
-    changes: Partial<Pick<Profile, "avatarColor" | "bio" | "displayName">>,
-  ) {
+  async updateProfile(installationId: string, changes: ProfileUpdate) {
+    const existing = await this.prisma.profile.findUnique({
+      where: { installationId },
+    });
+    if (!existing) {
+      throw new DomainError("Profiel niet gevonden.", 404);
+    }
+    // Kolomvelden gaan naar de tabel; dating-velden naar legacyData (JSON).
+    const { displayName, bio, avatarColor, ...legacyChanges } = changes;
+    const columnChanges = {
+      ...(displayName === undefined ? {} : { displayName }),
+      ...(bio === undefined ? {} : { bio }),
+      ...(avatarColor === undefined ? {} : { avatarColor }),
+    };
+    const existingLegacy =
+      existing.legacyData &&
+      typeof existing.legacyData === "object" &&
+      !Array.isArray(existing.legacyData)
+        ? (existing.legacyData as Record<string, unknown>)
+        : {};
+    const legacyData = {
+      ...existingLegacy,
+      ...legacyChanges,
+    } as Prisma.InputJsonValue;
     const profile = await this.prisma.profile.update({
       where: { installationId },
-      data: changes,
+      data: { ...columnChanges, legacyData },
     });
     return toProfile(profile);
+  }
+
+  private async installationsInActivePair() {
+    const rows = await this.prisma.pairMember.findMany({
+      where: { pair: { disconnectedAt: null } },
+      select: { installationId: true },
+    });
+    return new Set(rows.map((row) => row.installationId));
+  }
+
+  private async blockedIdsFor(installationId: string) {
+    const rows = await this.prisma.block.findMany({
+      where: {
+        OR: [
+          { byInstallationId: installationId },
+          { blockedInstallationId: installationId },
+        ],
+      },
+      select: { byInstallationId: true, blockedInstallationId: true },
+    });
+    const ids = new Set<string>();
+    for (const row of rows) {
+      ids.add(
+        row.byInstallationId === installationId
+          ? row.blockedInstallationId
+          : row.byInstallationId,
+      );
+    }
+    return ids;
+  }
+
+  async blockInstallation(
+    installationId: string,
+    targetInstallationId: string,
+  ): Promise<void> {
+    if (installationId === targetInstallationId) {
+      throw new DomainError("Je kunt jezelf niet blokkeren.", 400);
+    }
+    await this.prisma.block.upsert({
+      where: {
+        byInstallationId_blockedInstallationId: {
+          byInstallationId: installationId,
+          blockedInstallationId: targetInstallationId,
+        },
+      },
+      update: {},
+      create: {
+        byInstallationId: installationId,
+        blockedInstallationId: targetInstallationId,
+      },
+    });
+    await this.prisma.routeInvitation.updateMany({
+      where: {
+        status: "pending",
+        OR: [
+          {
+            fromInstallationId: installationId,
+            toInstallationId: targetInstallationId,
+          },
+          {
+            fromInstallationId: targetInstallationId,
+            toInstallationId: installationId,
+          },
+        ],
+      },
+      data: { status: "expired", respondedAt: new Date() },
+    });
+    const sharedPair = await this.prisma.pair.findFirst({
+      where: {
+        disconnectedAt: null,
+        members: { some: { installationId } },
+        AND: { members: { some: { installationId: targetInstallationId } } },
+      },
+    });
+    if (sharedPair) {
+      await this.disconnectPair(installationId);
+    }
+  }
+
+  async listBlockedInstallationIds(
+    installationId: string,
+  ): Promise<string[]> {
+    const rows = await this.prisma.block.findMany({
+      where: { byInstallationId: installationId },
+      select: { blockedInstallationId: true },
+    });
+    return rows.map((row) => row.blockedInstallationId);
+  }
+
+  async reportInstallation(
+    installationId: string,
+    targetInstallationId: string,
+    reason: ReportReason,
+    note: string,
+  ): Promise<void> {
+    if (installationId === targetInstallationId) {
+      throw new DomainError("Je kunt jezelf niet rapporteren.", 400);
+    }
+    await this.prisma.report.create({
+      data: {
+        byInstallationId: installationId,
+        targetInstallationId,
+        reason,
+        note: note.trim(),
+      },
+    });
+  }
+
+  private async weeklyInvitationCount(
+    field: "fromInstallationId" | "toInstallationId",
+    installationId: string,
+  ) {
+    return this.prisma.routeInvitation.count({
+      where: {
+        [field]: installationId,
+        createdAt: { gte: new Date(Date.now() - WEEK_MS) },
+      },
+    });
+  }
+
+  async suggestIntroductions(
+    installationId: string,
+  ): Promise<Introduction[]> {
+    if (await this.getPairForInstallation(installationId)) return [];
+    const viewerRow = await this.prisma.profile.findUnique({
+      where: { installationId },
+    });
+    if (!viewerRow) return [];
+    const viewer = toProfile(viewerRow);
+    const nowYear = new Date().getFullYear();
+    const inPair = await this.installationsInActivePair();
+    const related = await this.prisma.routeInvitation.findMany({
+      where: {
+        status: { in: ["pending", "accepted"] },
+        OR: [{ fromInstallationId: installationId }, { toInstallationId: installationId }],
+      },
+      select: { fromInstallationId: true, toInstallationId: true },
+    });
+    const blocked = new Set<string>([installationId]);
+    for (const invitation of related) {
+      blocked.add(invitation.fromInstallationId);
+      blocked.add(invitation.toInstallationId);
+    }
+    for (const id of await this.blockedIdsFor(installationId)) blocked.add(id);
+    const excluded = [...new Set([...blocked, ...inPair])];
+    const candidates = await this.prisma.profile.findMany({
+      where: { installationId: { notIn: excluded } },
+    });
+    return candidates
+      .map(toProfile)
+      .filter((candidate) => withinDistance(viewer, candidate))
+      .map((candidate) => {
+        const { score, reasons } = overlapScore(viewer, candidate, nowYear);
+        return { installationId: candidate.id, profile: candidate, score, reasons };
+      })
+      .sort((left, right) => right.score - left.score)
+      .slice(0, SUGGESTION_LIMIT);
+  }
+
+  async listRouteInvitations(
+    installationId: string,
+  ): Promise<RouteInvitationsList> {
+    const viewerRow = await this.prisma.profile.findUnique({
+      where: { installationId },
+    });
+    if (!viewerRow) {
+      return { incoming: [], outgoing: [], weeklyRemaining: 0 };
+    }
+    const viewer = toProfile(viewerRow);
+    const nowYear = new Date().getFullYear();
+    const rows = await this.prisma.routeInvitation.findMany({
+      where: {
+        status: "pending",
+        OR: [{ fromInstallationId: installationId }, { toInstallationId: installationId }],
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    const counterpartIds = [
+      ...new Set(
+        rows.map((row) =>
+          row.fromInstallationId === installationId
+            ? row.toInstallationId
+            : row.fromInstallationId,
+        ),
+      ),
+    ];
+    const counterpartRows = await this.prisma.profile.findMany({
+      where: { installationId: { in: counterpartIds } },
+    });
+    const counterparts = new Map(
+      counterpartRows.map((row) => [row.installationId, toProfile(row)]),
+    );
+    const toView = (
+      row: (typeof rows)[number],
+      otherId: string,
+    ) => {
+      const other = counterparts.get(otherId);
+      if (!other) return null;
+      const { score, reasons } = overlapScore(viewer, other, nowYear);
+      return {
+        invitation: toRouteInvitation(row),
+        counterpart: {
+          installationId: other.id,
+          profile: other,
+          score,
+          reasons,
+        },
+      };
+    };
+    const incoming = rows
+      .filter((row) => row.toInstallationId === installationId)
+      .map((row) => toView(row, row.fromInstallationId))
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+    const outgoing = rows
+      .filter((row) => row.fromInstallationId === installationId)
+      .map((row) => toView(row, row.toInstallationId))
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+    const weeklyRemaining = Math.max(
+      0,
+      WEEKLY_INVITATION_LIMIT -
+        (await this.weeklyInvitationCount("fromInstallationId", installationId)),
+    );
+    return { incoming, outgoing, weeklyRemaining };
+  }
+
+  async createRouteInvitation(
+    installationId: string,
+    toInstallationId: string,
+    message: string,
+  ): Promise<RouteInvitation> {
+    if (installationId === toInstallationId) {
+      throw new DomainError("Je kunt jezelf niet uitnodigen.", 400);
+    }
+    if (await this.getPairForInstallation(installationId)) {
+      throw new DomainError("Je hebt al een actieve route.", 409);
+    }
+    const target = await this.prisma.profile.findUnique({
+      where: { installationId: toInstallationId },
+    });
+    if (!target) throw new DomainError("Deze persoon bestaat niet.", 404);
+    if ((await this.blockedIdsFor(installationId)).has(toInstallationId)) {
+      throw new DomainError("Deze kennismaking is niet mogelijk.", 403);
+    }
+    const inPair = await this.installationsInActivePair();
+    if (inPair.has(toInstallationId)) {
+      throw new DomainError("Deze persoon is al op route.", 409);
+    }
+    if (
+      (await this.weeklyInvitationCount("fromInstallationId", installationId)) >=
+      WEEKLY_INVITATION_LIMIT
+    ) {
+      throw new DomainError(
+        "Je kennismakingen voor deze week zijn op. Neem even rust.",
+        429,
+      );
+    }
+    if (
+      (await this.weeklyInvitationCount(
+        "toInstallationId",
+        toInstallationId,
+      )) >= WEEKLY_INVITATION_LIMIT
+    ) {
+      throw new DomainError(
+        "Deze persoon heeft deze week al genoeg kennismakingen.",
+        409,
+      );
+    }
+    const existing = await this.prisma.routeInvitation.findFirst({
+      where: {
+        status: "pending",
+        OR: [
+          { fromInstallationId: installationId, toInstallationId },
+          { fromInstallationId: toInstallationId, toInstallationId: installationId },
+        ],
+      },
+    });
+    if (existing) throw new DomainError("Er loopt al een kennismaking.", 409);
+    const row = await this.prisma.routeInvitation.create({
+      data: {
+        fromInstallationId: installationId,
+        toInstallationId,
+        message: message.trim(),
+      },
+    });
+    return toRouteInvitation(row);
+  }
+
+  async respondToRouteInvitation(
+    installationId: string,
+    invitationId: string,
+    accept: boolean,
+  ): Promise<{ invitation: RouteInvitation; pairId: string | null }> {
+    const row = await this.prisma.routeInvitation.findUnique({
+      where: { id: invitationId },
+    });
+    if (!row) throw new DomainError("Kennismaking niet gevonden.", 404);
+    if (row.toInstallationId !== installationId) {
+      throw new DomainError("Dit is niet jouw kennismaking.", 403);
+    }
+    if (row.status !== "pending") {
+      throw new DomainError("Deze kennismaking is al beantwoord.", 409);
+    }
+    if (!accept) {
+      const declined = await this.prisma.routeInvitation.update({
+        where: { id: invitationId },
+        data: { status: "declined", respondedAt: new Date() },
+      });
+      return { invitation: toRouteInvitation(declined), pairId: null };
+    }
+    const inPair = await this.installationsInActivePair();
+    if (inPair.has(installationId) || inPair.has(row.fromInstallationId)) {
+      throw new DomainError("Eén van jullie is al op route.", 409);
+    }
+    const pair = await this.prisma.pair.create({
+      data: {
+        code: await this.createUniqueCode(),
+        members: {
+          create: [
+            { installationId: row.fromInstallationId, role: "creator" },
+            { installationId: row.toInstallationId, role: "partner" },
+          ],
+        },
+      },
+    });
+    const accepted = await this.prisma.routeInvitation.update({
+      where: { id: invitationId },
+      data: { status: "accepted", pairId: pair.id, respondedAt: new Date() },
+    });
+    // Overige openstaande kennismakingen van beiden vervallen (exclusiviteit).
+    await this.prisma.routeInvitation.updateMany({
+      where: {
+        status: "pending",
+        id: { not: invitationId },
+        OR: [
+          { fromInstallationId: { in: [row.fromInstallationId, row.toInstallationId] } },
+          { toInstallationId: { in: [row.fromInstallationId, row.toInstallationId] } },
+        ],
+      },
+      data: { status: "expired", respondedAt: new Date() },
+    });
+    return { invitation: toRouteInvitation(accepted), pairId: pair.id };
   }
 
   async createPair(installationId: string) {
@@ -893,6 +1300,35 @@ export class PrismaRepository implements AppRepository {
     });
   }
 
+  async getPairTempo(pairId: string) {
+    const out: Record<
+      string,
+      { madeWaitSeconds: number; madeWaitCount: number }
+    > = {};
+    const pair = await this.prisma.pair.findUnique({
+      where: { id: pairId },
+      include: { members: { select: { installationId: true } } },
+    });
+    if (!pair) return out;
+    const memberIds = pair.members.map((m) => m.installationId);
+    for (const id of memberIds) out[id] = { madeWaitSeconds: 0, madeWaitCount: 0 };
+    const sessions = await this.prisma.waitingSession.findMany({
+      where: { pairId, endedAt: { not: null } },
+      select: { userId: true, startedAt: true, endedAt: true },
+    });
+    for (const session of sessions) {
+      const slow = memberIds.find((m) => m !== session.userId);
+      if (!slow || !out[slow] || !session.endedAt) continue;
+      const dur =
+        (session.endedAt.getTime() - session.startedAt.getTime()) / 1000;
+      if (dur > 0) {
+        out[slow].madeWaitSeconds += Math.round(dur);
+        out[slow].madeWaitCount += 1;
+      }
+    }
+    return out;
+  }
+
   async getWorldProgress(installationId: string): Promise<WorldProgress> {
     const memberships = await this.prisma.pairMember.findMany({
       where: { installationId },
@@ -918,11 +1354,30 @@ export class PrismaRepository implements AppRepository {
       },
       select: { gameId: true },
     });
-    const completedGames = new Set(
-      completedRuns
-        .map((run) => run.gameId)
-        .filter(isDiscoveryGameId),
-    ).size;
+    const activeRunsRaw = await this.prisma.gameRun.findMany({
+      where: {
+        status: { not: "completed" },
+        OR: [
+          { installationId },
+          ...(memberships.length
+            ? [{ pairId: { in: memberships.map(({ pairId }) => pairId) } }]
+            : []),
+        ],
+      },
+      select: { gameId: true, revision: true },
+    });
+    const completedDiscoveryGameIds = [
+      ...new Set(
+        completedRuns.map((run) => run.gameId).filter(isDiscoveryGameId),
+      ),
+    ];
+    const activeRuns = activeRunsRaw
+      .filter((run) => isDiscoveryGameId(run.gameId))
+      .map((run) => ({ gameId: run.gameId, revision: run.revision }));
+    const { completedGames, eligibleWorlds, nabijheid } = computeCoreProgress(
+      completedDiscoveryGameIds,
+      activeRuns,
+    );
     const developerMode = memberships.some(
       ({ pair }) => pair.developerMode && !pair.disconnectedAt,
     );
@@ -933,6 +1388,7 @@ export class PrismaRepository implements AppRepository {
         eligibleWorlds: allWorlds,
         purchasedWorlds: allWorlds,
         unlockedWorlds: allWorlds,
+        nabijheid,
       };
     }
     const account = await this.getAccountForInstallation(installationId);
@@ -946,9 +1402,6 @@ export class PrismaRepository implements AppRepository {
       1,
       ...purchases.map((purchase) => purchase.world),
     ];
-    const eligibleWorlds = [1, 2, 3, 4, 5].filter(
-      (world) => world === 1 || completedGames >= (world - 1) * 5,
-    );
     return {
       completedGames,
       eligibleWorlds,
@@ -956,6 +1409,7 @@ export class PrismaRepository implements AppRepository {
       unlockedWorlds: eligibleWorlds.filter((world) =>
         purchasedWorlds.includes(world),
       ),
+      nabijheid,
     };
   }
 
@@ -1384,6 +1838,13 @@ export class PrismaRepository implements AppRepository {
         role: member.role,
         online: false,
       })),
+      christianLayer:
+        pair.members.length === 2 &&
+        pair.members.every((member) =>
+          member.installation.profile
+            ? toProfile(member.installation.profile).christianLayer
+            : false,
+        ),
     };
   }
 

@@ -1,0 +1,7 @@
+.faith{margin:1.4rem 0 0;padding:1.1rem 1.2rem;border:1px solid rgba(226,191,102,.4);border-radius:1.1rem;background:linear-gradient(160deg,rgba(60,46,18,.45),rgba(30,24,12,.5));box-shadow:inset 0 0 2.5rem rgba(226,191,102,.08)}
+.badge{display:inline-block;color:#f0d68a;font-family:system-ui,sans-serif;font-size:.64rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
+.faith h3{margin:.45rem 0 .6rem;font:500 1.25rem Georgia,serif;color:#f3e4b4}
+.intro{margin:0 0 .7rem;color:#e6dcc2;line-height:1.6}
+.faith ul{margin:0;padding-left:1.1rem;display:grid;gap:.55rem}
+.faith li{color:#f1ead6;line-height:1.55}
+.gentle{margin:.8rem 0 0;color:#bcae8a;font-family:system-ui,sans-serif;font-size:.82rem;line-height:1.5;font-style:italic}

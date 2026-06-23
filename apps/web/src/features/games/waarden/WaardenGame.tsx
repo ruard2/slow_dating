@@ -3,7 +3,8 @@ import { useState } from "react";
 import type { GameComponentProps } from "@slow-dating/game-kit";
 
 import type { ValueId, WaardenAction, WaardenState } from "./contracts";
-import { selectionHotspots, values } from "./content";
+import { christianPrompts, selectionHotspots, values } from "./content";
+import { FaithLayer } from "../FaithLayer";
 import {
   allPlayersSubmitted,
   questionsFor,
@@ -105,6 +106,7 @@ function QuestionZone({
 }
 
 export function WaardenGame({
+  christianLayer,
   dispatch,
   installationId,
   memberIds,
@@ -150,6 +152,7 @@ export function WaardenGame({
             className={styles.questionTwo!}
             questions={questions.partner}
           />
+          {christianLayer && <FaithLayer prompts={[...christianPrompts]} />}
           <button
             className={styles.finish}
             disabled={pending}
@@ -161,7 +164,7 @@ export function WaardenGame({
             }
             type="button"
           >
-            Ontdekking afronden
+            Samen afronden
           </button>
         </div>
       </section>

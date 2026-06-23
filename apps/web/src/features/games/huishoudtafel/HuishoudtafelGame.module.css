@@ -1,0 +1,61 @@
+.game{position:absolute;inset:0;overflow:auto;padding:5.2rem 1rem 7rem;color:#edf2e5;background:linear-gradient(rgba(3,13,9,.7),rgba(3,12,9,.94)),url("/assets/kaart2.webp") 22% top/cover fixed;font-family:system-ui,sans-serif}
+.panel{width:min(58rem,100%);margin:auto;padding:clamp(1.15rem,4vw,2.2rem);border:1px solid rgba(168,201,156,.22);border-radius:1.5rem;background:rgba(7,27,20,.94);box-shadow:0 1.7rem 5rem rgba(0,0,0,.55);backdrop-filter:blur(15px)}
+.kicker{color:#9ebd8f;font-size:.7rem;font-weight:900;letter-spacing:.17em;text-transform:uppercase}
+.panel h1,.panel h2{font-family:Georgia,serif;font-weight:500}.panel h1{margin:.35rem 0 .7rem;font-size:clamp(2rem,7vw,3.6rem)}.panel h2{margin:0 0 .75rem;color:#e8d59c;font-size:1.15rem}
+.lead{max-width:46rem;margin:0 0 1.4rem;color:#bdcabd;line-height:1.65}
+
+.house{position:relative;margin:1.2rem auto;max-width:44rem;aspect-ratio:4/3;border-radius:1.2rem;background:rgba(255,255,255,.04);border:1px solid rgba(168,201,156,.15);overflow:hidden;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:1px}
+.room{display:flex;align-items:center;justify-content:center;gap:.35rem;padding:.4rem;background:rgba(255,255,255,.03);border:1px solid transparent;font-size:.75rem;color:#cbd7c0;cursor:default;transition:background .15s}
+.room span{font-size:1rem}
+.roomLabel{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);color:#b5cfad;font-size:.55rem;padding:1px 6px;border-radius:6px;white-space:nowrap}
+
+.taskGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(14rem,1fr));gap:.55rem;margin-top:.6rem}
+.taskCard{padding:.65rem .75rem;border-radius:.85rem;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);cursor:pointer;transition:all .12s;text-align:left;font-family:inherit;color:#edf2e5;position:relative}
+.taskCard:hover{border-color:rgba(168,201,156,.4)}
+.taskCard .taskEmoji{font-size:1.15rem;display:block;margin-bottom:.15rem}
+.taskCard .taskLabel{font-size:.82rem;font-weight:600;display:block}
+.taskCard .taskDetail{font-size:.67rem;color:#a7b9a5;display:block;margin-top:.2rem;line-height:1.3}
+
+/* Categorie badges — kleine selector onderaan de kaart */
+.catSelect{display:flex;gap:.3rem;margin-top:.35rem;padding-top:.35rem;border-top:1px solid rgba(255,255,255,.06)}
+.catBtn{flex:1;padding:.25rem .2rem;border-radius:.45rem;border:1px solid transparent;background:transparent;cursor:pointer;font-size:.6rem;font-weight:600;text-align:center;color:#8da488;transition:all .12s;font-family:inherit}
+.catBtn:hover{border-color:rgba(168,201,156,.3)}
+.catBtn[data-active="true"]{border-color:#a6c997;color:#e8eddd;background:rgba(166,201,151,.18)}
+.catBtn[data-cat="enjoy"]{color:#b5d4a0}
+.catBtn[data-cat="draining"]{color:#e0b56a}
+.catBtn[data-cat="avoid"]{color:#e8917a}
+.catBtn[data-active="true"][data-cat="enjoy"]{background:rgba(166,201,151,.25);border-color:#a6c997}
+.catBtn[data-active="true"][data-cat="draining"]{background:rgba(224,181,106,.2);border-color:#e0b56a}
+.catBtn[data-active="true"][data-cat="avoid"]{background:rgba(232,145,122,.2);border-color:#e8917a}
+
+.submitBtn,.primary,.secondary{border:1px solid rgba(181,207,162,.2);border-radius:.8rem;color:#eaf0e5;background:rgba(255,255,255,.045);font:inherit;cursor:pointer;padding:.8rem 1rem}
+.submitBtn{margin-top:1rem;border:0;color:#112014;background:linear-gradient(135deg,#a9c886,#e1d391);font-weight:900;width:100%}.submitBtn:disabled{opacity:.45;cursor:not-allowed}
+.primary{margin-top:1rem;border:0;color:#112014;background:linear-gradient(135deg,#a9c886,#e1d391);font-weight:900}.primary:disabled{opacity:.45;cursor:not-allowed}
+.secondary{background:rgba(125,158,117,.13)}.secondary:disabled{opacity:.45;cursor:not-allowed}
+
+.waiting{padding:3.5rem 1rem;text-align:center}.waiting h2{margin:.8rem 0 .4rem;color:#e8d59c}.waiting p{color:#afbdaf}
+.ripple{width:3rem;height:3rem;margin:auto;border:1px solid #a9c886;border-radius:50%;box-shadow:0 0 0 .7rem rgba(169,200,134,.1),0 0 0 1.4rem rgba(169,200,134,.04);animation:pulse 2s ease-in-out infinite}
+
+.comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;margin:.8rem 0}
+.compareCol{padding:.85rem;border-radius:.85rem;background:rgba(255,255,255,.035)}
+.compareCol h3{color:#e8d59c;font-size:.85rem;font-weight:600;margin:0 0 .6rem;font-family:Georgia,serif}
+.taskRow{display:flex;align-items:center;gap:.4rem;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.78rem}
+.taskRow:last-child{border-bottom:none}
+.taskRow .emo{font-size:.85rem;flex-shrink:0}
+.taskRow .name{flex:1;color:#dbe5d5}
+.taskRow .tag{font-size:.6rem;font-weight:700;padding:.1rem .4rem;border-radius:.35rem;text-transform:uppercase}
+.tagEnjoy{background:rgba(166,201,151,.2);color:#b5d4a0}
+.tagDraining{background:rgba(224,181,106,.18);color:#e0b56a}
+.tagAvoid{background:rgba(232,145,122,.18);color:#e8917a}
+
+.discussion{padding:.8rem 0}
+.questionCard{margin:.8rem 0 1.2rem;padding:1.2rem;border-left:3px solid #b6cb8b;border-radius:0 1rem 1rem 0;background:rgba(182,203,139,.08);font:italic 1.05rem/1.55 Georgia,serif}
+.actions{display:flex;flex-wrap:wrap;gap:.55rem}
+.actions .primary{margin-top:0}
+
+.summary{padding:1rem 0;text-align:center}
+.summary strong{color:#e8d59c;display:block;margin:.5rem 0;font-size:1.1rem;font-family:Georgia,serif}
+.summary p{color:#bdcabd;line-height:1.6}
+
+@keyframes pulse{50%{scale:1.06;opacity:.75}}
+@media(max-width:650px){.game{padding-inline:.65rem}.panel{padding:1rem}.taskGrid{grid-template-columns:1fr}.comparison{grid-template-columns:1fr}.house{aspect-ratio:auto;grid-template-columns:repeat(2,1fr);grid-template-rows:auto;gap:2px}}

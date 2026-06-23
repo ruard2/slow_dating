@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Een oude eik weerspiegeld in een stille vijver">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a1b10"/>
+      <stop offset="0.45" stop-color="#11291a"/>
+      <stop offset="0.62" stop-color="#16331f"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#13313f"/>
+      <stop offset="0.5" stop-color="#0b2330"/>
+      <stop offset="1" stop-color="#040f16"/>
+    </linearGradient>
+    <radialGradient id="canopy" cx="0.42" cy="0.34" r="0.8">
+      <stop offset="0" stop-color="#4c7a3f"/>
+      <stop offset="0.45" stop-color="#2c5230"/>
+      <stop offset="1" stop-color="#122c18"/>
+    </radialGradient>
+    <radialGradient id="gold" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe6a8" stop-opacity="0.95"/>
+      <stop offset="0.4" stop-color="#f0c264" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#f0c264" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bark" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#241a0f"/>
+      <stop offset="0.5" stop-color="#4a3a22"/>
+      <stop offset="1" stop-color="#1d140b"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="0.5" cy="0.46" r="0.75">
+      <stop offset="0" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0.7" stop-color="#030a07" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#020705" stop-opacity="0.92"/>
+    </radialGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7"/></filter>
+    <filter id="bigblur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+    <clipPath id="pond"><rect x="0" y="624" width="800" height="576"/></clipPath>
+  </defs>
+
+  <!-- Forest backdrop -->
+  <rect width="800" height="640" fill="url(#sky)"/>
+  <!-- distant tree line -->
+  <g fill="#0e2415" opacity="0.9">
+    <ellipse cx="80" cy="540" rx="160" ry="150"/>
+    <ellipse cx="250" cy="560" rx="150" ry="120"/>
+    <ellipse cx="560" cy="555" rx="170" ry="135"/>
+    <ellipse cx="730" cy="545" rx="160" ry="150"/>
+    <ellipse cx="400" cy="585" rx="220" ry="110"/>
+  </g>
+
+  <!-- Oak trunk and roots -->
+  <g>
+    <path d="M372 470 C366 520 360 575 346 618 L300 624 C326 600 338 560 348 470 Z" fill="url(#bark)"/>
+    <path d="M428 470 C434 520 442 575 456 618 L506 624 C476 602 462 560 452 470 Z" fill="url(#bark)"/>
+    <path d="M384 430 C382 500 380 575 378 624 L424 624 C422 560 420 500 416 430 Z" fill="url(#bark)"/>
+    <path d="M396 470 C398 540 398 580 392 624 M404 470 C406 540 408 585 416 624" stroke="#0e0a05" stroke-width="3" fill="none" opacity="0.6"/>
+    <!-- branch hints into canopy -->
+    <path d="M398 470 C360 430 320 410 300 380 M404 470 C448 432 486 412 512 384" stroke="#2c2113" stroke-width="9" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Canopy -->
+  <g fill="url(#canopy)">
+    <ellipse cx="400" cy="400" rx="218" ry="172"/>
+    <ellipse cx="250" cy="362" rx="116" ry="98"/>
+    <ellipse cx="556" cy="360" rx="120" ry="104"/>
+    <ellipse cx="320" cy="298" rx="124" ry="102"/>
+    <ellipse cx="486" cy="300" rx="124" ry="102"/>
+    <ellipse cx="402" cy="262" rx="136" ry="116"/>
+    <ellipse cx="214" cy="436" rx="92" ry="82"/>
+    <ellipse cx="592" cy="436" rx="98" ry="86"/>
+    <ellipse cx="350" cy="468" rx="126" ry="92"/>
+    <ellipse cx="468" cy="468" rx="126" ry="92"/>
+  </g>
+  <!-- shaded underside -->
+  <g fill="#102a17" opacity="0.85">
+    <ellipse cx="300" cy="508" rx="132" ry="66"/>
+    <ellipse cx="512" cy="508" rx="132" ry="66"/>
+    <ellipse cx="406" cy="528" rx="170" ry="64"/>
+  </g>
+  <!-- golden highlights -->
+  <g fill="#cBad55" opacity="0.32">
+    <ellipse cx="332" cy="300" rx="44" ry="30"/>
+    <ellipse cx="470" cy="288" rx="48" ry="32"/>
+    <ellipse cx="402" cy="246" rx="54" ry="36"/>
+    <ellipse cx="258" cy="350" rx="36" ry="26"/>
+    <ellipse cx="544" cy="348" rx="40" ry="28"/>
+    <ellipse cx="352" cy="424" rx="40" ry="26"/>
+    <ellipse cx="462" cy="424" rx="40" ry="26"/>
+  </g>
+
+  <!-- Lantern glows flanking the trunk -->
+  <circle cx="196" cy="566" r="70" fill="url(#gold)"/>
+  <circle cx="196" cy="566" r="6" fill="#ffe9b4"/>
+  <circle cx="610" cy="566" r="70" fill="url(#gold)"/>
+  <circle cx="610" cy="566" r="6" fill="#ffe9b4"/>
+
+  <!-- Pond -->
+  <rect x="0" y="624" width="800" height="576" fill="url(#water)"/>
+  <g clip-path="url(#pond)">
+    <!-- mirrored canopy reflection -->
+    <g filter="url(#bigblur)" opacity="0.34">
+      <ellipse cx="400" cy="844" rx="210" ry="150" fill="#244a2a"/>
+      <ellipse cx="402" cy="982" rx="138" ry="110" fill="#1c3c22"/>
+      <ellipse cx="320" cy="946" rx="118" ry="96" fill="#21421f"/>
+      <ellipse cx="486" cy="944" rx="118" ry="96" fill="#21421f"/>
+    </g>
+    <!-- mirrored trunk shimmer -->
+    <rect x="384" y="624" width="34" height="360" fill="#3a2c18" opacity="0.28" filter="url(#soft)"/>
+    <!-- reflected lantern light streaks -->
+    <ellipse cx="196" cy="700" rx="42" ry="120" fill="url(#gold)" opacity="0.5" filter="url(#soft)"/>
+    <ellipse cx="610" cy="700" rx="42" ry="120" fill="url(#gold)" opacity="0.5" filter="url(#soft)"/>
+    <!-- ripples -->
+    <g stroke="#bfe0ea" fill="none" opacity="0.12">
+      <path d="M120 690 q90 -14 180 0 t180 0 t180 0" stroke-width="2"/>
+      <path d="M80 760 q110 -16 220 0 t220 0 t200 0" stroke-width="2.5"/>
+      <path d="M60 850 q120 -18 240 0 t240 0 t220 0" stroke-width="3"/>
+      <path d="M40 960 q140 -20 280 0 t280 0 t220 0" stroke-width="3.5"/>
+      <path d="M20 1080 q150 -22 300 0 t300 0 t220 0" stroke-width="4"/>
+    </g>
+  </g>
+
+  <!-- Fireflies -->
+  <g fill="#ffe9b4">
+    <circle cx="150" cy="300" r="2.5" opacity="0.9"/>
+    <circle cx="640" cy="260" r="2" opacity="0.8"/>
+    <circle cx="520" cy="180" r="2.5" opacity="0.85"/>
+    <circle cx="280" cy="200" r="2" opacity="0.7"/>
+    <circle cx="700" cy="420" r="2.5" opacity="0.8"/>
+    <circle cx="110" cy="450" r="2" opacity="0.7"/>
+    <circle cx="430" cy="150" r="2" opacity="0.75"/>
+  </g>
+
+  <!-- Vignette -->
+  <rect width="800" height="1200" fill="url(#vignette)"/>
+</svg>

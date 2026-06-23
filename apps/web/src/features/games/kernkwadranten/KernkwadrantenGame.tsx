@@ -10,11 +10,13 @@ import type {
 import {
   allAllergies,
   allQualities,
+  christianPrompts,
   conversationQuestions,
   optionsFor,
   profileForAllergy,
   profileForQuality,
 } from "./content";
+import { FaithLayer } from "../FaithLayer";
 import styles from "./KernkwadrantenGame.module.css";
 
 function Waiting({ partnerName }: { partnerName: string }) {
@@ -46,6 +48,7 @@ function Quadrant({ value }: { value: Kernkwadrant }) {
 }
 
 export function KernkwadrantenGame({
+  christianLayer,
   dispatch,
   installationId,
   memberIds,
@@ -315,6 +318,12 @@ export function KernkwadrantenGame({
               uitkomsten blijven beschikbaar voor het persoonlijke en
               gezamenlijke profiel.
             </p>
+            {christianLayer && (
+              <FaithLayer
+                intro="Een kwaliteit die doorschiet, mag je ook in genade bekijken."
+                prompts={[...christianPrompts]}
+              />
+            )}
             <button
               className={styles.primary}
               disabled={pending}

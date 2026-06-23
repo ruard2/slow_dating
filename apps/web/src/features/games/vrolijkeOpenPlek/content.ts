@@ -1,3 +1,9 @@
+export const christianPrompts = [
+  "Waar zie je Gods goedheid in de dingen die jullie samen lucht en plezier geven?",
+  "Hoe houden jullie speelsheid en rust vast, ook als het leven druk of zwaar wordt?",
+  "Waarvoor wil je samen dankbaar zijn na dit spel?",
+] as const;
+
 export const missions = [
   {
     id: "video",

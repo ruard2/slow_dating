@@ -7,6 +7,7 @@ import type {
   StilteruisjeState,
 } from "./contracts";
 import {
+  christianPrompts,
   conversationQuestions,
   invitations,
   labelFor,
@@ -14,6 +15,7 @@ import {
   noises,
   supportActions,
 } from "./content";
+import { FaithLayer } from "../FaithLayer";
 import styles from "./StilteruisjeGame.module.css";
 
 function Waiting({ partnerName }: { partnerName: string }) {
@@ -27,6 +29,7 @@ function Waiting({ partnerName }: { partnerName: string }) {
 }
 
 export function StilteruisjeGame({
+  christianLayer,
   dispatch,
   installationId,
   memberIds,
@@ -322,6 +325,12 @@ export function StilteruisjeGame({
           kunnen we laten zien wat daarin verandert en wat juist constant
           blijft.
         </p>
+        {christianLayer && (
+          <FaithLayer
+            intro="Openheid groeit ook in vertrouwen op God."
+            prompts={[...christianPrompts]}
+          />
+        )}
         <button
           className={styles.primary}
           disabled={pending}

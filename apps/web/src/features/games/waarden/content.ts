@@ -7,6 +7,12 @@ export interface ValueDefinition {
   question: string;
 }
 
+export const christianPrompts = [
+  "Welke van jouw waarden komen voort uit je geloof of het volgen van Christus?",
+  "Waar dagen jullie waarden elkaar uit om meer op Christus te gaan lijken?",
+  "Welke waarde wil je samen, voor God, centraal zetten in jullie relatie?",
+] as const;
+
 export const values: ValueDefinition[] = [
   { id: "eerlijkheid", name: "Eerlijkheid", emoji: "🤝", question: "Wanneer was het moeilijkst om eerlijk te zijn, maar ben je blij dat je het deed?" },
   { id: "trouw", name: "Trouw", emoji: "💛", question: "Voor wie zou jij alles laten vallen als diegene je nu belde?" },

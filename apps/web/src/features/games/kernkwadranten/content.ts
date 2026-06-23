@@ -1,3 +1,9 @@
+export const christianPrompts = [
+  "Welke kwaliteit zie je als een gave die je van God ontving — en hoe ga je daar verantwoord mee om?",
+  "Waar mag genade ruimte geven als jouw kwaliteit doorschiet naar een valkuil?",
+  "Hoe kunnen jullie elkaars uitdaging bemoedigen vanuit geloof in plaats van kritiek?",
+] as const;
+
 export type QuadrantField = "quality" | "pitfall" | "challenge" | "allergy";
 
 export interface QualityProfile {

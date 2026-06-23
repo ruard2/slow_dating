@@ -29,6 +29,9 @@ export function SettingsPanel({
       <NavLink onClick={() => setDrawer(null)} to="/profile">
         Profiel beheren
       </NavLink>
+      <NavLink onClick={() => setDrawer(null)} to="/profielschets">
+        Jullie groeiende profiel
+      </NavLink>
       <NavLink onClick={() => setDrawer(null)} to="/account">
         Account en herstel
       </NavLink>

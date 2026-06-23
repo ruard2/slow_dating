@@ -16,14 +16,11 @@ import {
 
 import styles from "../App.module.css";
 
-const WAYPOINTS = [7.4, 14.5, 24.9, 35.2, 48.5];
-
-function progressPosition(completedGames: number) {
-  const completed = Math.max(0, Math.min(completedGames, 20));
-  const segment = Math.min(Math.floor(completed / 5), 3);
-  const start = WAYPOINTS[segment] ?? 7.4;
-  const end = WAYPOINTS[segment + 1] ?? 48.5;
-  return start + (end - start) * ((completed % 5) / 5);
+// Zet de nabijheid-fractie (0..1) om naar de afstand die elk poppetje vanaf
+// zijn rand naar het midden is opgeschoven. Bij 1 ontmoeten ze elkaar (47%).
+// De groeilijn-markeringen zitten al in de balk-illustratie zelf.
+function meetingPosition(fraction: number) {
+  return Math.max(0, Math.min(fraction, 1)) * 47;
 }
 
 function formatPrice(priceCents: number) {
@@ -175,9 +172,9 @@ function WorldCard({
           <span>
             {progress.unlockedWorlds.includes(world.id - 1)
               ? progress.eligibleWorlds.includes(world.id)
-                ? "Klaar om vrij te schakelen"
-                : `${progress.completedGames} / ${world.requiredDiscoveries} ontdekkingen`
-              : `Open eerst wereld ${world.id - 1}`}
+                ? "Klaar om samen te openen"
+                : "Groei samen verder om dit landschap te openen"
+              : `Rond eerst landschap ${world.id - 1} samen af`}
           </span>
           <small>Tik voor details</small>
         </div>
@@ -245,7 +242,7 @@ export function WorldMap({
   const unlockCloseRef = useRef<HTMLButtonElement | null>(null);
   const [selectedWorld, setSelectedWorld] = useState<WorldDefinition | null>(null);
   const [toastWorld, setToastWorld] = useState<WorldDefinition | null>(null);
-  const position = progressPosition(progress.completedGames);
+  const position = meetingPosition(progress.nabijheid.fraction);
 
   useEffect(() => {
     if (!selectedWorld) return;
@@ -307,7 +304,7 @@ export function WorldMap({
 
   return (
     <main className={styles.worldPage}>
-      <div className={styles.progressBar} aria-label="Voortgang wereldkaart">
+      <div className={styles.progressBar} aria-label="Nabijheidsgroei">
         <img className={styles.progressTrack} src="/assets/nabijheid_balk2.webp" alt="" />
         <img className={styles.progressFigure} src="/assets/figuur_t.webp" alt="" style={{ left: `${position}%` }} />
         <img className={styles.partnerFigure} src="/assets/figuur2_t.webp" alt="" style={{ right: `${position}%` }} />
@@ -340,24 +337,24 @@ export function WorldMap({
 
       {toastWorld && (
         <button className={styles.unlockToast} onClick={() => { scrollToWorld(toastWorld.id); setToastWorld(null); }} type="button">
-          <strong>Wereld {toastWorld.id} is klaar</strong>
-          <span>Scroll omhoog om {toastWorld.name} vrij te schakelen</span>
+          <strong>Een nieuw landschap opent zich</strong>
+          <span>Scroll omhoog om samen {toastWorld.name} te openen</span>
         </button>
       )}
 
       {selectedWorld && (
-        <div className={styles.unlockBackdrop} role="dialog" aria-modal="true" aria-label={`Wereld ${selectedWorld.id} vrijschakelen`}>
+        <div className={styles.unlockBackdrop} role="dialog" aria-modal="true" aria-label={`Landschap ${selectedWorld.id} openen`}>
           <section className={styles.unlockCard}>
             <span className={styles.panelKicker}>Wereld {selectedWorld.id}</span>
             <h2>{selectedWorld.name}</h2>
             <p>{selectedWorld.description}</p>
             <div className={styles.unlockRequirement}>
-              <span>Ontdekkingen</span>
-              <strong>{progress.completedGames} / {selectedWorld.requiredDiscoveries}</strong>
+              <span>Nabijheid</span>
+              <strong>{progress.eligibleWorlds.includes(selectedWorld.id) ? "Genoeg samen gegroeid" : "Nog even samen groeien"}</strong>
             </div>
             <div className={styles.unlockRequirement}>
-              <span>Vorige wereld</span>
-              <strong>{progress.unlockedWorlds.includes(selectedWorld.id - 1) ? "Geopend" : "Nog gesloten"}</strong>
+              <span>Vorig landschap</span>
+              <strong>{progress.unlockedWorlds.includes(selectedWorld.id - 1) ? "Afgerond" : "Nog bezig"}</strong>
             </div>
             <div className={styles.unlockRequirement}>
               <span>Aankoop</span>
@@ -384,8 +381,8 @@ export function WorldMap({
               {purchasing
                 ? "Bezig..."
                 : progress.unlockedWorlds.includes(selectedWorld.id)
-                  ? "Open wereld"
-                  : "Wereld vrijschakelen"}
+                  ? "Open dit landschap"
+                  : "Samen dit landschap openen"}
             </button>
             <button
               className={styles.unlockClose}

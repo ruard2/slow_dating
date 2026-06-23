@@ -1,5 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { NavLink } from "react-router-dom";
+
+import type {
+  LifeStage,
+  ProfileUpdate,
+  RelationIntention,
+} from "@slow-dating/contracts";
 
 import styles from "../../App.module.css";
 import { LoadingScreen } from "../../app/LoadingScreen";
@@ -55,8 +62,7 @@ export function ProfilePage() {
     },
   });
   const update = useMutation({
-    mutationFn: (changes: Record<string, string>) =>
-      api.updateProfile(changes),
+    mutationFn: (changes: ProfileUpdate) => api.updateProfile(changes),
     onSuccess: (value) => {
       queryClient.setQueryData(["profile"], value);
     },
@@ -72,9 +78,31 @@ export function ProfilePage() {
         onSubmit={(event) => {
           event.preventDefault();
           const form = new FormData(event.currentTarget);
+          const text = (key: string) => String(form.get(key) ?? "").trim();
+          const num = (key: string) => {
+            const value = text(key);
+            return value ? Number(value) : null;
+          };
+          const optional = <T extends string>(key: string) =>
+            (text(key) || null) as T | null;
           update.mutate({
-            displayName: String(form.get("displayName") ?? ""),
-            bio: String(form.get("bio") ?? ""),
+            displayName: text("displayName"),
+            bio: text("bio"),
+            photoUrl: text("photoUrl") || null,
+            city: text("city"),
+            birthYear: num("birthYear"),
+            relationIntention: optional<RelationIntention>("relationIntention"),
+            lifeStage: optional<LifeStage>("lifeStage"),
+            interests: text("interests")
+              .split(",")
+              .map((item) => item.trim())
+              .filter(Boolean)
+              .slice(0, 12),
+            coreValues: form.getAll("coreValues").map(String),
+            christianLayer: form.get("christianLayer") === "on",
+            prefAgeMin: num("prefAgeMin"),
+            prefAgeMax: num("prefAgeMax"),
+            prefMaxDistanceKm: num("prefMaxDistanceKm"),
           });
         }}
       >
@@ -97,6 +125,126 @@ export function ProfilePage() {
             rows={5}
           />
         </label>
+        <label>
+          Foto-URL (optioneel)
+          <input
+            defaultValue={profile.data.photoUrl ?? ""}
+            maxLength={600}
+            name="photoUrl"
+            placeholder="https://…"
+          />
+        </label>
+        <div className={styles.formRow}>
+          <label>
+            Geboortejaar
+            <input
+              defaultValue={profile.data.birthYear ?? ""}
+              max={2100}
+              min={1900}
+              name="birthYear"
+              type="number"
+            />
+          </label>
+          <label>
+            Woonplaats
+            <input
+              defaultValue={profile.data.city}
+              maxLength={80}
+              name="city"
+            />
+          </label>
+        </div>
+        <div className={styles.formRow}>
+          <label>
+            Ik zoek
+            <select
+              defaultValue={profile.data.relationIntention ?? ""}
+              name="relationIntention"
+            >
+              <option value="">Kies…</option>
+              <option value="verkennen">Rustig verkennen</option>
+              <option value="serieus">Iets serieus</option>
+              <option value="vriendschap">Eerst vriendschap</option>
+            </select>
+          </label>
+          <label>
+            Levensfase
+            <select
+              defaultValue={profile.data.lifeStage ?? ""}
+              name="lifeStage"
+            >
+              <option value="">Kies…</option>
+              <option value="kinderwens">Kinderwens</option>
+              <option value="ooit-misschien">Ooit misschien</option>
+              <option value="geen-kinderwens">Geen kinderwens</option>
+              <option value="heeft-kinderen">Heeft kinderen</option>
+            </select>
+          </label>
+        </div>
+        <label>
+          Interesses (komma-gescheiden)
+          <input
+            defaultValue={profile.data.interests.join(", ")}
+            name="interests"
+            placeholder="wandelen, koken, muziek"
+          />
+        </label>
+        <fieldset className={styles.valuePicker}>
+          <legend>Mijn kernwaarden</legend>
+          <div className={styles.valuePickerOptions}>
+            {values.map((value) => (
+              <label className={styles.valueOption} key={value.id}>
+                <input
+                  defaultChecked={profile.data.coreValues.includes(value.id)}
+                  name="coreValues"
+                  type="checkbox"
+                  value={value.id}
+                />
+                {value.name}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <div className={styles.formRow}>
+          <label>
+            Leeftijd vanaf
+            <input
+              defaultValue={profile.data.prefAgeMin ?? ""}
+              max={120}
+              min={18}
+              name="prefAgeMin"
+              type="number"
+            />
+          </label>
+          <label>
+            Leeftijd tot
+            <input
+              defaultValue={profile.data.prefAgeMax ?? ""}
+              max={120}
+              min={18}
+              name="prefAgeMax"
+              type="number"
+            />
+          </label>
+          <label>
+            Max. afstand (km)
+            <input
+              defaultValue={profile.data.prefMaxDistanceKm ?? ""}
+              max={2000}
+              min={1}
+              name="prefMaxDistanceKm"
+              type="number"
+            />
+          </label>
+        </div>
+        <label className={styles.checkboxRow}>
+          <input
+            defaultChecked={profile.data.christianLayer}
+            name="christianLayer"
+            type="checkbox"
+          />
+          Christelijke verdiepingslaag aanzetten
+        </label>
         <button className={styles.primaryButton} disabled={update.isPending}>
           Opslaan
         </button>
@@ -106,54 +254,42 @@ export function ProfilePage() {
       </form>
       {insights.data && (
         <section className={styles.insightsCard}>
-          <span>Jouw geschiedenis</span>
-          <h2>Profielinzichten</h2>
+          <span>Jullie route</span>
+          <h2>Groeiend profiel</h2>
+          <p>
+            Na iedere kaart ontstaat een nieuw hoofdstuk over wie jullie zijn,
+            wat opvalt, wat jullie delen en waar nieuwsgierigheid nodig blijft.
+          </p>
           <div className={styles.insightStats}>
             <div>
-              <strong>{insights.data.personal.completedRuns}</strong>
-              <small>semantische spelresultaten</small>
-            </div>
-            <div>
-              <strong>{insights.data.personal.waiting.totalWaitCount}</strong>
-              <small>keer gewacht</small>
+              <strong>
+                {
+                  insights.data.chapters.filter((chapter) => chapter.available)
+                    .length
+                }
+              </strong>
+              <small>profielhoofdstukken</small>
             </div>
             <div>
               <strong>
-                {Math.round(
-                  insights.data.personal.waiting.totalWaitSeconds / 60,
+                {insights.data.chapters.reduce(
+                  (total, chapter) => total + chapter.completedGameCount,
+                  0,
                 )}
               </strong>
-              <small>minuten gewacht</small>
+              <small>verschillende spellen verwerkt</small>
+            </div>
+            <div>
+              <strong>
+                {insights.data.chapters.find((chapter) => !chapter.available)
+                  ?.world ?? 5}
+              </strong>
+              <small>volgend profiel</small>
             </div>
           </div>
-          <h3>Waarden die bij jou terugkomen</h3>
-          {insights.data.personal.values.length ? (
-            <div className={styles.valueChips}>
-              {insights.data.personal.values.map((value) => (
-                <span key={value.valueId}>
-                  {valueNames.get(value.valueId) ?? value.valueId}
-                  {value.occurrences > 1 ? ` · ${value.occurrences}×` : ""}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p>Na voltooide spellen verschijnen hier jouw inzichten.</p>
-          )}
-          {insights.data.currentRelationship && (
-            <div className={styles.relationshipInsight}>
-              <h3>Jij en {insights.data.currentRelationship.partnerName}</h3>
-              <p>
-                <strong>Gedeeld:</strong>{" "}
-                {valueList(insights.data.currentRelationship.sharedValues) ||
-                  "nog geen gedeelde waarden"}
-              </p>
-              <p>
-                <strong>Verschillend:</strong>{" "}
-                {valueList(insights.data.currentRelationship.differingValues) ||
-                  "nog geen verschillen berekend"}
-              </p>
-            </div>
-          )}
+          <NavLink className={styles.secondaryButton!} to="/profielschets">
+            Lees jullie groeiende profiel
+          </NavLink>
           <button
             className={styles.secondaryButton}
             disabled={exportProfile.isPending}
@@ -193,7 +329,7 @@ export function ProfilePage() {
                   </strong>
                   <span>
                     {archive.messageCount} berichten · {archive.completedGames}{" "}
-                    ontdekkingen
+                    samen ontdekt
                   </span>
                 </button>
                 {openArchiveId === archive.id && (

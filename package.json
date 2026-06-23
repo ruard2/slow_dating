@@ -28,8 +28,7 @@
     "db:check": "node scripts/db-check.mjs",
     "check": "npm run lint && npm run typecheck && npm run test:unit && npm run build",
     "start": "npm run start -w @slow-dating/api",
-    "preview": "npm run preview -w @slow-dating/web",
-    "legacy:start": "node legacy/koppel-backend/server.js"
+    "preview": "npm run preview -w @slow-dating/web"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -44,7 +44,7 @@ export function CallPanel({ pair }: { pair: Pair | null | undefined }) {
           {Math.min(30, Math.floor(access.data.sharedSeconds / 60))} / 30
           minuten samen
         </p>
-        <p>{access.data.completedGames} / 5 ontdekkingen</p>
+        <p>{access.data.completedGames} / 5 spellen samen ontdekt</p>
         <p>
           Minimaal 10 berichten per persoon:{" "}
           {Object.values(access.data.messagesByMember).join(" en ")}

@@ -38,7 +38,20 @@ export function AppShell() {
   );
   const [developerPartnerArriving, setDeveloperPartnerArriving] =
     useState(false);
+  const [dismissedMilestoneWorld, setDismissedMilestoneWorld] = useState<
+    number | null
+  >(null);
   const pair = useQuery({ queryKey: ["pair"], queryFn: api.getPair });
+  const progress = useQuery({
+    queryKey: ["progress"],
+    queryFn: api.getProgress,
+    enabled: Boolean(pair.data?.members.length === 2),
+  });
+  const profileInsights = useQuery({
+    queryKey: ["profile-insights", progress.data?.completedGames ?? 0],
+    queryFn: api.getProfileInsights,
+    enabled: Boolean(pair.data?.members.length === 2 && progress.data),
+  });
 
   const closeDrawer = useCallback(() => {
     const returnToMap = drawer === "chat" && chatReturnsToMap;
@@ -94,6 +107,31 @@ export function AppShell() {
   const inGame = location.pathname.startsWith("/games/");
   const currentGameId = inGame ? location.pathname.split("/")[2] ?? "" : "";
   const currentWorldPath = worldPathForGame(currentGameId);
+  const onWorldMap =
+    location.pathname === "/" || location.pathname.startsWith("/worlds/");
+
+  const unseenMilestone = onWorldMap
+    ? profileInsights.data?.chapters.findLast((chapter) => {
+        if (!chapter.available || !pair.data?.id) return false;
+        const key = `slow-dating:profile-milestone:${pair.data.id}:${chapter.world}`;
+        return localStorage.getItem(key) !== "seen";
+      })
+    : undefined;
+  const milestoneChapter =
+    unseenMilestone?.world === dismissedMilestoneWorld
+      ? undefined
+      : unseenMilestone;
+
+  function closeProfileMilestone(openProfile: boolean) {
+    if (!pair.data?.id || !milestoneChapter) return;
+    localStorage.setItem(
+      `slow-dating:profile-milestone:${pair.data.id}:${milestoneChapter.world}`,
+      "seen",
+    );
+    const world = milestoneChapter.world;
+    setDismissedMilestoneWorld(world);
+    if (openProfile) navigate(`/profielschets?kaart=${world}`);
+  }
 
   useEffect(() => {
     if (lastEvent?.type !== "chat.message") return;
@@ -164,6 +202,16 @@ export function AppShell() {
       )}
 
       <nav aria-label="Vaste appbediening" className={styles.dock}>
+        {!inGame && (
+          <button
+            aria-label="Kennismaken openen"
+            data-active={location.pathname === "/kennismaken"}
+            onClick={() => navigate("/kennismaken")}
+            type="button"
+          >
+            <ShellIcon name="heart" />
+          </button>
+        )}
         <button
           aria-label={`Chat openen${
             unreadCount ? `, ${unreadCount} ongelezen` : ""
@@ -210,6 +258,44 @@ export function AppShell() {
           <ShellIcon name="settings" />
         </button>
       </nav>
+
+      {milestoneChapter && (
+        <div className={styles.profileMilestoneBackdrop}>
+          <section
+            aria-labelledby="profile-milestone-title"
+            aria-modal="true"
+            className={styles.profileMilestone}
+            role="dialog"
+          >
+            <span>Nieuw profielhoofdstuk</span>
+            <strong>Profiel {milestoneChapter.world}</strong>
+            <h2 id="profile-milestone-title">
+              Jullie {milestoneChapter.title.toLowerCase()} is zichtbaar
+            </h2>
+            <p>
+              Uit vijf verschillende spellen is een eerste portret ontstaan.
+              Je leest het later altijd terug via <b>Opties</b> onder{" "}
+              <b>Jullie groeiende profiel</b>. Nieuwe spellen blijven dit
+              hoofdstuk automatisch verrijken.
+            </p>
+            <div>
+              <button
+                onClick={() => closeProfileMilestone(false)}
+                type="button"
+              >
+                Later bekijken
+              </button>
+              <button
+                data-primary="true"
+                onClick={() => closeProfileMilestone(true)}
+                type="button"
+              >
+                Bekijk profiel {milestoneChapter.world}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {drawer && (
         <aside

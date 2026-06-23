@@ -82,6 +82,18 @@ Het spel bouwt voort op Familiedorp. Spelers bekijken oude boodschappen, rollen,
 
 Iedere speler beschrijft wat anderen snel zien, wat pas later zichtbaar wordt en wat nog moeilijk te begrijpen is. De partner geeft afzonderlijk een waarneming. Daarna vergelijken spelers beide beelden en bespreken zij herkenning, verschil en verrassing.
 
+### 6. Grenzen & tempo
+
+**Doel:** ontdekken hoe spelers dichterbij kunnen komen zonder elkaars ruimte te verliezen.
+
+In drie rondes vergelijken spelers concrete grenzen, hun gewenste tempo bij zes vormen van nabijheid en hun reactie op een kleine nee. Het spel bewaart waar afstemming nodig is en wat ieder helpt om een grens veilig en warm te ontvangen.
+
+### 7. Kruispunt van Reacties
+
+**Doel:** op een lichte manier ontdekken wat ieders eerste reactie is wanneer een situatie onverwacht, spannend of ongemakkelijk wordt.
+
+Spelers krijgen tegelijk vijftien seconden om uit vier reacties te kiezen. Na iedere kaart worden de antwoorden kort vergeleken. Een ronde bevat tien van de vijftig scenario's; gespeelde kaarten, reacties, gemiste keuzes en kaarten die iemand later wil terugzien worden bewaard.
+
 ## Gezamenlijke lijn
 
 De spellen vormen samen een oplopende reis:

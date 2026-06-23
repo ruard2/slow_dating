@@ -5,6 +5,7 @@ import {
   callAccessSchema,
   gameRunSchema,
   guestSessionSchema,
+  introductionSchema,
   messageSchema,
   pairSchema,
   profileDataExportSchema,
@@ -12,9 +13,13 @@ import {
   profileSchema,
   relationshipArchiveSchema,
   relationshipGameResultSchema,
+  respondRouteInvitationResultSchema,
+  routeInvitationSchema,
+  routeInvitationsListSchema,
   waitingStatsSchema,
   worldProgressSchema,
   type GuestSession,
+  type ProfileUpdate,
 } from "@slow-dating/contracts";
 
 let accessToken: string | null = null;
@@ -119,7 +124,7 @@ export const api = {
       body: JSON.stringify({ token }),
     }),
   getProfile: () => request("/api/profile", profileSchema),
-  updateProfile: (changes: Record<string, string>) =>
+  updateProfile: (changes: ProfileUpdate) =>
     request("/api/profile", profileSchema, {
       method: "PATCH",
       body: JSON.stringify(changes),
@@ -130,6 +135,35 @@ export const api = {
     request("/api/profile/insights", profileInsightsSchema),
   getProfileExport: () =>
     request("/api/profile/export", profileDataExportSchema),
+  getIntroductions: () =>
+    request("/api/introductions", z.array(introductionSchema)),
+  getRouteInvitations: () =>
+    request("/api/route-invitations", routeInvitationsListSchema),
+  createRouteInvitation: (toInstallationId: string, message: string) =>
+    request("/api/route-invitations", routeInvitationSchema, {
+      method: "POST",
+      body: JSON.stringify({ toInstallationId, message }),
+    }),
+  respondRouteInvitation: (id: string, accept: boolean) =>
+    request(
+      `/api/route-invitations/${id}/respond`,
+      respondRouteInvitationResultSchema,
+      { method: "POST", body: JSON.stringify({ accept }) },
+    ),
+  blockInstallation: (installationId: string) =>
+    request("/api/blocks", z.undefined(), {
+      method: "POST",
+      body: JSON.stringify({ installationId }),
+    }),
+  reportInstallation: (
+    installationId: string,
+    reason: string,
+    note: string,
+  ) =>
+    request("/api/reports", z.undefined(), {
+      method: "POST",
+      body: JSON.stringify({ installationId, reason, note }),
+    }),
   recordActivity: (input: {
     clientEventId: string;
     category: "game" | "waiting" | "pair" | "chat" | "call" | "profile" | "world";

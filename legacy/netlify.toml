@@ -1,8 +1,0 @@
-[build]
-  command = "git fetch --unshallow 2>/dev/null || true"
-  publish = "koppel-frontend"
-
-[[redirects]]
-  from   = "/"
-  to     = "/world.html"
-  status = 302

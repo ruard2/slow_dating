@@ -8,6 +8,8 @@ import {
   VerifyEmailPage,
 } from "../features/account/AccountPages";
 import { GamePage } from "../features/games/GamePage";
+import { KennismakenPage } from "../features/matching/KennismakenPage";
+import { ProfielschetsPage } from "../features/profile/ProfielschetsPage";
 import { ProfilePage } from "../features/profile/ProfilePage";
 import { WorldPage } from "../features/worlds/WorldPage";
 
@@ -40,6 +42,8 @@ export function AppRoutes({
         }
       />
       <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/profielschets" element={<ProfielschetsPage />} />
+      <Route path="/kennismaken" element={<KennismakenPage />} />
       <Route path="/account" element={<AccountPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />

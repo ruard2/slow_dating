@@ -9,12 +9,14 @@ import type {
 } from "./contracts";
 import {
   atmosphereOptions,
+  christianPrompts,
   conversationQuestions,
   messageOptions,
   needOptions,
   responseOptions,
   roleOptions,
 } from "./content";
+import { FaithLayer } from "../FaithLayer";
 import styles from "./OudeEikGame.module.css";
 
 type Option = { id: string; label: string };
@@ -33,6 +35,7 @@ function Waiting({ partnerName }: { partnerName: string }) {
 }
 
 export function OudeEikGame({
+  christianLayer,
   dispatch,
   installationId,
   memberIds,
@@ -271,6 +274,12 @@ export function OudeEikGame({
           oefeningen beter aansluiten zonder van patronen vaste etiketten te
           maken.
         </p>
+        {christianLayer && (
+          <FaithLayer
+            intro="Wat je meedraagt uit je familie mag je ook in geloof onderzoeken."
+            prompts={[...christianPrompts]}
+          />
+        )}
         <button
           className={styles.primary}
           disabled={pending}

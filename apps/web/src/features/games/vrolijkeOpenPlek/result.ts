@@ -1,13 +1,21 @@
+import { missions } from "./content";
 import type { VrolijkeOpenPlekState } from "./contracts";
 import { selectedMission } from "./reducer";
+
+const missionTitle = (id: string) =>
+  missions.find((mission) => mission.id === id)?.title ?? id;
 
 export function serializeVrolijkeOpenPlekResult(
   state: VrolijkeOpenPlekState,
   memberIds: string[],
 ) {
+  const selected = selectedMission(state, memberIds);
   return {
     schemaVersion: 1,
-    selectedMission: selectedMission(state, memberIds),
+    selectedMission: selected,
+    // Leesbare titels naast de kale ids, zodat de profiel-AI ze begrijpt.
+    selectedMissionTitle: selected ? missionTitle(selected) : null,
+    completedMissionTitles: state.completedMissionIds.map(missionTitle),
     completedMissionIds: state.completedMissionIds,
     missionChoices: state.missionChoices,
     reflections: state.reflections,

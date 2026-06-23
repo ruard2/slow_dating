@@ -8,6 +8,7 @@ import type {
 } from "./contracts";
 import {
   bluffPrompts,
+  christianPrompts,
   conversationQuestions,
   isYouTubeUrl,
   missions,
@@ -15,6 +16,7 @@ import {
   setbackOptions,
   type MissionId,
 } from "./content";
+import { FaithLayer } from "../FaithLayer";
 import {
   availableCommonMissions,
   selectedMission,
@@ -46,6 +48,7 @@ function MissionHeader({ id }: { id: MissionId }) {
 }
 
 export function VrolijkeOpenPlekGame({
+  christianLayer,
   dispatch,
   installationId,
   memberIds,
@@ -652,6 +655,12 @@ export function VrolijkeOpenPlekGame({
         <span className={styles.kicker}>Opgeslagen voor jullie profiel</span>
         <h1>Jullie luchtmakers zijn gevonden</h1>
         <p className={styles.lead}>De gezamenlijke spelkeuze en jullie persoonlijke reacties zijn bewaard. Zo kan de app later herkennen wat ontspant, wat spanning oproept en welke steun werkelijk helpt.</p>
+        {christianLayer && (
+          <FaithLayer
+            intro="Ook plezier en ontspanning zijn een gave om dankbaar voor te zijn."
+            prompts={[...christianPrompts]}
+          />
+        )}
         <button className={styles.primary} disabled={pending} onClick={() => dispatch({ type: "vrolijke-open-plek.game.completed", actorId: installationId })} type="button">Terug naar kaart 2</button>
       </div>
     </section>
