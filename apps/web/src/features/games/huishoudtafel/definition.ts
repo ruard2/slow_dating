@@ -14,7 +14,7 @@ export const huishoudtafelDefinition: GameDefinition<
   HuishoudtafelAction
 > = {
   id: "huishoudtafel",
-  version: 1,
+  version: 2,
   modes: ["couple"],
   createInitialState: createInitialHuishoudtafelState,
   validateContent() {},

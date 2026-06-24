@@ -205,6 +205,18 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ clientId, text }),
     }),
+  generateDateSummary: (
+    objects: Array<{
+      label: string;
+      category: string;
+      tags: string[];
+      christian: boolean;
+    }>,
+  ) =>
+    request("/api/ai/date-summary", z.object({ summary: z.string() }), {
+      method: "POST",
+      body: JSON.stringify({ objects }),
+    }),
   createGameRun: (gameId: string, version: number) =>
     request("/api/game-runs", gameRunSchema, {
       method: "POST",

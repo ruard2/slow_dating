@@ -8,7 +8,7 @@ import express, {
   type Response,
 } from "express";
 import helmet from "helmet";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 
 import {
   activityEventSchema,
@@ -65,6 +65,61 @@ function installationId(request: Request) {
 }
 
 const REFRESH_COOKIE = "slow_dating_refresh";
+
+const dateSummaryRequestSchema = z.object({
+  objects: z.array(
+    z.object({
+      label: z.string().min(1).max(80),
+      category: z.string().min(1).max(80),
+      tags: z.array(z.string().max(40)).max(12).default([]),
+      christian: z.boolean().default(false),
+    }),
+  ).min(2).max(16),
+});
+
+const dateSummaryResponseSchema = z.object({
+  summary: z.string().min(1).max(900),
+});
+
+const DATE_SUMMARY_RESPONSE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    summary: { type: "string" },
+  },
+  required: ["summary"],
+} as const;
+
+const DATE_SUMMARY_SYSTEM_PROMPT = `Je schrijft voor een slow-dating-app een korte date-samenvatting in het Nederlands.
+
+DOEL:
+- Maak van de gekozen objecten één echt uitvoerbaar date-idee.
+- Het moet klinken alsof iemand met smaak en een beetje humor dit aan het stel teruggeeft.
+- Licht, warm, nuchter, speels. Niet therapeutisch.
+
+VASTE START:
+- De tekst begint exact met: "Jullie date:"
+
+BELANGRIJK:
+- Som de objecten NIET mechanisch op.
+- Noem niet alles. Kies 4 tot 7 objecten die samen een logisch plan vormen.
+- Groepeer dingen natuurlijk: eten/drinken, buiten, actief, knus, cultuur, geloof.
+- Als keuzes botsen, maak daar mild grappig iets van.
+- Als er veel eten/drinken gekozen is, benoem dat luchtig zonder te oordelen.
+- Als christelijke objecten gekozen zijn, verwerk geloof natuurlijk en warm, zonder preektoon.
+- Geen analyse van hun relatie.
+- Geen zinnen als "dit zegt dat jullie..." of "jullie zijn duidelijk...".
+- Geen cliché-eindzin zoals "een date om nooit te vergeten".
+- Maximaal 75 woorden.
+
+STIJL:
+- Eenvoudig Nederlands.
+- Concreet genoeg om uit te voeren.
+- Mag één droog grapje bevatten.
+- Niet te zoet, niet zalvend, niet poëtisch doen om het poëtisch doen.
+
+OUTPUT:
+- Geef uitsluitend JSON volgens het schema.`;
 
 function readCookie(request: Request, name: string) {
   const cookies = request.header("cookie")?.split(";") ?? [];
@@ -148,7 +203,15 @@ export function createApp({
       contentSecurityPolicy: false,
     }),
   );
-  app.use(cors({ origin: webOrigin, credentials: true }));
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        const allowed = [webOrigin, "capacitor://localhost", "http://localhost"];
+        callback(null, !origin || allowed.includes(origin));
+      },
+      credentials: true,
+    }),
+  );
   app.use(express.json({ limit: "250kb" }));
   app.use("/api", (_request, response, next) => {
     response.set("Cache-Control", "no-store");
@@ -534,6 +597,72 @@ export function createApp({
       );
   });
 
+  app.post("/api/ai/date-summary", auth.requireAuth, async (request, response) => {
+    const input = dateSummaryRequestSchema.parse(request.body);
+    if (!process.env.OPENAI_API_KEY) {
+      console.warn("[date-summary] OPENAI_API_KEY ontbreekt; frontend gebruikt fallback.");
+      throw new DomainError("AI-samenvatting is lokaal niet ingesteld.", 503);
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20_000);
+    try {
+      const result = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model:
+            process.env.AI_DATE_MODEL ??
+            process.env.AI_PROFILE_MODEL ??
+            "gpt-4o",
+          messages: [
+            { role: "system", content: DATE_SUMMARY_SYSTEM_PROMPT },
+            {
+              role: "user",
+              content: JSON.stringify({
+                opdracht:
+                  "Maak een korte samenvatting van deze gezamenlijk geplande date. Gebruik de volgorde als lichte indicatie, maar maak er vooral een soepel, uitvoerbaar plan van.",
+                gekozen_objecten_in_volgorde: input.objects.map((object, index) => ({
+                  volgorde: index + 1,
+                  label: object.label,
+                  categorie: object.category,
+                  tags: object.tags,
+                  christelijk: object.christian,
+                })),
+              }),
+            },
+          ],
+          temperature: 0.72,
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "kleine_date_samenvatting",
+              strict: true,
+              schema: DATE_SUMMARY_RESPONSE_SCHEMA,
+            },
+          },
+        }),
+      });
+      if (!result.ok) {
+        const detail = await result.text().catch(() => "");
+        console.warn(
+          `[date-summary] OpenAI gaf ${result.status}: ${detail.slice(0, 500)}`,
+        );
+        throw new DomainError("AI-samenvatting lukte niet.", 502);
+      }
+      const data = (await result.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      const text = data.choices?.[0]?.message?.content ?? "{}";
+      response.json(dateSummaryResponseSchema.parse(JSON.parse(text)));
+    } finally {
+      clearTimeout(timeout);
+    }
+  });
+
   app.post("/api/game-runs", auth.requireAuth, async (request, response) => {
     const input = createGameRunSchema.parse(request.body);
     const game = findPlayableGame(input.gameId);
@@ -666,6 +795,24 @@ export function createApp({
       index: false,
     }),
   );
+
+  if (process.env.NODE_ENV === "production") {
+    const webDist = fileURLToPath(
+      new URL("../../../apps/web/dist/", import.meta.url),
+    );
+    app.use(express.static(webDist, { maxAge: "7d" }));
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (
+        req.path.startsWith("/api/") ||
+        req.path.startsWith("/legacy/") ||
+        req.path.startsWith("/socket.io/")
+      ) {
+        next();
+        return;
+      }
+      res.sendFile("index.html", { root: webDist });
+    });
+  }
 
   app.use(
     (

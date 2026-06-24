@@ -1,0 +1,57 @@
+.game{min-height:100dvh;padding:4.5rem 1rem 6rem;color:#f4f1e8;background:radial-gradient(circle at 50% 0,rgba(191,151,72,.18),transparent 30rem),#08130d}
+.bingoGame{background:linear-gradient(rgba(5,16,10,.58),rgba(5,14,9,.92)),url("/assets/kleine-irritatiebingo-scene.png") center 28%/cover fixed}
+.bingoGame .panel{background:rgba(13,29,19,.88);backdrop-filter:blur(12px)}
+.bingoBoardStage{position:relative;width:min(31rem,100%);margin:0 auto 1rem;overflow:hidden;border:1px solid rgba(212,185,101,.3);border-radius:1.1rem;background:#172315;box-shadow:0 1.2rem 3rem rgba(0,0,0,.38)}
+.bingoBoardStage img{display:block;width:100%;height:auto}
+.bingoBoard{position:absolute;left:29.1%;top:35.9%;width:47.3%;height:25.2%;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:1.4%}
+.bingoTile{position:relative;min-width:0;min-height:0;padding:0;border:2px solid transparent;border-radius:.3rem;background:rgba(255,255,255,.015);cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s,scale .15s}
+.bingoTile:hover:not(:disabled),.bingoTile:focus-visible{border-color:#f3dc88;background:rgba(243,220,136,.18);outline:0;scale:1.05}
+.bingoTile[data-own=true]{border-color:#55aaff;background:rgba(55,145,255,.18);box-shadow:0 0 .75rem #298cff,inset 0 0 .7rem rgba(62,155,255,.3)}
+.bingoTile[data-partner=true]{border-color:#ff6262;background:rgba(255,70,70,.16);box-shadow:0 0 .75rem #e33,inset 0 0 .7rem rgba(255,70,70,.26)}
+.bingoTile[data-own=true][data-partner=true]{border-color:#fff;box-shadow:-.22rem 0 .7rem #298cff,.22rem 0 .7rem #e33,inset .18rem 0 #55aaff,inset -.18rem 0 #ff6262}
+.bingoLegend{display:flex;justify-content:center;flex-wrap:wrap;gap:.55rem;margin:.5rem 0}
+.bingoLegend span{padding:.35rem .65rem;border:1px solid;border-radius:999px;font-size:.72rem;font-weight:800}
+.bingoLegend span[data-color=own]{border-color:#55aaff;color:#a9d3ff;background:rgba(55,145,255,.12)}
+.bingoLegend span[data-color=partner]{border-color:#ff6262;color:#ffb2b2;background:rgba(255,70,70,.1)}
+.choiceStatus,.mismatch{margin:.8rem auto 0;max-width:38rem;padding:.85rem 1rem;border-radius:.9rem;text-align:center;background:rgba(255,255,255,.055);line-height:1.5}
+.mismatch{border:1px solid rgba(255,179,92,.35);background:rgba(110,65,15,.28)}
+.mismatch strong{color:#ffd08b;font:500 1.2rem Georgia,serif}
+.mismatch p{margin:.45rem 0}
+.visuallyHidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.panel{width:min(58rem,100%);margin:0 auto;padding:clamp(1rem,3vw,2rem);border:1px solid rgba(212,185,101,.24);border-radius:1.4rem;background:rgba(13,29,19,.94);box-shadow:0 2rem 6rem rgba(0,0,0,.4)}
+.kicker{color:#d4b965;font-size:.7rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.panel h1{margin:.45rem 0 .7rem;font:500 clamp(2rem,6vw,3.5rem) Georgia,serif}
+.lead{max-width:48rem;margin:0 0 1.4rem;color:#bdc9ba;line-height:1.65}
+.promptGrid{display:grid;gap:1rem}
+.themeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));gap:.8rem}
+.themeCard{display:grid;gap:.45rem;min-height:10rem;padding:1rem;border:1px solid rgba(212,185,101,.25);border-radius:1rem;color:#edf3e8;background:linear-gradient(145deg,rgba(212,185,101,.1),rgba(255,255,255,.03));text-align:left;cursor:pointer}
+.themeCard:hover{border-color:rgba(212,185,101,.65);translate:0 -2px}
+.themeCard strong{font:500 1.25rem Georgia,serif;color:#f1dfaa}
+.themeCard span{color:#bdc9ba;line-height:1.5}
+.themeCard small{align-self:end;color:#d4b965;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.roundLabel{display:inline-block;margin:0 0 .8rem;padding:.35rem .6rem;border-radius:999px;color:#ead99f;background:rgba(212,185,101,.12);font-size:.75rem;font-weight:800}
+.prompt{padding:1rem;border:1px solid rgba(255,255,255,.1);border-radius:1rem;background:rgba(255,255,255,.035)}
+.prompt h2{margin:0 0 .8rem;font:500 1.1rem Georgia,serif}
+.options{display:flex;flex-wrap:wrap;gap:.5rem}
+.option,.secondary,.primary{border:1px solid rgba(255,255,255,.14);border-radius:.75rem;color:#eef3eb;background:rgba(255,255,255,.05);cursor:pointer}
+.option{padding:.55rem .75rem}
+.option[data-active=true]{border-color:#d4b965;color:#fff5cc;background:rgba(212,185,101,.18)}
+.primary,.secondary{padding:.72rem 1rem;font-weight:700}
+.primary{border-color:rgba(190,219,116,.45);color:#eff9d5;background:#36552e}
+.primary:disabled{cursor:not-allowed;opacity:.45}
+.actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.2rem}
+.waiting{min-height:55dvh;display:grid;place-content:center;text-align:center}
+.waiting p{color:#afbdaf}
+.compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.person{padding:1rem;border:1px solid rgba(255,255,255,.1);border-radius:1rem;background:rgba(255,255,255,.03)}
+.person h2{margin:0 0 .8rem;font:500 1.25rem Georgia,serif}
+.answer{padding:.65rem 0;border-top:1px solid rgba(255,255,255,.07)}
+.answer span{display:block;color:#9eac9d;font-size:.75rem;line-height:1.4}
+.answer strong{display:block;margin-top:.2rem;color:#f3ead1}
+.conversation{margin-top:1.2rem;padding:1rem;border:1px solid rgba(190,219,116,.18);border-radius:1rem;background:rgba(190,219,116,.05)}
+.question{font:500 1.2rem/1.5 Georgia,serif}
+.outcome{margin-top:.8rem;padding:.8rem;border-left:3px solid #d4b965;color:#e8ddbd;background:rgba(212,185,101,.08);line-height:1.55}
+.summary{text-align:center;padding:2rem 0}
+.summary p{max-width:38rem;margin:.8rem auto;color:#bdc9ba;line-height:1.65}
+.actionsCentered{display:flex;flex-wrap:wrap;justify-content:center;gap:.6rem;margin-top:1rem}
+@media(max-width:640px){.compare{grid-template-columns:1fr}.game{padding-inline:.65rem}.panel{padding:1rem}}

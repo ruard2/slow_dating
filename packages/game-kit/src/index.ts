@@ -14,6 +14,8 @@ export interface GameComponentProps<TState, TAction = unknown> {
   priorFamilyData?: Record<string, unknown> | null;
   openChat?(text?: string): void;
   openCall?(): void;
+  pauseGame?(): void;
+  restartGame?(): void;
   dispatch(action: TAction): Promise<void>;
 }
 

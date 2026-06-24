@@ -4,7 +4,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import type {
   ProfileChapter,
+  ProfileConversationCard,
+  ProfileEvidence,
+  ProfileGameAppendix,
   ProfileNarrativeCard,
+  ProfilePersonBlock,
+  ProfileTextBlock,
 } from "@slow-dating/contracts";
 
 import { LoadingScreen } from "../../app/LoadingScreen";
@@ -27,6 +32,137 @@ const KIND_LABELS: Record<ProfileNarrativeCard["kind"], string> = {
 
 function chapterPath(chapter: ProfileChapter) {
   return chapter.world === 1 ? "/" : `/worlds/${chapter.world}`;
+}
+
+function EvidenceDetails({ evidence }: { evidence?: ProfileEvidence[] }) {
+  if (!evidence?.length) return null;
+  return (
+    <details className={styles.evidence}>
+      <summary>Waar zagen we dit?</summary>
+      <ul>
+        {evidence.map((item) => (
+          <li key={item.id}>
+            <strong>{item.sourceGameTitle}</strong>
+            <span>{item.label}</span>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+function RichBlockSection({
+  title,
+  blocks,
+}: {
+  title: string;
+  blocks: ProfileTextBlock[] | undefined;
+}) {
+  if (!blocks?.length) return null;
+  return (
+    <section className={styles.richSection}>
+      <h3>{title}</h3>
+      <div className={styles.richGrid}>
+        {blocks.map((block) => (
+          <article className={styles.richBlock} key={`${title}-${block.title}`}>
+            <h4>{block.title}</h4>
+            <p>{block.body}</p>
+            <EvidenceDetails evidence={block.evidence} />
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PersonProfiles({
+  people,
+}: {
+  people: ProfilePersonBlock[] | undefined;
+}) {
+  if (!people?.length) return null;
+  return (
+    <section className={styles.richSection}>
+      <h3>Wie jullie ieder zijn</h3>
+      <div className={styles.personGrid}>
+        {people.map((person) => (
+          <article className={styles.personCard} key={person.personId}>
+            <span>{person.label}</span>
+            <p>{person.profile}</p>
+            {person.strengths.length > 0 && (
+              <ul>
+                {person.strengths.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            )}
+            {person.watchouts.length > 0 && (
+              <div className={styles.watchouts}>
+                {person.watchouts.map((item) => (
+                  <small key={item}>{item}</small>
+                ))}
+              </div>
+            )}
+            <EvidenceDetails evidence={person.evidence} />
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ConversationCards({
+  cards,
+  onOpen,
+}: {
+  cards: ProfileConversationCard[] | undefined;
+  onOpen: (prompt: string) => void;
+}) {
+  if (!cards?.length) return null;
+  return (
+    <section className={styles.richSection}>
+      <h3>Gesprekskaarten</h3>
+      <div className={styles.conversationGrid}>
+        {cards.map((card) => (
+          <article className={styles.conversationCard} key={card.title}>
+            <h4>{card.title}</h4>
+            <p>{card.question}</p>
+            {card.whyThisMatters && <small>{card.whyThisMatters}</small>}
+            <EvidenceDetails evidence={card.evidence} />
+            <button
+              className={styles.chatButton}
+              onClick={() => onOpen(card.question)}
+              type="button"
+            >
+              Bespreek dit
+            </button>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function GameResultAppendix({
+  appendix,
+}: {
+  appendix: ProfileGameAppendix[] | undefined;
+}) {
+  if (!appendix?.length) return null;
+  return (
+    <details className={styles.appendix}>
+      <summary>Alle gebruikte spelresultaten</summary>
+      <div className={styles.appendixList}>
+        {appendix.map((item) => (
+          <article className={styles.appendixGame} key={`${item.gameId}-${item.completedAt}`}>
+            <h4>{item.gameTitle}</h4>
+            <p>{item.summary}</p>
+            <pre>{JSON.stringify(item.result, null, 2)}</pre>
+          </article>
+        ))}
+      </div>
+    </details>
+  );
 }
 
 export function ProfielschetsPage() {
@@ -114,8 +250,9 @@ export function ProfielschetsPage() {
           <span className={styles.chapterNumber}>Profiel {selected.world}</span>
           <h2>Nog even samen ontdekken</h2>
           <p>
-            Na vijf verschillende spellen op kaart {selected.world} verschijnt
-            hier jullie volgende profielhoofdstuk. Nog{" "}
+            Speel minimaal {selected.requiredGames} spellen op kaart{" "}
+            {selected.world} om dit profielhoofdstuk te openen. Jullie staan op{" "}
+            {selected.completedGameCount}/{selected.requiredGames}; nog{" "}
             {Math.max(
               0,
               selected.requiredGames - selected.completedGameCount,
@@ -165,6 +302,44 @@ export function ProfielschetsPage() {
             </div>
           </section>
 
+          {(selected.overviewSummary || selected.coupleImage) && (
+            <section className={styles.richIntro}>
+              {selected.overviewSummary && (
+                <article>
+                  <span className={styles.richKicker}>Samenvatting</span>
+                  <p>{selected.overviewSummary}</p>
+                </article>
+              )}
+              {selected.coupleImage && (
+                <article>
+                  <span className={styles.richKicker}>
+                    Verwerkt beeld van jullie samen
+                  </span>
+                  <p>{selected.coupleImage}</p>
+                </article>
+              )}
+            </section>
+          )}
+
+          <PersonProfiles people={selected.personProfiles} />
+          <RichBlockSection
+            title="Sterke kanten"
+            blocks={selected.relationshipStrengths}
+          />
+          <RichBlockSection
+            title="Uitdagingen"
+            blocks={selected.relationshipChallenges}
+          />
+          <RichBlockSection
+            title="Ontspanningskansen"
+            blocks={selected.relaxationChances}
+          />
+          <RichBlockSection title="Tips" blocks={selected.practicalTips} />
+          <ConversationCards
+            cards={selected.conversationCards}
+            onOpen={openConversation}
+          />
+
           <div className={styles.story}>
             {selected.cards.map((profileCard, index) => (
               <article
@@ -187,19 +362,7 @@ export function ProfielschetsPage() {
                 </span>
                 <h3>{profileCard.title}</h3>
                 <p>{profileCard.body}</p>
-                {profileCard.evidence.length > 0 && (
-                  <details className={styles.evidence}>
-                    <summary>Waar zagen we dit?</summary>
-                    <ul>
-                      {profileCard.evidence.map((item) => (
-                        <li key={item.id}>
-                          <strong>{item.sourceGameTitle}</strong>
-                          <span>{item.label}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
+                <EvidenceDetails evidence={profileCard.evidence} />
                 {profileCard.chatPrompt && (
                   <button
                     className={styles.chatButton}
@@ -212,6 +375,8 @@ export function ProfielschetsPage() {
               </article>
             ))}
           </div>
+
+          <GameResultAppendix appendix={selected.gameResultAppendix} />
 
           <footer className={styles.footer}>
             <p>

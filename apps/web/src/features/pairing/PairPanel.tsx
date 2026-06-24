@@ -5,8 +5,10 @@ import type { Pair } from "@slow-dating/contracts";
 
 import styles from "../../App.module.css";
 import { api } from "../../lib/api";
+import { useSession } from "../../providers/SessionProvider";
 
 export function PairPanel({ pair }: { pair: Pair | null | undefined }) {
+  const { session } = useSession();
   const queryClient = useQueryClient();
   const [code, setCode] = useState("");
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["pair"] });
@@ -17,6 +19,13 @@ export function PairPanel({ pair }: { pair: Pair | null | undefined }) {
   });
   const developer = useMutation({
     mutationFn: api.activateDeveloperPair,
+    onSuccess: refresh,
+  });
+  const switchToDeveloper = useMutation({
+    mutationFn: async () => {
+      await api.disconnectPair();
+      return api.activateDeveloperPair();
+    },
     onSuccess: refresh,
   });
   const disconnect = useMutation({
@@ -50,6 +59,26 @@ export function PairPanel({ pair }: { pair: Pair | null | undefined }) {
             <li key={member.installationId}>{member.displayName}</li>
           ))}
         </ul>
+        {session?.account?.email === "ruard@example.test" &&
+          !pair.developerMode && (
+            <>
+              <button
+                className={styles.primaryButton}
+                disabled={switchToDeveloper.isPending}
+                onClick={() => switchToDeveloper.mutate()}
+                type="button"
+              >
+                {switchToDeveloper.isPending
+                  ? "Testpartner wordt gekoppeld..."
+                  : "Open met virtuele Testpartner"}
+              </button>
+              {switchToDeveloper.error && (
+                <p className={styles.error}>
+                  {switchToDeveloper.error.message}
+                </p>
+              )}
+            </>
+          )}
         <button
           className={styles.dangerButton}
           onClick={() => disconnect.mutate()}

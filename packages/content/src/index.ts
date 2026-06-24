@@ -69,13 +69,14 @@ export const worlds: WorldDefinition[] = [
   },
   {
     id: 3,
-    slug: "verbinding",
-    name: "Verbinding",
-    description: "Herken patronen en bouw bewuster aan verbinding.",
+    slug: "samen-leven",
+    name: "Samen Leven",
+    description:
+      "Ontdek hoe aandacht, zorg, geld, rust en liefde vorm krijgen in het gewone leven.",
     requiredDiscoveries: 10,
     priceCents: 300,
-    image: "/assets/kaart3.webp",
-    imageAspectRatio: 3792 / 6636,
+    image: "/assets/kaart3-samen-leven.png",
+    imageAspectRatio: 941 / 1672,
   },
   {
     id: 4,
@@ -272,6 +273,72 @@ export const games: GameMetadata[] = [
     description: "Ontdek hoe jullie kijken naar taken, verantwoordelijkheid en mentale last.",
     legacyPath: null,
     modes: ["couple"],
+    version: 2,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
+    id: "geldbrug",
+    title: "De Geldbrug",
+    description:
+      "Onderzoek wat geld voor jullie betekent en hoe vertrouwen, vrijheid en verantwoordelijkheid samenkomen.",
+    legacyPath: null,
+    modes: ["couple"],
+    version: 2,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
+    id: "winkelmandje",
+    title: "Het Winkelmandje",
+    description:
+      "Kijk achter koopgedrag en ontdek welke behoefte, impuls of verwachting meespeelt.",
+    legacyPath: null,
+    modes: ["couple"],
+    version: 2,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
+    id: "liefdestaal",
+    title: "Liefdestaal of misverstand",
+    description:
+      "Vertaal hoe jullie liefde geven en ontvangen zonder er een rekensom van te maken.",
+    legacyPath: null,
+    modes: ["couple"],
+    version: 2,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
+    id: "stressmeter",
+    title: "De Stressmeter",
+    description:
+      "Vlieg een speels luchtduel en ontdek hoe jullie reageren als spanning oploopt.",
+    legacyPath: null,
+    modes: ["couple"],
+    version: 3,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
+    id: "irritatiebingo",
+    title: "Kleine-irritatiebingo",
+    description:
+      "Gebruik kleine ergernissen voor humor, zelfkennis en een gesprek zonder minachting.",
+    legacyPath: null,
+    modes: ["couple"],
+    version: 1,
+    status: "native",
+    scoresDiscovery: true,
+  },
+  {
+    id: "kleine-date",
+    title: "Plan een kleine date",
+    description:
+      "Maak aandacht concreet met een haalbare ontmoeting die bij jullie allebei past.",
+    legacyPath: null,
+    modes: ["couple"],
     version: 1,
     status: "native",
     scoresDiscovery: true,
@@ -388,7 +455,43 @@ export const gamePlacements: GamePlacement[] = [
     worldId: 3,
     gameId: "huishoudtafel",
     order: 1,
-    position: { left: 11.4, top: 32.2, width: 21.5, height: 7.2 },
+    position: { left: 69.2, top: 16.1, width: 25.2, height: 7.2 },
+  },
+  {
+    worldId: 3,
+    gameId: "geldbrug",
+    order: 2,
+    position: { left: 30.2, top: 29.6, width: 25.2, height: 7.1 },
+  },
+  {
+    worldId: 3,
+    gameId: "winkelmandje",
+    order: 3,
+    position: { left: 67.5, top: 32.1, width: 26, height: 7.3 },
+  },
+  {
+    worldId: 3,
+    gameId: "liefdestaal",
+    order: 4,
+    position: { left: 4.5, top: 45.8, width: 27.5, height: 7.7 },
+  },
+  {
+    worldId: 3,
+    gameId: "stressmeter",
+    order: 5,
+    position: { left: 69.3, top: 49.1, width: 25.7, height: 7.1 },
+  },
+  {
+    worldId: 3,
+    gameId: "irritatiebingo",
+    order: 6,
+    position: { left: 8.7, top: 62.6, width: 28.2, height: 7.3 },
+  },
+  {
+    worldId: 3,
+    gameId: "kleine-date",
+    order: 7,
+    position: { left: 61.6, top: 64.8, width: 28, height: 7.2 },
   },
 ];
 
@@ -446,6 +549,12 @@ const GROWTH_LINE_BY_GAME: Record<string, GrowthLine> = {
   "grenzen-tempo": "zorg",
   "kruispunt-reacties": "vertrouwen",
   huishoudtafel: "zorg",
+  geldbrug: "richting",
+  winkelmandje: "richting",
+  liefdestaal: "zorg",
+  stressmeter: "vertrouwen",
+  irritatiebingo: "zorg",
+  "kleine-date": "kennis",
 };
 
 /** Welke interne groeilijn een spel voedt. Onbekend → 'kennis'. */

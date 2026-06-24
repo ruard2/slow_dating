@@ -2,8 +2,13 @@ import { createHash } from "node:crypto";
 
 import { findGame, worldIdForGame } from "@slow-dating/content";
 import type {
+  ProfileChapter,
+  ProfileConversationCard,
+  ProfileEvidence,
   ProfileInsights,
   ProfileNarrativeCard,
+  ProfilePersonBlock,
+  ProfileTextBlock,
   RelationshipGameResult,
 } from "@slow-dating/contracts";
 
@@ -27,6 +32,7 @@ export function aiProfileEnabled(): boolean {
 
 // In-memory cache: zelfde input → zelfde kaarten, geen extra LLM-call.
 const cache = new Map<string, ProfileNarrativeCard[]>();
+const world3Cache = new Map<string, Partial<ProfileChapter>>();
 
 const CARD_KINDS = [
   "portrait",
@@ -135,6 +141,135 @@ interface RawCard {
   evidence: Array<{ game: string; detail: string }>;
 }
 
+interface RawWorld3Evidence {
+  game: string;
+  detail: string;
+}
+
+interface RawWorld3Block {
+  title: string;
+  body: string;
+  evidence: RawWorld3Evidence[];
+}
+
+interface RawWorld3Person {
+  person: "{{A}}" | "{{B}}";
+  label: string;
+  profile: string;
+  strengths: string[];
+  watchouts: string[];
+  evidence: RawWorld3Evidence[];
+}
+
+interface RawWorld3ConversationCard {
+  title: string;
+  question: string;
+  whyThisMatters: string;
+  evidence: RawWorld3Evidence[];
+}
+
+interface RawWorld3Profile {
+  overviewSummary: string;
+  coupleImage: string;
+  personProfiles: RawWorld3Person[];
+  relationshipStrengths: RawWorld3Block[];
+  relationshipChallenges: RawWorld3Block[];
+  relaxationChances: RawWorld3Block[];
+  practicalTips: RawWorld3Block[];
+  conversationCards: RawWorld3ConversationCard[];
+}
+
+const WORLD3_EVIDENCE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    game: { type: "string" },
+    detail: { type: "string" },
+  },
+  required: ["game", "detail"],
+} as const;
+
+const WORLD3_BLOCK_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    title: { type: "string" },
+    body: { type: "string" },
+    evidence: { type: "array", items: WORLD3_EVIDENCE_SCHEMA },
+  },
+  required: ["title", "body", "evidence"],
+} as const;
+
+const WORLD3_RESPONSE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    overviewSummary: { type: "string" },
+    coupleImage: { type: "string" },
+    personProfiles: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          person: { type: "string", enum: ["{{A}}", "{{B}}"] },
+          label: { type: "string" },
+          profile: { type: "string" },
+          strengths: { type: "array", items: { type: "string" } },
+          watchouts: { type: "array", items: { type: "string" } },
+          evidence: { type: "array", items: WORLD3_EVIDENCE_SCHEMA },
+        },
+        required: [
+          "person",
+          "label",
+          "profile",
+          "strengths",
+          "watchouts",
+          "evidence",
+        ],
+      },
+    },
+    relationshipStrengths: { type: "array", items: WORLD3_BLOCK_SCHEMA },
+    relationshipChallenges: { type: "array", items: WORLD3_BLOCK_SCHEMA },
+    relaxationChances: { type: "array", items: WORLD3_BLOCK_SCHEMA },
+    practicalTips: { type: "array", items: WORLD3_BLOCK_SCHEMA },
+    conversationCards: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          title: { type: "string" },
+          question: { type: "string" },
+          whyThisMatters: { type: "string" },
+          evidence: { type: "array", items: WORLD3_EVIDENCE_SCHEMA },
+        },
+        required: ["title", "question", "whyThisMatters", "evidence"],
+      },
+    },
+  },
+  required: [
+    "overviewSummary",
+    "coupleImage",
+    "personProfiles",
+    "relationshipStrengths",
+    "relationshipChallenges",
+    "relaxationChances",
+    "practicalTips",
+    "conversationCards",
+  ],
+} as const;
+
+function parseJsonObject<T>(text: string): T {
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("AI response bevat geen JSON-object");
+    return JSON.parse(match[0]) as T;
+  }
+}
+
 function stripMeta(value: unknown, a: string, b: string): unknown {
   if (!value || typeof value !== "object") return value;
   if (Array.isArray(value)) return value.map((item) => stripMeta(item, a, b));
@@ -218,6 +353,106 @@ async function callLLM(userContent: string): Promise<RawCard[]> {
     };
     const text = data.choices?.[0]?.message?.content ?? "{}";
     return (JSON.parse(text).cards ?? []) as RawCard[];
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function callWorld3LLM(userContent: string): Promise<RawWorld3Profile> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    if (PROVIDER === "claude" || PROVIDER === "anthropic") {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "x-api-key": process.env.ANTHROPIC_API_KEY ?? "",
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: CLAUDE_MODEL,
+          max_tokens: 5000,
+          output_config: {
+            format: { type: "json_schema", schema: WORLD3_RESPONSE_SCHEMA },
+          },
+          system: SYSTEM_PROMPT,
+          messages: [{ role: "user", content: userContent }],
+        }),
+      });
+      if (!res.ok) throw new Error(`Claude ${res.status}: ${await res.text()}`);
+      const data = (await res.json()) as {
+        content?: Array<{ type: string; text?: string }>;
+      };
+      const text =
+        data.content?.find((block) => block.type === "text")?.text ?? "{}";
+      return parseJsonObject<RawWorld3Profile>(text);
+    }
+
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        authorization: `Bearer ${process.env.OPENAI_API_KEY ?? ""}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userContent },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "profiel_samen_leven",
+            strict: true,
+            schema: WORLD3_RESPONSE_SCHEMA,
+          },
+        },
+      }),
+    });
+    if (!res.ok) {
+      const firstError = await res.text();
+      const retry = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          authorization: `Bearer ${process.env.OPENAI_API_KEY ?? ""}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            {
+              role: "user",
+              content: `${userContent}
+
+Geef uitsluitend geldig JSON terug met exact deze velden: overviewSummary, coupleImage, personProfiles, relationshipStrengths, relationshipChallenges, relaxationChances, practicalTips, conversationCards.`,
+            },
+          ],
+          response_format: { type: "json_object" },
+        }),
+      });
+      if (!retry.ok) {
+        throw new Error(
+          `OpenAI ${res.status}: ${firstError}; retry ${retry.status}: ${await retry.text()}`,
+        );
+      }
+      const retryData = (await retry.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      return parseJsonObject<RawWorld3Profile>(
+        retryData.choices?.[0]?.message?.content ?? "{}",
+      );
+    }
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const text = data.choices?.[0]?.message?.content ?? "{}";
+    return parseJsonObject<RawWorld3Profile>(text);
   } finally {
     clearTimeout(timeout);
   }
@@ -358,6 +593,237 @@ ${payload}`;
   return built;
 }
 
+async function richWorld3ForChapter(
+  chapter: ProfileChapter,
+  worldResults: RelationshipGameResult[],
+  context: AiContext,
+  priorText: string,
+): Promise<Partial<ProfileChapter>> {
+  const { ownerId, ownerName, partnerId, partnerName, tempo } = context;
+  const profielen =
+    context.ownerProfile || context.partnerProfile
+      ? { "{{A}}": context.ownerProfile, "{{B}}": context.partnerProfile }
+      : undefined;
+  const trekken =
+    context.ownerTraits || context.partnerTraits
+      ? { "{{A}}": context.ownerTraits, "{{B}}": context.partnerTraits }
+      : undefined;
+  const spellen = worldResults.map((entry) => ({
+    spel: findGame(entry.provenance.gameId)?.title ?? entry.provenance.gameId,
+    gameId: entry.provenance.gameId,
+    completedAt: entry.provenance.completedAt,
+    resultaat: stripMeta(entry.result, ownerId, partnerId),
+  }));
+  const speelseFeiten = tempo
+    ? {
+        toelichting:
+          "wachttijden in de wachtkamer: hoger = vaker/langer op die persoon gewacht.",
+        "{{A}}": tempo[ownerId] ?? { madeWaitSeconds: 0, madeWaitCount: 0 },
+        "{{B}}": tempo[partnerId] ?? { madeWaitSeconds: 0, madeWaitCount: 0 },
+      }
+    : undefined;
+
+  const payloadObject: Record<string, unknown> = {
+    eerdere_profielhoofdstukken: priorText || "(nog geen eerdere AI-tekst)",
+    kaart_3_spelresultaten: spellen,
+    volledige_resultatenbijlage: chapter.gameResultAppendix ?? [],
+    data_dekking: chapter.dataCoverage,
+  };
+  if (trekken) payloadObject.gewogen_trekken_cumulatief_tm_kaart_3 = trekken;
+  if (profielen) payloadObject.profielen_uit_eerdere_kaarten = profielen;
+  if (speelseFeiten) payloadObject.speelse_feiten = speelseFeiten;
+
+  let payload = JSON.stringify(payloadObject, null, 2);
+  payload = payload.split(ownerId).join("{{A}}").split(partnerId).join("{{B}}");
+
+  const fingerprint = createHash("sha1")
+    .update(`world3-rich\n${priorText}\n${payload}`)
+    .digest("hex");
+  const cacheKey = `${PROVIDER}:world3-rich:${fingerprint}`;
+  const cached = world3Cache.get(cacheKey);
+  if (cached) return cached;
+
+  const gameTitles = worldResults
+    .map((entry) => findGame(entry.provenance.gameId)?.title ?? entry.provenance.gameId)
+    .join(", ");
+  const instructions = `Jij schrijft profielhoofdstuk 3 voor de profielschets in de slow-dating-app.
+
+Jij = de lezer ({{A}}), schrijf dus tegen "jij". De partner = {{B}}. Samen = "jullie".
+
+Doel:
+- Bouw voort op kaart 1 en 2; herhaal ze niet als losse samenvatting.
+- Gebruik kaart 3 als serieus hoofdstuk over samen leven: geld, aandacht, huis, stress, irritatie, plannen, plezier en commitment.
+- Gebruik alle kaart-3-domeinen waarvoor data is. Laat niets belangrijks verdwijnen.
+- Maak onderscheid tussen feit, patroon en voorzichtige interpretatie.
+- Geef bij elk inzicht concrete evidence. evidence.game moet exact een van deze speltitels zijn: ${gameTitles}.
+- Geen therapietaal, diagnose, preek of wollige taal. Nuchter, warm, eerlijk, soms licht droog.
+- Noem geen ruwe scores als hoofdzaak. Vertaal scores naar gewone taal.
+- Christelijke reflecties alleen verwerken als ze werkelijk in de data staan.
+- Als data dun of eenzijdig is: benoem dat voorzichtig en maak er geen grote conclusie van.
+- Schrijf NOOIT meta-zinnen zoals "kaart 3 gebruikt vijf spellen", "profieldata", "de gegevens laten zien" of "dit profiel gaat over". Schrijf direct over het stel.
+- Leg verbanden tussen domeinen: bv. liefdestaal + date-keuzes + geldkeuzes + irritaties. Dáár zit de rijkdom.
+- Noem concrete keuzes: welke liefdestaal, welke date-objecten, welk budget/mandje, welke huishoudtaken, welk stressgedrag, welke irritaties.
+- Trek geen jeugd- of herkomstconclusies tenzij eerdere profielhoofdstukken dat expliciet ondersteunen. Gebruik anders "dit kan raken aan..." in plaats van "dit komt doordat...".
+- "attenties" vertaal je naar "cadeaus met betekenis", "kleine gebaren" of "iets dat laat zien: ik dacht aan je".
+- Vermijd lelijke formuleringen zoals "Testpartner's", "verwijderd in liefdestaal", "bevredigen". Schrijf natuurlijk Nederlands.
+
+Schrijf rijke output in dit vaste JSON-schema:
+- overviewSummary: compleet maar leesbaar profielhoofdstuk over kaart 3.
+- coupleImage: verwerkt beeld van dit stel: wie jullie samen lijken te zijn in dagelijks leven, met nuance.
+- personProfiles: profiel per persoon.
+- relationshipStrengths: sterke kanten met evidence.
+- relationshipChallenges: uitdagingen met evidence.
+- relaxationChances: waar lucht, plezier en ontspanning zitten.
+- practicalTips: concrete oefeningen of afspraken.
+- conversationCards: vragen om samen te bespreken.
+
+Gegevens:
+
+${payload}`;
+
+  const raw = await callWorld3LLM(instructions);
+  const hydrate = (text: string) =>
+    text.split("{{A}}").join(ownerName).split("{{B}}").join(partnerName);
+  const byTitle = new Map(
+    worldResults.map((entry) => [
+      findGame(entry.provenance.gameId)?.title ?? entry.provenance.gameId,
+      entry,
+    ]),
+  );
+  const toEvidence = (
+    evidence: RawWorld3Evidence[] | undefined,
+    prefix: string,
+  ): ProfileEvidence[] =>
+    (evidence ?? [])
+      .map((item, i) => {
+        const entry = byTitle.get(item.game);
+        if (!entry) return null;
+        return {
+          id: `${entry.provenance.gameRunId}:${prefix}-${i}`,
+          sourceGameId: entry.provenance.gameId,
+          sourceGameTitle:
+            findGame(entry.provenance.gameId)?.title ?? entry.provenance.gameId,
+          sourceRunId: entry.provenance.gameRunId,
+          observedAt: entry.provenance.completedAt,
+          label: hydrate(item.detail),
+        };
+      })
+      .filter((item): item is ProfileEvidence => item !== null);
+  const toBlocks = (
+    blocks: RawWorld3Block[] | undefined,
+    prefix: string,
+  ): ProfileTextBlock[] =>
+    (blocks ?? [])
+      .filter((block) => block.title && block.body)
+      .map((block, index) => ({
+        title: hydrate(block.title),
+        body: hydrate(block.body),
+        evidence: toEvidence(block.evidence, `${prefix}-${index}`),
+      }));
+
+  const personProfiles: ProfilePersonBlock[] = (raw.personProfiles ?? [])
+    .filter((person) => person.profile)
+    .map((person, index) => ({
+      personId: person.person === "{{A}}" ? ownerId : partnerId,
+      label: hydrate(person.label),
+      profile: hydrate(person.profile),
+      strengths: (person.strengths ?? []).map(hydrate),
+      watchouts: (person.watchouts ?? []).map(hydrate),
+      evidence: toEvidence(person.evidence, `person-${index}`),
+    }));
+
+  const conversationCards: ProfileConversationCard[] = (
+    raw.conversationCards ?? []
+  )
+    .filter((card) => card.title && card.question)
+    .map((card, index) => ({
+      title: hydrate(card.title),
+      question: hydrate(card.question),
+      whyThisMatters: hydrate(card.whyThisMatters),
+      evidence: toEvidence(card.evidence, `conversation-${index}`),
+    }));
+
+  const rich: Partial<ProfileChapter> = {
+    overviewSummary: hydrate(raw.overviewSummary),
+    coupleImage: hydrate(raw.coupleImage),
+    personProfiles,
+    relationshipStrengths: toBlocks(raw.relationshipStrengths, "strength"),
+    relationshipChallenges: toBlocks(raw.relationshipChallenges, "challenge"),
+    relaxationChances: toBlocks(raw.relaxationChances, "relaxation"),
+    practicalTips: toBlocks(raw.practicalTips, "tip"),
+    conversationCards,
+  };
+  world3Cache.set(cacheKey, rich);
+  return rich;
+}
+
+function richWorld3FromNarrativeCards(
+  chapter: ProfileChapter,
+  context: AiContext,
+): Partial<ProfileChapter> {
+  const cards = chapter.cards;
+  if (!cards.length) return {};
+  const byKind = (kinds: ProfileNarrativeCard["kind"][]) =>
+    cards.filter((card) => kinds.includes(card.kind));
+  const toBlocks = (
+    source: ProfileNarrativeCard[],
+    fallback: ProfileNarrativeCard[],
+  ): ProfileTextBlock[] =>
+    (source.length ? source : fallback)
+      .slice(0, 3)
+      .map((card) => ({
+        title: card.title,
+        body: card.body,
+        evidence: card.evidence,
+      }));
+  const portraits = byKind(["portrait", "partner-view"]);
+  const conversationSource = cards.filter((card) => card.chatPrompt).slice(0, 4);
+  return {
+    overviewSummary:
+      cards[0]?.body ??
+      "Kaart 3 laat zien hoe jullie voorkeuren concreet worden in geld, aandacht, taken, stress en ontspanning.",
+    coupleImage:
+      byKind(["shared", "connection"])[0]?.body ??
+      byKind(["difference", "challenge"])[0]?.body ??
+      cards[1]?.body,
+    personProfiles: portraits.slice(0, 2).map((card, index) => ({
+      personId: index === 0 ? context.ownerId : context.partnerId,
+      label: index === 0 ? "Jij" : context.partnerName,
+      profile: card.body,
+      strengths: card.kind === "portrait" ? [card.title] : [],
+      watchouts: card.kind === "challenge" ? [card.title] : [],
+      evidence: card.evidence,
+    })).filter((person) => person.profile && person.personId),
+    relationshipStrengths: toBlocks(
+      byKind(["shared", "connection"]),
+      cards.filter((card) => card.kind !== "challenge"),
+    ),
+    relationshipChallenges: toBlocks(
+      byKind(["challenge", "difference"]),
+      cards,
+    ),
+    relaxationChances: toBlocks(
+      cards.filter((card) =>
+        /date|rust|ontspann|knus|plezier|sfeer/i.test(
+          `${card.title} ${card.body}`,
+        ),
+      ),
+      cards,
+    ),
+    practicalTips: conversationSource.slice(0, 3).map((card) => ({
+      title: card.title,
+      body: card.chatPrompt ?? card.body,
+      evidence: card.evidence,
+    })),
+    conversationCards: conversationSource.map((card) => ({
+      title: card.title,
+      question: card.chatPrompt ?? card.body,
+      whyThisMatters: "Deze vraag komt direct uit wat jullie in kaart 3 lieten zien.",
+      evidence: card.evidence,
+    })),
+  };
+}
+
 /**
  * Vervangt de regelgebaseerde kaarten van elk beschikbaar hoofdstuk door
  * AI-gegenereerde kaarten. Bij een fout blijft het regelgebaseerde hoofdstuk
@@ -433,14 +899,42 @@ export async function augmentInsightsWithAi(
         mode,
         priorText,
       );
-      if (cards.length > 0) {
-        processed.set(chapter.world, { ...chapter, cards });
-        const summary = cards
-          .map((card) => anonymize(`(kaart ${chapter.world}) ${card.title}: ${card.body}`))
-          .join("\n");
-        priorText += (priorText ? "\n" : "") + summary;
-      } else {
-        processed.set(chapter.world, chapter);
+      let nextChapter: ProfileInsights["chapters"][number] =
+        cards.length > 0 ? { ...chapter, cards } : chapter;
+      if (chapter.world === 3) {
+        try {
+          const rich = await richWorld3ForChapter(
+            nextChapter,
+            worldResults,
+            chapterContext,
+            priorText,
+          );
+          nextChapter = { ...nextChapter, ...rich };
+        } catch (error) {
+          console.warn(
+            "AI-profiel kaart 3 rijke laag mislukt, fallback blijft staan:",
+            error instanceof Error ? error.message : error,
+          );
+          nextChapter = {
+            ...nextChapter,
+            ...richWorld3FromNarrativeCards(nextChapter, chapterContext),
+          };
+        }
+      }
+      processed.set(chapter.world, nextChapter);
+      const summaryParts = [
+        ...nextChapter.cards.map((card) =>
+          anonymize(`(kaart ${chapter.world}) ${card.title}: ${card.body}`),
+        ),
+        nextChapter.overviewSummary
+          ? anonymize(`(kaart ${chapter.world}) ${nextChapter.overviewSummary}`)
+          : "",
+        nextChapter.coupleImage
+          ? anonymize(`(kaart ${chapter.world}) ${nextChapter.coupleImage}`)
+          : "",
+      ].filter(Boolean);
+      if (summaryParts.length > 0) {
+        priorText += (priorText ? "\n" : "") + summaryParts.join("\n");
       }
     } catch (error) {
       console.warn(

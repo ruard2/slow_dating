@@ -84,6 +84,51 @@ import {
   normalizeHuishoudtafelState,
 } from "./huishoudtafel/reducer";
 import { serializeHuishoudtafelResult } from "./huishoudtafel/result";
+import type { GeldbrugAction } from "./geldbrug/contracts";
+import { geldbrugDefinition } from "./geldbrug/definition";
+import {
+  addDeveloperGeldbrugPartner,
+  geldbrugReducer,
+  normalizeGeldbrugState,
+} from "./geldbrug/reducer";
+import { serializeGeldbrugResult } from "./geldbrug/result";
+import type { WinkelmandjeAction } from "./winkelmandje/contracts";
+import { winkelmandjeDefinition } from "./winkelmandje/definition";
+import {
+  addDeveloperWinkelmandjePartner,
+  normalizeWinkelmandjeState,
+  winkelmandjeReducer,
+} from "./winkelmandje/reducer";
+import { serializeWinkelmandjeResult } from "./winkelmandje/result";
+import type { StressmeterAction } from "./stressmeter/contracts";
+import { stressmeterDefinition } from "./stressmeter/definition";
+import {
+  addDeveloperStressmeterPartner,
+  normalizeStressmeterState,
+  stressmeterReducer,
+} from "./stressmeter/reducer";
+import { serializeStressmeterResult } from "./stressmeter/result";
+import type { KleineDateAction } from "./kleineDate/contracts";
+import { kleineDateDefinition } from "./kleineDate/definition";
+import {
+  addDeveloperKleineDatePartner,
+  kleineDateReducer,
+  normalizeKleineDateState,
+} from "./kleineDate/reducer";
+import { serializeKleineDateResult } from "./kleineDate/result";
+import type { SamenLevenAction } from "./samenLeven/contracts";
+import {
+  getSamenLevenRound,
+  isSamenLevenGameId,
+  samenLevenContent,
+} from "./samenLeven/content";
+import { samenLevenDefinitions } from "./samenLeven/definitions";
+import {
+  addDeveloperSamenLevenPartner,
+  normalizeSamenLevenState,
+  samenLevenReducer,
+} from "./samenLeven/reducer";
+import { serializeSamenLevenResult } from "./samenLeven/result";
 export function GamePage({
   developerPartnerArriving,
   developerPartnerPresent,
@@ -336,6 +381,9 @@ export function GamePage({
         });
         if (action.type === "waarden.game.completed") {
           await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
           navigate(worldPath);
         }
       });
@@ -915,7 +963,9 @@ export function GamePage({
               );
             }
           }
-          const completesRun = action.type === "huishoudtafel.game.completed";
+          const completesRun =
+            action.type === "huishoudtafel.game.completed" ||
+            action.type === "huishoudtafel.game.replayed";
           return api.applyGameAction(current!.id, {
             id: crypto.randomUUID(),
             expectedRevision: current!.revision,
@@ -949,12 +999,32 @@ export function GamePage({
           gameRunId: updated.id,
           revision: updated.revision,
         });
-        if (action.type === "huishoudtafel.game.completed") {
+        if (
+          action.type === "huishoudtafel.game.completed" ||
+          action.type === "huishoudtafel.game.replayed"
+        ) {
           await queryClient.invalidateQueries({ queryKey: ["progress"] });
           await queryClient.invalidateQueries({
             queryKey: ["relationship-results", pair?.id],
           });
-          navigate(worldPath);
+          if (action.type === "huishoudtafel.game.replayed") {
+            const freshRun = await api.createGameRun(
+              gameId,
+              game?.version ?? huishoudtafelDefinition.version,
+            );
+            runRef.current = freshRun;
+            setArrivalComplete(false);
+            queryClient.setQueryData(
+              ["active-game-run", pair?.id, gameId],
+              freshRun,
+            );
+            send("game.lobby.enter", {
+              gameId,
+              gameRunId: freshRun.id,
+            });
+          } else {
+            navigate(worldPath);
+          }
         }
       });
       actionQueueRef.current = queued.catch(() => undefined);
@@ -964,7 +1034,505 @@ export function GamePage({
         setNativePending(false);
       }
     },
-    [activeRun, gameId, navigate, pair, queryClient, send, worldPath],
+    [activeRun, game, gameId, navigate, pair, queryClient, send, worldPath],
+  );
+
+  const dispatchKleineDateAction = useCallback(
+    async (action: KleineDateAction) => {
+      if (gameId !== kleineDateDefinition.id) return;
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+        const apply = () => {
+          let nextState = kleineDateReducer(
+            normalizeKleineDateState(current!.state),
+            action,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              nextState = addDeveloperKleineDatePartner(
+                nextState,
+                action,
+                partnerId,
+                Boolean(pair.christianLayer),
+              );
+            }
+          }
+          const completesRun =
+            action.type === "kleine-date.game.completed" ||
+            action.type === "kleine-date.game.replayed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeKleineDateResult(nextState),
+                }
+              : {}),
+          });
+        };
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (
+          action.type === "kleine-date.game.completed" ||
+          action.type === "kleine-date.game.replayed"
+        ) {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          if (action.type === "kleine-date.game.replayed") {
+            const freshRun = await api.createGameRun(
+              gameId,
+              game?.version ?? kleineDateDefinition.version,
+            );
+            runRef.current = freshRun;
+            setArrivalComplete(false);
+            queryClient.setQueryData(
+              ["active-game-run", pair?.id, gameId],
+              freshRun,
+            );
+            send("game.lobby.enter", {
+              gameId,
+              gameRunId: freshRun.id,
+            });
+          } else {
+            navigate(worldPath);
+          }
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, game, gameId, navigate, pair, queryClient, send, worldPath],
+  );
+
+  const dispatchSamenLevenAction = useCallback(
+    async (action: SamenLevenAction) => {
+      if (!isSamenLevenGameId(gameId)) return;
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+        const apply = () => {
+          let nextState = samenLevenReducer(
+            normalizeSamenLevenState(current!.state),
+            action,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              const prompts = getSamenLevenRound(
+                samenLevenContent[gameId],
+                nextState.themeId,
+              ).prompts;
+              nextState = addDeveloperSamenLevenPartner(
+                nextState,
+                action,
+                partnerId,
+                Object.fromEntries(
+                  prompts.map((prompt) => [prompt.id, prompt.options]),
+                ),
+              );
+            }
+          }
+          const completesRun =
+            action.type === "samen-leven.game.completed" ||
+            action.type === "samen-leven.game.replayed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: `${gameId}.${action.type}`,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeSamenLevenResult(gameId, nextState),
+                }
+              : {}),
+          });
+        };
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (
+          action.type === "samen-leven.game.completed" ||
+          action.type === "samen-leven.game.replayed"
+        ) {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          if (action.type === "samen-leven.game.replayed") {
+            const freshRun = await api.createGameRun(
+              gameId,
+              game?.version ?? 1,
+            );
+            runRef.current = freshRun;
+            setArrivalComplete(false);
+            queryClient.setQueryData(
+              ["active-game-run", pair?.id, gameId],
+              freshRun,
+            );
+            send("game.lobby.enter", {
+              gameId,
+              gameRunId: freshRun.id,
+            });
+          } else {
+            navigate(worldPath);
+          }
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, game, gameId, navigate, pair, queryClient, send, worldPath],
+  );
+
+  const dispatchGeldbrugAction = useCallback(
+    async (action: GeldbrugAction) => {
+      if (gameId !== geldbrugDefinition.id) return;
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+        const apply = () => {
+          let nextState = geldbrugReducer(
+            normalizeGeldbrugState(current!.state),
+            action,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              nextState = addDeveloperGeldbrugPartner(
+                nextState,
+                action,
+                partnerId,
+              );
+            }
+          }
+          const completesRun =
+            action.type === "geldbrug.game.completed" ||
+            action.type === "geldbrug.game.replayed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeGeldbrugResult(nextState),
+                }
+              : {}),
+          });
+        };
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (
+          action.type === "geldbrug.game.completed" ||
+          action.type === "geldbrug.game.replayed"
+        ) {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          if (action.type === "geldbrug.game.replayed") {
+            const freshRun = await api.createGameRun(
+              gameId,
+              game?.version ?? geldbrugDefinition.version,
+            );
+            runRef.current = freshRun;
+            setArrivalComplete(false);
+            queryClient.setQueryData(
+              ["active-game-run", pair?.id, gameId],
+              freshRun,
+            );
+            send("game.lobby.enter", {
+              gameId,
+              gameRunId: freshRun.id,
+            });
+          } else {
+            navigate(worldPath);
+          }
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, game, gameId, navigate, pair, queryClient, send, worldPath],
+  );
+
+  const dispatchWinkelmandjeAction = useCallback(
+    async (action: WinkelmandjeAction) => {
+      if (gameId !== winkelmandjeDefinition.id) return;
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+        const apply = () => {
+          let nextState = winkelmandjeReducer(
+            normalizeWinkelmandjeState(current!.state),
+            action,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              nextState = addDeveloperWinkelmandjePartner(
+                nextState,
+                action,
+                partnerId,
+              );
+            }
+          }
+          const completesRun =
+            action.type === "winkelmandje.game.completed" ||
+            action.type === "winkelmandje.game.replayed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeWinkelmandjeResult(nextState),
+                }
+              : {}),
+          });
+        };
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (
+          action.type === "winkelmandje.game.completed" ||
+          action.type === "winkelmandje.game.replayed"
+        ) {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          if (action.type === "winkelmandje.game.replayed") {
+            const freshRun = await api.createGameRun(
+              gameId,
+              game?.version ?? winkelmandjeDefinition.version,
+            );
+            runRef.current = freshRun;
+            setArrivalComplete(false);
+            queryClient.setQueryData(
+              ["active-game-run", pair?.id, gameId],
+              freshRun,
+            );
+            send("game.lobby.enter", {
+              gameId,
+              gameRunId: freshRun.id,
+            });
+          } else {
+            navigate(worldPath);
+          }
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, game, gameId, navigate, pair, queryClient, send, worldPath],
+  );
+
+  const dispatchStressmeterAction = useCallback(
+    async (action: StressmeterAction) => {
+      if (gameId !== stressmeterDefinition.id) return;
+      setNativePending(true);
+      const queued = actionQueueRef.current.then(async () => {
+        let current = runRef.current;
+        if (!current) return;
+        const memberIds =
+          pair?.members.map((member) => member.installationId) ?? [];
+        const apply = () => {
+          let nextState = stressmeterReducer(
+            normalizeStressmeterState(current!.state),
+            action,
+          );
+          if (pair?.developerMode) {
+            const partnerId = memberIds.find((id) => id !== action.actorId);
+            if (partnerId) {
+              nextState = addDeveloperStressmeterPartner(
+                nextState,
+                action,
+                partnerId,
+              );
+            }
+          }
+          const completesRun =
+            action.type === "stressmeter.game.completed" ||
+            action.type === "stressmeter.game.replayed";
+          return api.applyGameAction(current!.id, {
+            id: crypto.randomUUID(),
+            expectedRevision: current!.revision,
+            type: action.type,
+            payload: action,
+            state: nextState,
+            ...(completesRun
+              ? {
+                  status: "completed" as const,
+                  result: serializeStressmeterResult(nextState),
+                }
+              : {}),
+          });
+        };
+        let updated: GameRun;
+        try {
+          updated = await apply();
+        } catch {
+          const refreshed = await activeRun.refetch();
+          if (!refreshed.data) throw new Error("Spelsessie niet gevonden.");
+          current = refreshed.data;
+          runRef.current = current;
+          updated = await apply();
+        }
+        runRef.current = updated;
+        queryClient.setQueryData(
+          ["active-game-run", pair?.id, gameId],
+          updated,
+        );
+        send("game.state.updated", {
+          gameRunId: updated.id,
+          revision: updated.revision,
+        });
+        if (
+          action.type === "stressmeter.game.completed" ||
+          action.type === "stressmeter.game.replayed"
+        ) {
+          await queryClient.invalidateQueries({ queryKey: ["progress"] });
+          await queryClient.invalidateQueries({
+            queryKey: ["relationship-results", pair?.id],
+          });
+          if (action.type === "stressmeter.game.replayed") {
+            const freshRun = await api.createGameRun(
+              gameId,
+              game?.version ?? stressmeterDefinition.version,
+            );
+            runRef.current = freshRun;
+            setArrivalComplete(false);
+            queryClient.setQueryData(
+              ["active-game-run", pair?.id, gameId],
+              freshRun,
+            );
+            send("game.lobby.enter", {
+              gameId,
+              gameRunId: freshRun.id,
+            });
+          } else {
+            navigate(worldPath);
+          }
+        }
+      });
+      actionQueueRef.current = queued.catch(() => undefined);
+      try {
+        await queued;
+      } finally {
+        setNativePending(false);
+      }
+    },
+    [activeRun, game, gameId, navigate, pair, queryClient, send, worldPath],
   );
 
   useEffect(() => {
@@ -1247,12 +1815,230 @@ export function GamePage({
             setChatContext(text, false);
             setDrawer("chat");
           }}
+          pauseGame={() => navigate(worldPath)}
           partnerName={partner?.displayName ?? "je partner"}
           christianLayer={pair.christianLayer}
           pending={nativePending}
+          restartGame={() => restartRun.mutate()}
           priorAllergyOptions={priorAllergyOptions}
           priorQualityOptions={priorQualityOptions}
           state={normalizeKernkwadrantenState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (
+    game.status === "native" &&
+    game.id === geldbrugDefinition.id &&
+    run
+  ) {
+    const GeldbrugComponent = geldbrugDefinition.Component;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="geldbrug"
+      >
+        {pair.developerMode && (
+          <button
+            className={styles.restartGameButton}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
+        <GeldbrugComponent
+          christianLayer={pair.christianLayer}
+          dispatch={dispatchGeldbrugAction}
+          installationId={session?.installationId ?? ""}
+          key={run.id}
+          memberIds={pair.members.map((member) => member.installationId)}
+          openCall={() => setDrawer("call")}
+          openChat={(text = "") => {
+            setChatContext(text, false);
+            setDrawer("chat");
+          }}
+          pauseGame={() => navigate(worldPath)}
+          partnerName={partner?.displayName ?? "je partner"}
+          pending={nativePending}
+          restartGame={() => restartRun.mutate()}
+          state={normalizeGeldbrugState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (
+    game.status === "native" &&
+    game.id === winkelmandjeDefinition.id &&
+    run
+  ) {
+    const WinkelmandjeComponent = winkelmandjeDefinition.Component;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="winkelmandje"
+      >
+        {pair.developerMode && (
+          <button
+            className={styles.restartGameButton}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
+        <WinkelmandjeComponent
+          christianLayer={pair.christianLayer}
+          dispatch={dispatchWinkelmandjeAction}
+          installationId={session?.installationId ?? ""}
+          key={run.id}
+          memberIds={pair.members.map((member) => member.installationId)}
+          openCall={() => setDrawer("call")}
+          openChat={(text = "") => {
+            setChatContext(text, false);
+            setDrawer("chat");
+          }}
+          pauseGame={() => navigate(worldPath)}
+          partnerName={partner?.displayName ?? "je partner"}
+          pending={nativePending}
+          restartGame={() => restartRun.mutate()}
+          state={normalizeWinkelmandjeState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (
+    game.status === "native" &&
+    game.id === stressmeterDefinition.id &&
+    run
+  ) {
+    const StressmeterComponent = stressmeterDefinition.Component;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="stressmeter"
+      >
+        {pair.developerMode && (
+          <button
+            className={styles.restartGameButton}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
+        <StressmeterComponent
+          christianLayer={pair.christianLayer}
+          dispatch={dispatchStressmeterAction}
+          installationId={session?.installationId ?? ""}
+          key={run.id}
+          memberIds={pair.members.map((member) => member.installationId)}
+          openCall={() => setDrawer("call")}
+          openChat={(text = "") => {
+            setChatContext(text, false);
+            setDrawer("chat");
+          }}
+          pauseGame={() => navigate(worldPath)}
+          partnerName={partner?.displayName ?? "je partner"}
+          pending={nativePending}
+          restartGame={() => restartRun.mutate()}
+          state={normalizeStressmeterState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (
+    game.status === "native" &&
+    game.id === kleineDateDefinition.id &&
+    run
+  ) {
+    const KleineDateComponent = kleineDateDefinition.Component;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game="kleine-date"
+      >
+        {pair.developerMode && (
+          <button
+            className={styles.restartGameButton}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
+        <KleineDateComponent
+          christianLayer={pair.christianLayer}
+          dispatch={dispatchKleineDateAction}
+          installationId={session?.installationId ?? ""}
+          key={run.id}
+          memberIds={pair.members.map((member) => member.installationId)}
+          openCall={() => setDrawer("call")}
+          openChat={(text = "") => {
+            setChatContext(text, false);
+            setDrawer("chat");
+          }}
+          pauseGame={() => navigate(worldPath)}
+          partnerName={partner?.displayName ?? "je partner"}
+          pending={nativePending}
+          restartGame={() => restartRun.mutate()}
+          state={normalizeKleineDateState(run.state)}
+        />
+      </main>
+    );
+  }
+
+  if (game.status === "native" && isSamenLevenGameId(game.id) && run) {
+    const definition = samenLevenDefinitions[game.id];
+    const SamenLevenComponent = definition.Component;
+    return (
+      <main
+        className={styles.gameFramePage}
+        data-game-revision={run.revision}
+        data-game-run-id={run.id}
+        data-native-game={game.id}
+      >
+        {pair.developerMode && (
+          <button
+            className={styles.restartGameButton}
+            disabled={restartRun.isPending}
+            onClick={() => restartRun.mutate()}
+            type="button"
+          >
+            Opnieuw starten
+          </button>
+        )}
+        <SamenLevenComponent
+          christianLayer={pair.christianLayer}
+          dispatch={dispatchSamenLevenAction}
+          installationId={session?.installationId ?? ""}
+          key={run.id}
+          memberIds={pair.members.map((member) => member.installationId)}
+          openCall={() => setDrawer("call")}
+          openChat={(text = "") => {
+            setChatContext(text, false);
+            setDrawer("chat");
+          }}
+          partnerName={partner?.displayName ?? "je partner"}
+          pending={nativePending}
+          restartGame={() => restartRun.mutate()}
+          state={normalizeSamenLevenState(run.state)}
         />
       </main>
     );
@@ -1537,9 +2323,11 @@ export function GamePage({
             setChatContext(text, false);
             setDrawer("chat");
           }}
+          pauseGame={() => navigate(worldPath)}
           partnerName={partner?.displayName ?? "je partner"}
           christianLayer={pair.christianLayer}
           pending={nativePending}
+          restartGame={() => restartRun.mutate()}
           state={normalizeHuishoudtafelState(run.state)}
         />
       </main>

@@ -51,6 +51,39 @@ function completedWaardenRun(
   };
 }
 
+function completedWorld3Run(
+  gameId: string,
+  index: number,
+  result: Record<string, unknown> = {},
+): GameRun {
+  const completedAt = `2026-06-${20 + index}T10:00:00.000Z`;
+  return {
+    id: `a0000000-0000-4000-8000-00000000000${index}`,
+    gameId,
+    version: 1,
+    mode: "couple",
+    pairId: newPairId,
+    installationId: ownerId,
+    status: "completed",
+    revision: 4,
+    state: {},
+    result: {
+      schemaVersion: 1,
+      ownerId,
+      partnerId: newPartnerId,
+      choices: {
+        [ownerId]: [`keuze-jij-${gameId}`],
+        [newPartnerId]: [`keuze-partner-${gameId}`],
+      },
+      reflection: `reflectie ${gameId}`,
+      ...result,
+      completedAt,
+    },
+    startedAt: completedAt,
+    completedAt,
+  };
+}
+
 describe("buildProfileInsights", () => {
   it("recalculates deterministically from semantic results", () => {
     const input = {
@@ -181,6 +214,82 @@ describe("buildProfileInsights", () => {
       world: 2,
       available: false,
     });
+  });
+
+  it("keeps profile three locked below five completed world-three games", () => {
+    const runs = [
+      "geldbrug",
+      "winkelmandje",
+      "liefdestaal",
+      "stressmeter",
+    ].map((gameId, index) => completedWorld3Run(gameId, index + 1));
+
+    const insights = buildProfileInsights({
+      installationId: ownerId,
+      completedRuns: runs,
+      waiting,
+      currentPair: {
+        id: newPairId,
+        memberIds: [ownerId, newPartnerId],
+        partnerName: "Nieuwe partner",
+      },
+      generatedAt: "2026-06-24T12:00:00.000Z",
+    });
+
+    expect(insights.chapters[2]).toMatchObject({
+      world: 3,
+      available: false,
+      completedGameCount: 4,
+      requiredGames: 5,
+    });
+    expect(insights.chapters[2]?.gameResultAppendix).toBeUndefined();
+  });
+
+  it("unlocks profile three after five completed world-three games and keeps appendix data", () => {
+    const gameIds = [
+      "geldbrug",
+      "winkelmandje",
+      "liefdestaal",
+      "stressmeter",
+      "huishoudtafel",
+    ];
+    const runs = gameIds.map((gameId, index) =>
+      completedWorld3Run(gameId, index + 1, {
+        marker: `volledige-data-${gameId}`,
+      }),
+    );
+
+    const insights = buildProfileInsights({
+      installationId: ownerId,
+      completedRuns: runs,
+      waiting,
+      currentPair: {
+        id: newPairId,
+        memberIds: [ownerId, newPartnerId],
+        partnerName: "Nieuwe partner",
+      },
+      generatedAt: "2026-06-24T12:00:00.000Z",
+    });
+
+    const chapter = insights.chapters[2];
+    expect(chapter).toMatchObject({
+      world: 3,
+      available: true,
+      completedGameCount: 5,
+      requiredGames: 5,
+    });
+    expect(chapter?.dataCoverage).toMatchObject({
+      requiredGames: 5,
+      completedGameCount: 5,
+      gamesUsed: gameIds,
+    });
+    expect(chapter?.gameResultAppendix?.map((item) => item.gameId)).toEqual(
+      gameIds,
+    );
+    expect(chapter?.gameResultAppendix?.[0]?.result).toMatchObject({
+      marker: "volledige-data-geldbrug",
+    });
+    expect(chapter?.overviewSummary).toContain("samenleven concreet");
   });
 });
 

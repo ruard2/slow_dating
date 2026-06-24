@@ -16,11 +16,13 @@ import {
 
 import styles from "../App.module.css";
 
-// Zet de nabijheid-fractie (0..1) om naar de afstand die elk poppetje vanaf
-// zijn rand naar het midden is opgeschoven. Bij 1 ontmoeten ze elkaar (47%).
-// De groeilijn-markeringen zitten al in de balk-illustratie zelf.
+// Zet de nabijheid-fractie (0..1) om naar een positie in vw-eenheden (viewport
+// width). Begint op 8vw van de rand (altijd zichtbaar, ook als de balk breder
+// is dan het scherm) en loopt op naar 48vw (bijna-ontmoeting in het midden).
+// In de JSX wordt dit gecombineerd met een calc()-offset die de balk-overhang
+// compenseert zodat "8vw" daadwerkelijk 8% van het viewport is.
 function meetingPosition(fraction: number) {
-  return Math.max(0, Math.min(fraction, 1)) * 47;
+  return 8 + Math.max(0, Math.min(fraction, 1)) * 40;
 }
 
 function formatPrice(priceCents: number) {
@@ -28,6 +30,16 @@ function formatPrice(priceCents: number) {
     style: "currency",
     currency: "EUR",
   }).format(priceCents / 100);
+}
+
+// Kaarten 2 en 3 staan tijdens de inhoudelijke opbouw vrij open, zodat hun
+// spellen direct getest kunnen worden zonder aankoop of eerdere voortgang.
+export function isWorldAccessible(progress: WorldProgress, worldId: number) {
+  return (
+    worldId === 2 ||
+    worldId === 3 ||
+    progress.unlockedWorlds.includes(worldId)
+  );
 }
 
 function WorldCard({
@@ -43,7 +55,7 @@ function WorldCard({
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const lastPoint = useRef<{ x: number; y: number } | null>(null);
   const pinch = useRef<{ distance: number; scale: number } | null>(null);
-  const unlocked = progress.unlockedWorlds.includes(world.id);
+  const unlocked = isWorldAccessible(progress, world.id);
   const placements = getWorldPlacements(world.id);
   const zoomable = unlocked && placements.length > 0;
 
@@ -103,7 +115,7 @@ function WorldCard({
   }
 
   function wheel(event: WheelEvent<HTMLElement>) {
-    if (!event.ctrlKey || !zoomable) return;
+    if (!zoomable) return;
     event.preventDefault();
     setScale(transform.scale + (event.deltaY < 0 ? 0.2 : -0.2));
   }
@@ -294,7 +306,7 @@ export function WorldMap({
   }, [progress]);
 
   function activateWorld(world: WorldDefinition) {
-    if (progress.unlockedWorlds.includes(world.id)) {
+    if (isWorldAccessible(progress, world.id)) {
       navigate(world.id === 1 ? "/" : `/worlds/${world.id}`);
       scrollToWorld(world.id);
       return;
@@ -306,15 +318,15 @@ export function WorldMap({
     <main className={styles.worldPage}>
       <div className={styles.progressBar} aria-label="Nabijheidsgroei">
         <img className={styles.progressTrack} src="/assets/nabijheid_balk2.webp" alt="" />
-        <img className={styles.progressFigure} src="/assets/figuur_t.webp" alt="" style={{ left: `${position}%` }} />
-        <img className={styles.partnerFigure} src="/assets/figuur2_t.webp" alt="" style={{ right: `${position}%` }} />
+        <img className={styles.progressFigure} src="/assets/figuur_t.webp" alt="" style={{ left: `calc(${position}vw + max(0px, (100% - 100vw) / 2))` }} />
+        <img className={styles.partnerFigure} src="/assets/figuur2_t.webp" alt="" style={{ right: `calc(${position}vw + max(0px, (100% - 100vw) / 2))` }} />
       </div>
 
       <nav className={styles.worldNavigator} aria-label="Werelden">
         {[...worlds].reverse().map((world) => (
           <button
             aria-label={`Ga naar wereld ${world.id}: ${world.name}`}
-            data-unlocked={progress.unlockedWorlds.includes(world.id)}
+            data-unlocked={isWorldAccessible(progress, world.id)}
             key={world.id}
             onClick={() => scrollToWorld(world.id)}
             type="button"

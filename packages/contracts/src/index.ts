@@ -475,6 +475,51 @@ export type ProfileNarrativeCard = z.infer<
   typeof profileNarrativeCardSchema
 >;
 
+export const profileTextBlockSchema = z.object({
+  title: z.string().min(1),
+  body: z.string().min(1),
+  evidence: z.array(profileEvidenceSchema).default([]),
+});
+
+export const profilePersonBlockSchema = z.object({
+  personId: idSchema,
+  label: z.string().min(1),
+  profile: z.string().min(1),
+  strengths: z.array(z.string().min(1)).default([]),
+  watchouts: z.array(z.string().min(1)).default([]),
+  evidence: z.array(profileEvidenceSchema).default([]),
+});
+
+export const profileConversationCardSchema = z.object({
+  title: z.string().min(1),
+  question: z.string().min(1),
+  whyThisMatters: z.string().min(1).optional(),
+  evidence: z.array(profileEvidenceSchema).default([]),
+});
+
+export const profileGameAppendixSchema = z.object({
+  gameId: z.string().min(1),
+  gameTitle: z.string().min(1),
+  completedAt: z.string().datetime(),
+  summary: z.string().min(1),
+  result: z.record(z.string(), z.unknown()),
+});
+
+export const profileDataCoverageSchema = z.object({
+  requiredGames: z.number().int().positive(),
+  completedGameCount: z.number().int().nonnegative(),
+  gamesUsed: z.array(z.string().min(1)),
+  missingGames: z.array(z.string().min(1)),
+});
+
+export type ProfileTextBlock = z.infer<typeof profileTextBlockSchema>;
+export type ProfilePersonBlock = z.infer<typeof profilePersonBlockSchema>;
+export type ProfileConversationCard = z.infer<
+  typeof profileConversationCardSchema
+>;
+export type ProfileGameAppendix = z.infer<typeof profileGameAppendixSchema>;
+export type ProfileDataCoverage = z.infer<typeof profileDataCoverageSchema>;
+
 export const profileChapterSchema = z.object({
   world: z.number().int().min(1).max(5),
   title: z.string().min(1),
@@ -486,6 +531,16 @@ export const profileChapterSchema = z.object({
   completedGameCount: z.number().int().nonnegative(),
   generatedAt: z.string().datetime(),
   cards: z.array(profileNarrativeCardSchema),
+  overviewSummary: z.string().min(1).optional(),
+  coupleImage: z.string().min(1).optional(),
+  personProfiles: z.array(profilePersonBlockSchema).optional(),
+  relationshipStrengths: z.array(profileTextBlockSchema).optional(),
+  relationshipChallenges: z.array(profileTextBlockSchema).optional(),
+  relaxationChances: z.array(profileTextBlockSchema).optional(),
+  practicalTips: z.array(profileTextBlockSchema).optional(),
+  conversationCards: z.array(profileConversationCardSchema).optional(),
+  gameResultAppendix: z.array(profileGameAppendixSchema).optional(),
+  dataCoverage: profileDataCoverageSchema.optional(),
 });
 
 export type ProfileChapter = z.infer<typeof profileChapterSchema>;
