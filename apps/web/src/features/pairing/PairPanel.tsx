@@ -11,7 +11,11 @@ export function PairPanel({ pair }: { pair: Pair | null | undefined }) {
   const { session } = useSession();
   const queryClient = useQueryClient();
   const [code, setCode] = useState("");
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["pair"] });
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ["pair"] });
+    void queryClient.invalidateQueries({ queryKey: ["progress"] });
+    void queryClient.invalidateQueries({ queryKey: ["profile-insights"] });
+  };
   const create = useMutation({ mutationFn: api.createPair, onSuccess: refresh });
   const join = useMutation({
     mutationFn: () => api.joinPair(code),

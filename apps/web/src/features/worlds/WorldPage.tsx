@@ -5,7 +5,7 @@ import { LoadingScreen } from "../../app/LoadingScreen";
 import { WorldMap } from "../../components/WorldMap";
 import { api } from "../../lib/api";
 
-export function WorldPage() {
+export function WorldPage({ developerMode = false }: { developerMode?: boolean }) {
   const { worldId } = useParams();
   const queryClient = useQueryClient();
   const progress = useQuery({
@@ -28,6 +28,7 @@ export function WorldPage() {
           : 1
       }
       progress={progress.data}
+      developerMode={developerMode}
       purchaseWorld={(world) => purchase.mutate(world)}
       purchasing={purchase.isPending}
     />

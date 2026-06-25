@@ -26,8 +26,22 @@ export function AppRoutes({
 }) {
   return (
     <Routes>
-      <Route path="/" element={<WorldPage />} />
-      <Route path="/worlds/:worldId" element={<WorldPage />} />
+      <Route
+        path="/"
+        element={
+          <WorldPage
+            developerMode={Boolean(pair?.developerMode) || import.meta.env.DEV}
+          />
+        }
+      />
+      <Route
+        path="/worlds/:worldId"
+        element={
+          <WorldPage
+            developerMode={Boolean(pair?.developerMode) || import.meta.env.DEV}
+          />
+        }
+      />
       <Route
         path="/games/:gameId"
         element={

@@ -34,8 +34,13 @@ function formatPrice(priceCents: number) {
 
 // Kaarten 2 en 3 staan tijdens de inhoudelijke opbouw vrij open, zodat hun
 // spellen direct getest kunnen worden zonder aankoop of eerdere voortgang.
-export function isWorldAccessible(progress: WorldProgress, worldId: number) {
+export function isWorldAccessible(
+  progress: WorldProgress,
+  worldId: number,
+  developerMode = false,
+) {
   return (
+    developerMode ||
     worldId === 2 ||
     worldId === 3 ||
     progress.unlockedWorlds.includes(worldId)
@@ -46,16 +51,18 @@ function WorldCard({
   activate,
   progress,
   world,
+  developerMode,
 }: {
   activate(world: WorldDefinition): void;
   progress: WorldProgress;
   world: WorldDefinition;
+  developerMode?: boolean;
 }) {
   const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const lastPoint = useRef<{ x: number; y: number } | null>(null);
   const pinch = useRef<{ distance: number; scale: number } | null>(null);
-  const unlocked = isWorldAccessible(progress, world.id);
+  const unlocked = isWorldAccessible(progress, world.id, developerMode);
   const placements = getWorldPlacements(world.id);
   const zoomable = unlocked && placements.length > 0;
 
@@ -240,11 +247,13 @@ function WorldCard({
 
 export function WorldMap({
   focusWorld = 1,
+  developerMode = false,
   progress,
   purchaseWorld,
   purchasing,
 }: {
   focusWorld?: number;
+  developerMode?: boolean;
   progress: WorldProgress;
   purchaseWorld(world: number): void;
   purchasing: boolean;
@@ -306,7 +315,7 @@ export function WorldMap({
   }, [progress]);
 
   function activateWorld(world: WorldDefinition) {
-    if (isWorldAccessible(progress, world.id)) {
+    if (isWorldAccessible(progress, world.id, developerMode)) {
       navigate(world.id === 1 ? "/" : `/worlds/${world.id}`);
       scrollToWorld(world.id);
       return;
@@ -326,7 +335,7 @@ export function WorldMap({
         {[...worlds].reverse().map((world) => (
           <button
             aria-label={`Ga naar wereld ${world.id}: ${world.name}`}
-            data-unlocked={isWorldAccessible(progress, world.id)}
+            data-unlocked={isWorldAccessible(progress, world.id, developerMode)}
             key={world.id}
             onClick={() => scrollToWorld(world.id)}
             type="button"
@@ -340,6 +349,7 @@ export function WorldMap({
         {[...worlds].reverse().map((world) => (
           <WorldCard
             activate={activateWorld}
+            developerMode={developerMode}
             key={world.id}
             progress={progress}
             world={world}

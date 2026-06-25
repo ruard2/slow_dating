@@ -26,4 +26,9 @@ describe("isWorldAccessible", () => {
     expect(isWorldAccessible(lockedProgress, 4)).toBe(false);
     expect(isWorldAccessible(lockedProgress, 5)).toBe(false);
   });
+
+  it("opent alle kaarten in beheerdersmodus", () => {
+    expect(isWorldAccessible(lockedProgress, 4, true)).toBe(true);
+    expect(isWorldAccessible(lockedProgress, 5, true)).toBe(true);
+  });
 });
