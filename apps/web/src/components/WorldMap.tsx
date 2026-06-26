@@ -41,8 +41,7 @@ export function isWorldAccessible(
 ) {
   return (
     developerMode ||
-    worldId === 2 ||
-    worldId === 3 ||
+    worldId === 1 ||
     progress.unlockedWorlds.includes(worldId)
   );
 }
@@ -365,7 +364,7 @@ export function WorldMap({
       )}
 
       {selectedWorld && (
-        <div className={styles.unlockBackdrop} role="dialog" aria-modal="true" aria-label={`Landschap ${selectedWorld.id} openen`}>
+        <div className={styles.unlockBackdrop} role="dialog" aria-modal="true" aria-label={`Wereld ${selectedWorld.id} vrijschakelen`}>
           <section className={styles.unlockCard}>
             <span className={styles.panelKicker}>Wereld {selectedWorld.id}</span>
             <h2>{selectedWorld.name}</h2>

@@ -255,7 +255,7 @@ export function ProfilePage() {
       {insights.data && (
         <section className={styles.insightsCard}>
           <span>Jullie route</span>
-          <h2>Groeiend profiel</h2>
+          <h2>Profielinzichten</h2>
           <p>
             Na iedere kaart ontstaat een nieuw hoofdstuk over wie jullie zijn,
             wat opvalt, wat jullie delen en waar nieuwsgierigheid nodig blijft.

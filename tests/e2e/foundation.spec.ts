@@ -67,7 +67,7 @@ test("loads the world map without console errors", async ({ page }) => {
     name: "Wereld 2 vrijschakelen",
   });
   await expect(unlockDialog).toBeVisible();
-  await expect(unlockDialog.getByText("0 / 5", { exact: true })).toBeVisible();
+  await expect(unlockDialog.getByText("Nabijheid")).toBeVisible();
   await page.getByRole("button", { name: "Misschien later" }).click();
   await page.getByRole("button", { name: "Ga naar wereld 1: Het Beginland" }).click();
   await page.getByRole("link", { name: "Je waarden", exact: true }).click();
@@ -130,7 +130,8 @@ test("opens all seven world games inside the permanent icon shell", async ({
       id: "kwaliteiten",
       title: "Jullie kwaliteiten",
       visibleText: "",
-      visibleSelector: ".screen.active .swipe-next",
+      visibleSelector: "[class*='wordGrid']",
+      native: true,
     },
     {
       id: "stille-vijver",
@@ -158,11 +159,13 @@ test("opens all seven world games inside the permanent icon shell", async ({
       await expect(
         page.locator("nav[aria-label='Vaste appbediening'] button[data-call-state]"),
       ).toHaveAttribute("data-call-state", "ready");
-      await page.getByRole("button", { name: "Eerlijkheid kiezen" }).click();
-      await page.getByRole("button", { name: "Trouw kiezen" }).click();
-      await page.getByRole("button", { name: "Familie kiezen" }).click();
-      await page.getByRole("button", { name: "Dit zijn mijn drie waarden" }).click();
-      await expect(page.getByRole("button", { name: "Ontdekking afronden" })).toBeVisible();
+      if (game.id === "waarden") {
+        await page.getByRole("button", { name: "Eerlijkheid kiezen" }).click();
+        await page.getByRole("button", { name: "Trouw kiezen" }).click();
+        await page.getByRole("button", { name: "Familie kiezen" }).click();
+        await page.getByRole("button", { name: "Dit zijn mijn drie waarden" }).click();
+        await expect(page.getByRole("button", { name: "Ontdekking afronden" })).toBeVisible();
+      }
       continue;
     }
     const frame = page.frameLocator(`iframe[title='${game.title}']`);
@@ -195,8 +198,6 @@ test("opens all seven world games inside the permanent icon shell", async ({
       await expect(frame.getByText("Gesprekken bij het vuur")).toBeVisible();
     } else if (game.id === "familiedorp") {
       await frame.getByRole("button", { name: "Bouw mijn dorp →" }).click();
-    } else if (game.id === "kwaliteiten") {
-      await frame.locator(".screen.active .swipe-next").click();
     } else if (game.id === "stille-vijver") {
       await frame.locator(".screen.active .mode-card").first().click();
     } else if (game.id === "brug-ontdekking") {
