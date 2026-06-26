@@ -80,7 +80,6 @@ export function OudeKnoppenGame({
   const partnerId = memberIds.find((id) => id !== installationId) ?? "";
   const introSeen = state.introSeenIds.includes(installationId);
   const ownSelection = state.selections[installationId];
-  const partnerSelection = state.selections[partnerId];
   const ownReflection = state.reflections[installationId];
   const partnerReflection = state.reflections[partnerId];
   const ownRepair = state.repairs[installationId];

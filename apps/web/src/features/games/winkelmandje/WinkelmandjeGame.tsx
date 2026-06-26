@@ -292,7 +292,11 @@ export function WinkelmandjeGame({
   }, [dispatch, installationId, started, state.dayId]);
 
   useEffect(() => {
-    setSupportText(state.supportLine?.text ?? "");
+    const timeout = window.setTimeout(
+      () => setSupportText(state.supportLine?.text ?? ""),
+      0,
+    );
+    return () => window.clearTimeout(timeout);
   }, [state.supportLine?.text]);
 
   const interruption = useMemo(

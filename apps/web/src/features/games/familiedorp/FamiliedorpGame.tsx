@@ -71,19 +71,14 @@ export function FamiliedorpGame({
   // Transition wacht → reveal when partner submits
   useEffect(() => {
     if (screen === "wacht" && bothSubmitted) {
-      setScreen("reveal");
+      const timeout = window.setTimeout(() => setScreen("reveal"), 0);
+      return () => window.clearTimeout(timeout);
     }
+    return undefined;
   }, [screen, bothSubmitted]);
 
   const napraatQuestions = useMemo(() => {
-    const arr = [...NAPRAAT_VRAGEN];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const tmp = arr[i] as string;
-      arr[i] = arr[j] as string;
-      arr[j] = tmp;
-    }
-    return arr.slice(0, 5);
+    return NAPRAAT_VRAGEN.slice(0, 5);
   }, []);
 
   // ── Tray pick ─────────────────────────────────────────────
@@ -171,6 +166,7 @@ export function FamiliedorpGame({
           ),
         );
       } else {
+        // eslint-disable-next-line react-hooks/immutability
         openEditModal(item);
       }
       dragRef.current = null;

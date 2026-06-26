@@ -30,7 +30,6 @@ import type {
 import {
   kleurProfileFor,
   scoreScenarioAnswers,
-  scoreStressRatings,
 } from "./result";
 import { normalizeKleurkompasState } from "./reducer";
 import { FaithLayer } from "../FaithLayer";
@@ -178,7 +177,6 @@ export function KleurkompasGame({
   const ownStress = gameState.stressRatings[installationId];
   const partnerStress = gameState.stressRatings[partnerId];
   const ownExercise = gameState.exercises[installationId];
-  const partnerExercise = gameState.exercises[partnerId];
   const ownDeepening = gameState.deepenings[installationId];
   const partnerDeepening = gameState.deepenings[partnerId];
   const introSeen = gameState.introSeenIds.includes(installationId);

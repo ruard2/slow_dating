@@ -442,6 +442,7 @@ function world3SharedHighlights(
   return uniqueLabels(highlights, 8);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function buildWorld3RichFallback(
   context: ChapterContext,
 ): Pick<

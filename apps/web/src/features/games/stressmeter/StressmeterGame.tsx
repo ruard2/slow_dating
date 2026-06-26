@@ -468,7 +468,7 @@ export function StressmeterGame({
   state,
 }: GameComponentProps<StressmeterState, StressmeterAction>) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const runtimeRef = useRef<Runtime>(createRuntime(performance.now()));
+  const runtimeRef = useRef<Runtime>(createRuntime(0));
   const controlsRef = useRef({ left: false, right: false, forward: false });
   const [phase, setPhase] = useState<Phase>("intro");
   const [countdown, setCountdown] = useState(3);
@@ -914,8 +914,13 @@ export function StressmeterGame({
 
   useEffect(() => {
     if (phase === "ended" && winner && !roundSaved) {
-      void saveRound();
+      const timeout = window.setTimeout(() => {
+        void saveRound();
+      }, 0);
+      return () => window.clearTimeout(timeout);
     }
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, winner, roundSaved]);
 
   return (

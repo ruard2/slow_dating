@@ -250,7 +250,11 @@ export function GeldbrugGame({
   }, [dispatch, installationId, started, state.scenarioIds.length]);
 
   useEffect(() => {
-    setCommitmentText(state.commitment?.text ?? "");
+    const timeout = window.setTimeout(
+      () => setCommitmentText(state.commitment?.text ?? ""),
+      0,
+    );
+    return () => window.clearTimeout(timeout);
   }, [state.commitment?.text]);
 
   const comparisonInsights = useMemo(() => {

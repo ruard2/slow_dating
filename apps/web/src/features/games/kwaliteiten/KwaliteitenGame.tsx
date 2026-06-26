@@ -70,14 +70,18 @@ export function KwaliteitenGame({
 
   useEffect(() => {
     if (screen === "wacht-selectie" && bothSubmittedSelection) {
-      setScreen("vraagfase");
+      const timeout = window.setTimeout(() => setScreen("vraagfase"), 0);
+      return () => window.clearTimeout(timeout);
     }
+    return undefined;
   }, [screen, bothSubmittedSelection]);
 
   useEffect(() => {
     if (screen === "wacht-vragen" && bothSubmittedQuestions) {
-      setScreen("presentatie");
+      const timeout = window.setTimeout(() => setScreen("presentatie"), 0);
+      return () => window.clearTimeout(timeout);
     }
+    return undefined;
   }, [screen, bothSubmittedQuestions]);
 
   function toggleKwaliteit(w: string) {
