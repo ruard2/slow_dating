@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma client
+        run: npm run db:generate --workspace @slow-dating/api
+
       - name: Static checks, unit tests and builds
         run: npm run check
 
@@ -55,6 +58,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate --workspace @slow-dating/api
 
       - name: Install Chromium
         run: npx playwright install chromium
