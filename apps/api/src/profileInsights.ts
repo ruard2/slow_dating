@@ -49,8 +49,8 @@ const WORLD_TITLES: Record<number, [string, string]> = {
   1: ["Eerste indruk", "Wie jullie zijn en hoe jullie elkaar ontmoeten"],
   2: ["Verdieping", "Wat jullie nodig hebben en wat onder de oppervlakte leeft"],
   3: ["Samen leven", "Hoe jullie omgaan met geld, aandacht, taken, stress en ontspanning"],
-  4: ["Richting", "Hoe jullie samen keuzes maken en vooruitkijken"],
-  5: ["Ziel", "Wat jullie ten diepste samenbrengt"],
+  4: ["Botsen zonder breken", "Hoe jullie omgaan met spanning, verschil en herstel"],
+  5: ["Samen bouwen", "Hoe jullie richting kiezen voor toekomst, trouw en gezamenlijke gewoontes"],
 };
 
 const VALUE_NAMES: Record<string, string> = {

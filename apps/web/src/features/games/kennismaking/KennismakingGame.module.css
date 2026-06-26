@@ -1,0 +1,466 @@
+:root {
+  --km-ink: #f7efe2;
+  --km-muted: #c4b9a7;
+  --km-amber: #e3ad61;
+  --km-amber-soft: #f1c982;
+  --km-forest: #102018;
+  --km-panel: rgba(12, 25, 18, 0.88);
+  --km-line: rgba(231, 193, 129, 0.22);
+  --km-good: #8fbd8a;
+  --km-bad: #df8d79;
+}
+
+.screen {
+  position: relative;
+  min-height: 100dvh;
+  background: #08120d;
+  color: var(--km-ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow-y: auto;
+}
+
+.bg {
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(5, 12, 9, 0.34) 0%, rgba(5, 12, 9, 0.18) 42%, rgba(5, 12, 9, 0.48) 100%),
+    url('/assets/kennismaking-background.png') center center / cover no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.pad {
+  position: relative;
+  z-index: 1;
+  padding: 60px 20px 120px;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.padCenter {
+  position: relative;
+  z-index: 1;
+  padding: 60px 20px 120px;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.h1 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.9rem;
+  font-weight: 600;
+  color: var(--km-amber-soft);
+  text-align: center;
+  line-height: 1.16;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
+}
+
+.h2 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.42rem;
+  font-weight: 600;
+  color: var(--km-ink);
+  text-align: center;
+  line-height: 1.16;
+}
+
+.sub {
+  color: var(--km-muted);
+  font-size: 0.87rem;
+  text-align: center;
+  line-height: 1.55;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.center {
+  text-align: center;
+}
+
+/* Buttons */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  font: 600 0.96rem / 1.2 'Inter', system-ui, sans-serif;
+  cursor: pointer;
+  transition: transform 0.18s, background 0.18s, border-color 0.18s;
+  text-align: center;
+}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+
+.btnGold {
+  background: linear-gradient(180deg, #edbf70, #d99b4b);
+  color: #182016;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+}
+
+.btnOutline {
+  background: rgba(7, 17, 12, 0.42);
+  border-color: rgba(227, 173, 97, 0.52);
+  color: var(--km-amber-soft);
+}
+
+.btnGhost {
+  background: rgba(10, 23, 16, 0.64);
+  color: var(--km-ink);
+  border-color: rgba(255, 255, 255, 0.13);
+  backdrop-filter: blur(10px);
+}
+
+.btnSm {
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  border-radius: 10px;
+}
+
+/* Choices */
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.choiceBtn {
+  padding: 14px 17px;
+  background: rgba(10, 23, 16, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  color: var(--km-ink);
+  font-size: 0.91rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', system-ui, sans-serif;
+  backdrop-filter: blur(12px);
+}
+.choiceBtn[data-selected="true"],
+.choiceBtn:active {
+  background: rgba(83, 78, 48, 0.9);
+  border-color: var(--km-amber);
+  color: #fff1d7;
+}
+
+/* Level pill */
+.levelPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  background: rgba(12, 28, 19, 0.78);
+  color: var(--km-amber-soft);
+  border: 1px solid var(--km-line);
+}
+
+/* Mode cards */
+.modeCard {
+  position: relative;
+  background: var(--km-panel);
+  border: 1px solid var(--km-line);
+  border-radius: 17px;
+  padding: 18px 18px 18px 68px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(14px);
+  width: 100%;
+}
+.modeCard:active {
+  transform: scale(0.985);
+  background: rgba(34, 50, 36, 0.94);
+  border-color: rgba(227, 173, 97, 0.55);
+}
+
+.modeIcon {
+  position: absolute;
+  left: 18px;
+  top: 19px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(227, 173, 97, 0.44);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--km-amber-soft);
+  font: 600 0.74rem 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.05em;
+}
+
+.modeTitle {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.08rem;
+  color: var(--km-ink);
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.modeDesc {
+  font-size: 0.79rem;
+  color: var(--km-muted);
+  line-height: 1.48;
+}
+
+/* Kaarten */
+.topRow {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  transition: background 0.3s;
+}
+
+.dotDone { background: #9e7545; }
+.dotActive { background: var(--km-amber-soft); }
+
+.counter {
+  font-size: 0.8rem;
+  color: var(--km-muted);
+}
+
+.catBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  background: rgba(13, 29, 20, 0.78);
+  color: var(--km-amber-soft);
+  border: 1px solid var(--km-line);
+}
+
+.cardWrap {
+  perspective: 1000px;
+  width: 100%;
+  max-width: 350px;
+  height: 232px;
+  cursor: pointer;
+  align-self: center;
+}
+
+.cardInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.58s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flipped .cardInner {
+  transform: rotateY(180deg);
+}
+
+.cardFront,
+.cardBack {
+  position: absolute;
+  inset: 0;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 27px;
+  border: 1px solid var(--km-line);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
+}
+
+.cardFront {
+  background: linear-gradient(145deg, rgba(30, 49, 35, 0.96), rgba(10, 24, 17, 0.97));
+}
+
+.flipped .cardFront {
+  visibility: hidden;
+  transition-delay: 0.28s;
+}
+
+.cardBack {
+  background: linear-gradient(145deg, rgba(23, 42, 30, 0.97), rgba(9, 21, 15, 0.98));
+  transform: rotateY(180deg);
+}
+
+.cardTap {
+  font-size: 0.75rem;
+  color: var(--km-muted);
+  letter-spacing: 0.04em;
+}
+
+.cardCat {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--km-amber);
+  margin-bottom: 14px;
+}
+
+.cardVraag {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.13rem;
+  color: var(--km-ink);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.cardFollowup {
+  font-size: 0.8rem;
+  color: var(--km-muted);
+  text-align: center;
+  margin-top: 12px;
+}
+
+/* Quiz & Raad */
+.revealBox {
+  background: var(--km-panel);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 17px;
+  width: 100%;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(14px);
+}
+
+.revealLabel {
+  font-size: 0.67rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--km-amber);
+  margin-bottom: 7px;
+}
+
+.revealAnswer {
+  font-size: 1rem;
+  color: var(--km-ink);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.inputLabel {
+  font-size: 0.85rem;
+  color: var(--km-muted);
+  margin-bottom: 8px;
+}
+
+.textarea {
+  width: 100%;
+  background: rgba(8, 20, 14, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  color: var(--km-ink);
+  font-size: 1rem;
+  padding: 14px;
+  font-family: 'Inter', system-ui, sans-serif;
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s;
+  backdrop-filter: blur(12px);
+  min-height: 108px;
+}
+.textarea:focus { border-color: var(--km-amber); }
+
+.rowBetween {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.row .btn { flex: 1; }
+
+.gap { display: flex; flex-direction: column; gap: 13px; width: 100%; }
+
+/* Score display */
+.scoreRow {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.scoreLabel {
+  font-size: 0.75rem;
+  color: var(--km-muted);
+  text-align: center;
+}
+
+.scoreNum {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--km-amber-soft);
+  font-family: 'Playfair Display', Georgia, serif;
+  text-align: center;
+}
+
+.scoreVs {
+  font-size: 2rem;
+  align-self: center;
+  color: var(--km-muted);
+}
+
+/* Waiting */
+.waitingMark {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(227, 173, 97, 0.32);
+  border-radius: 50%;
+  position: relative;
+}
+.waitingMark::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--km-amber);
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.waitingDots span { display: inline-block; animation: bounce 1.2s infinite; }
+.waitingDots span:nth-child(2) { animation-delay: 0.2s; }
+.waitingDots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-5px); }
+}
